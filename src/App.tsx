@@ -17,6 +17,7 @@ import { ThemeProvider } from './theme/ThemeProvider';
 import { HeroSection } from './sections/HeroSection';
 import { SectionRenderer } from './sections/SectionRenderer';
 import { resolveGalleryImages } from './sections/galleryUtils';
+import type { ResolvedGalleryImage } from './sections/GallerySection';
 import {
   type CartState,
   getCartCount,
@@ -166,7 +167,7 @@ function AppShell() {
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
-  if (isLoading || !brand) {
+  if (isLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background text-on-surface font-sans">
         <span className="material-symbols-outlined animate-spin text-4xl text-primary">progress_activity</span>
@@ -242,7 +243,14 @@ function AppShell() {
 
   const heroSection = sections.find((s) => s.type === 'hero' && s.visible);
   const restSections = sections.filter((s) => s.type !== 'hero');
-  const galleryImages = resolveGalleryImages(sections, mediaMap);
+  const heroBackgroundMediaId = heroSection?.type === 'hero' ? heroSection.content?.backgroundMediaId : undefined;
+  let galleryImages: ResolvedGalleryImage[] = [];
+  try {
+    galleryImages = resolveGalleryImages(sections, mediaMap);
+  } catch {
+    // An invalid CMS gallery must not prevent the rest of the public site from rendering.
+    galleryImages = [];
+  }
   const openStatus = 'Open for Dinner';
 
   return (
@@ -262,7 +270,7 @@ function AppShell() {
           <HeroSection
             content={heroSection.content}
             backgroundImageUrl={
-              heroSection.content.backgroundMediaId ? mediaMap.get(heroSection.content.backgroundMediaId)?.fileUrl : undefined
+              heroBackgroundMediaId ? mediaMap.get(heroBackgroundMediaId)?.fileUrl : undefined
             }
             onNavigate={navigateFromLink}
           />
@@ -277,7 +285,7 @@ function AppShell() {
           <div className="max-w-container-max mx-auto px-margin-mobile md:px-margin-desktop py-4 flex flex-col md:flex-row justify-between items-center gap-4">
             <div className="flex items-center text-[#D3C4AF]">
               <span className="material-symbols-outlined text-[#C5A059] mr-2 text-xl">location_on</span>
-              <span className="font-sans text-sm font-semibold text-white">{brand.contact.address.split(',').slice(-2, -1)[0]?.trim() || 'Mayfair, London'}</span>
+              <span className="font-sans text-sm font-semibold text-white">{(brand?.contact?.address ?? '').split(',').slice(-2, -1)[0]?.trim() || 'Mayfair, London'}</span>
               <span className="mx-3 text-[#C5A059]/40">•</span>
               <span className="text-xs text-green-300 bg-green-950/70 px-3 py-1 rounded-full font-semibold flex items-center gap-1.5 border border-green-700/40">
                 <span className="w-2 h-2 rounded-full bg-green-400 animate-pulse"></span>
@@ -354,7 +362,7 @@ function AppShell() {
                   <h3 className="font-serif text-2xl font-bold text-on-surface">Opening Hours</h3>
                 </div>
                 <ul className="space-y-4 font-sans text-sm text-secondary">
-                  {brand.businessHours.map((h) => (
+                  {(brand?.businessHours ?? []).map((h) => (
                     <li key={h.day} className="flex justify-between border-b border-outline-variant/10 pb-3 last:border-0">
                       <span>{DAY_LABEL[h.day]}</span>
                       <span className="text-on-surface font-semibold">

@@ -3,42 +3,63 @@ import { useBrandDraft, usePublishWebsite, useUpdateBrand, useWebsiteStatus } fr
 import { useAdminToast } from '../../context/AdminToastContext';
 import { PublishBar } from '../../components/PublishBar';
 import { ToggleField } from '../../components/forms/ToggleField';
-import type { BrandSettings } from '../../../types';
+import type { BusinessHoursEntry } from '../../../types';
 
-const DAY_LABEL: Record<string, string> = {
-  mon: 'Monday', tue: 'Tuesday', wed: 'Wednesday', thu: 'Thursday', fri: 'Friday', sat: 'Saturday', sun: 'Sunday',
+const DEFAULT_BUSINESS_HOURS: BusinessHoursEntry[] = [
+  { day: 'mon', isClosed: false, openTime: '18:00', closeTime: '23:00' },
+  { day: 'tue', isClosed: false, openTime: '18:00', closeTime: '23:00' },
+  { day: 'wed', isClosed: false, openTime: '18:00', closeTime: '23:00' },
+  { day: 'thu', isClosed: false, openTime: '18:00', closeTime: '23:00' },
+  { day: 'fri', isClosed: false, openTime: '12:00', closeTime: '00:00' },
+  { day: 'sat', isClosed: false, openTime: '12:00', closeTime: '00:00' },
+  { day: 'sun', isClosed: false, openTime: '12:00', closeTime: '21:00' },
+];
+
+const DAY_LABEL: Record<BusinessHoursEntry['day'], string> = {
+  mon: 'Mon', tue: 'Tue', wed: 'Wed', thu: 'Thu', fri: 'Fri', sat: 'Sat', sun: 'Sun',
 };
 
+function normalizeBusinessHours(hours: BusinessHoursEntry[] | undefined): BusinessHoursEntry[] {
+  const configuredHours = Array.isArray(hours) ? hours : [];
+  return DEFAULT_BUSINESS_HOURS.map((fallback) => ({
+    ...fallback,
+    ...configuredHours.find((entry) => entry?.day === fallback.day),
+    day: fallback.day,
+  }));
+}
+
 export function HoursPage() {
-  const { data: brand } = useBrandDraft();
+  const { data: brand, isLoading } = useBrandDraft();
   const { data: website } = useWebsiteStatus();
   const updateBrand = useUpdateBrand();
   const publishWebsite = usePublishWebsite();
   const { showToast } = useAdminToast();
+  const [businessHours, setBusinessHours] = useState<BusinessHoursEntry[]>(DEFAULT_BUSINESS_HOURS);
 
-  const [draft, setDraft] = useState<BrandSettings | null>(null);
   useEffect(() => {
-    if (brand) setDraft(brand);
-  }, [brand]);
+    if (!isLoading) setBusinessHours(normalizeBusinessHours(brand?.businessHours));
+  }, [brand?.businessHours, isLoading]);
 
-  if (!draft) return <p className="text-secondary text-sm">Loading...</p>;
-  const isDirty = JSON.stringify(draft) !== JSON.stringify(brand);
+  if (isLoading) return <p className="text-secondary text-sm">Loading...</p>;
+
+  const persistedHours = normalizeBusinessHours(brand?.businessHours);
+  const isDirty = JSON.stringify(businessHours) !== JSON.stringify(persistedHours);
+
+  const updateDay = (day: BusinessHoursEntry['day'], patch: Partial<BusinessHoursEntry>) => {
+    setBusinessHours((currentHours) =>
+      currentHours.map((entry) => (entry.day === day ? { ...entry, ...patch } : entry)),
+    );
+  };
 
   const handleSaveDraft = async () => {
-    await updateBrand.mutateAsync(draft);
-    showToast('Draft saved.');
-  };
-  const handlePublish = async () => {
-    if (isDirty) await updateBrand.mutateAsync(draft);
-    await publishWebsite.mutateAsync();
-    showToast('Website published.');
+    await updateBrand.mutateAsync({ businessHours });
+    showToast('Opening hours saved.');
   };
 
-  const updateDay = (day: string, patch: Partial<BrandSettings['businessHours'][number]>) => {
-    setDraft({
-      ...draft,
-      businessHours: draft.businessHours.map((h) => (h.day === day ? { ...h, ...patch } : h)),
-    });
+  const handlePublish = async () => {
+    if (isDirty) await updateBrand.mutateAsync({ businessHours });
+    await publishWebsite.mutateAsync();
+    showToast('Website published.');
   };
 
   return (
@@ -52,29 +73,32 @@ export function HoursPage() {
         onPublish={handlePublish}
         lastPublishedAt={website?.publishedAt}
       />
-      <h1 className="font-serif text-2xl font-bold text-on-surface mb-6">Opening Hours</h1>
+      <h1 className="font-serif text-2xl font-bold text-on-surface mb-2">Opening Hours</h1>
+      <p className="text-sm text-secondary mb-6">Set the weekly hours shown on your public website.</p>
 
       <div className="space-y-2 max-w-2xl">
-        {draft.businessHours.map((h) => (
-          <div key={h.day} className="flex items-center gap-4 bg-surface rounded-xl border border-outline-variant/20 p-4">
-            <span className="w-28 font-semibold text-on-surface text-sm">{DAY_LABEL[h.day]}</span>
-            <ToggleField label="Closed" checked={h.isClosed} onChange={(isClosed) => updateDay(h.day, { isClosed })} />
-            {!h.isClosed && (
-              <>
+        {businessHours.map((entry) => (
+          <div key={entry.day} className="flex flex-wrap items-center gap-4 bg-surface rounded-xl border border-outline-variant/20 p-4">
+            <span className="w-12 font-semibold text-on-surface text-sm">{DAY_LABEL[entry.day]}</span>
+            <ToggleField label="Closed" checked={entry.isClosed} onChange={(isClosed) => updateDay(entry.day, { isClosed })} />
+            {!entry.isClosed && (
+              <div className="flex items-center gap-3">
                 <input
                   type="time"
-                  value={h.openTime ?? ''}
-                  onChange={(e) => updateDay(h.day, { openTime: e.target.value })}
+                  value={entry.openTime ?? ''}
+                  onChange={(event) => updateDay(entry.day, { openTime: event.target.value })}
                   className="px-3 py-1.5 text-sm rounded-lg border border-outline-variant/30 bg-surface-container-low"
+                  aria-label={`${DAY_LABEL[entry.day]} opening time`}
                 />
-                <span className="text-secondary">to</span>
+                <span className="text-secondary text-sm">to</span>
                 <input
                   type="time"
-                  value={h.closeTime ?? ''}
-                  onChange={(e) => updateDay(h.day, { closeTime: e.target.value })}
+                  value={entry.closeTime ?? ''}
+                  onChange={(event) => updateDay(entry.day, { closeTime: event.target.value })}
                   className="px-3 py-1.5 text-sm rounded-lg border border-outline-variant/30 bg-surface-container-low"
+                  aria-label={`${DAY_LABEL[entry.day]} closing time`}
                 />
-              </>
+              </div>
             )}
           </div>
         ))}

@@ -10,7 +10,7 @@ export interface FeaturedMenuDisplayItem {
 }
 
 interface FeaturedMenuSectionProps {
-  content: FeaturedMenuSectionContent;
+  content?: Partial<FeaturedMenuSectionContent> | null;
   items: FeaturedMenuDisplayItem[];
   onViewMenu: () => void;
 }
@@ -23,12 +23,12 @@ export const FeaturedMenuSection = ({ content, items, onViewMenu }: FeaturedMenu
       <div className="max-w-container-max mx-auto px-margin-mobile md:px-margin-desktop">
         <div className="mb-12 flex flex-col md:flex-row md:items-end md:justify-between gap-4">
           <div>
-            {content.eyebrow && (
-              <span className="font-label-sm text-primary uppercase tracking-[0.2em] font-bold">{content.eyebrow}</span>
+            {content?.eyebrow && (
+              <span className="font-label-sm text-primary uppercase tracking-[0.2em] font-bold">{content?.eyebrow}</span>
             )}
-            <h2 className="font-serif text-3xl md:text-4xl font-semibold text-on-surface mt-2">{content.heading}</h2>
-            {content.description && (
-              <p className="font-sans text-sm md:text-base text-secondary mt-2 max-w-xl">{content.description}</p>
+            <h2 className="font-serif text-3xl md:text-4xl font-semibold text-on-surface mt-2">{content?.heading}</h2>
+            {content?.description && (
+              <p className="font-sans text-sm md:text-base text-secondary mt-2 max-w-xl">{content?.description}</p>
             )}
           </div>
           <button

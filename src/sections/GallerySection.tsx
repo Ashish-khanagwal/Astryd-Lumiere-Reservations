@@ -8,7 +8,7 @@ export interface ResolvedGalleryImage {
 }
 
 interface GallerySectionProps {
-  content: GallerySectionContent;
+  content?: Partial<GallerySectionContent> | null;
   images: ResolvedGalleryImage[];
   onImageClick: (index: number) => void;
 }
@@ -27,16 +27,18 @@ export function resolveGalleryColSpan(index: number) {
 }
 
 export const GallerySection = ({ content, images, onImageClick }: GallerySectionProps) => {
+  if (!Array.isArray(images) || images.length === 0) return null;
+
   return (
     <section className="py-section-gap bg-[#F4EFE6] w-full border-b border-outline-variant/15">
       <div className="max-w-container-max mx-auto px-margin-mobile md:px-margin-desktop">
         <div className="mb-12 text-center">
-          {content.eyebrow && (
-            <span className="font-label-sm text-primary uppercase tracking-[0.2em] font-bold">{content.eyebrow}</span>
+          {content?.eyebrow && (
+            <span className="font-label-sm text-primary uppercase tracking-[0.2em] font-bold">{content?.eyebrow}</span>
           )}
-          <h2 className="font-serif text-3xl md:text-4xl font-semibold text-on-surface mt-2">{content.heading}</h2>
-          {content.description && (
-            <p className="font-sans text-sm md:text-base text-secondary mt-2">{content.description}</p>
+          <h2 className="font-serif text-3xl md:text-4xl font-semibold text-on-surface mt-2">{content?.heading}</h2>
+          {content?.description && (
+            <p className="font-sans text-sm md:text-base text-secondary mt-2">{content?.description}</p>
           )}
         </div>
 

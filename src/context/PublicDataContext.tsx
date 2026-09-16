@@ -1,13 +1,17 @@
-import { createContext, useContext, useEffect, type ReactNode } from 'react';
-import { useQuery } from '@tanstack/react-query';
-import { useRestaurant } from './RestaurantContext';
-import { getHomepage } from '../services/homepage';
-import { getBrandSettings } from '../services/website';
-import { getMenu } from '../services/menu';
-import { getAddons } from '../services/addons';
-import { getOffers } from '../services/offers';
-import { getMedia } from '../services/media';
-import { setMenuCatalog, type AddonCategory, type MenuItem as LegacyMenuItem } from '../data/menuItems';
+import { createContext, useContext, useEffect, type ReactNode } from "react";
+import { useQuery } from "@tanstack/react-query";
+import { useRestaurant } from "./RestaurantContext";
+import { getHomepage } from "../services/homepage";
+import { getBrandSettings } from "../services/website";
+import { getMenu } from "../services/menu";
+import { getAddons } from "../services/addons";
+import { getOffers } from "../services/offers";
+import { getMedia } from "../services/media";
+import {
+  setMenuCatalog,
+  type AddonCategory,
+  type MenuItem as LegacyMenuItem,
+} from "../data/menuItems";
 import type {
   BrandSettings,
   HomepageSection,
@@ -16,7 +20,7 @@ import type {
   MenuItem,
   Addon,
   Offer,
-} from '../types';
+} from "../types";
 
 interface PublicDataValue {
   isLoading: boolean;
@@ -31,25 +35,28 @@ interface PublicDataValue {
 
 const PublicDataContext = createContext<PublicDataValue | undefined>(undefined);
 
-function toFoodTypeVeg(foodType: MenuItem['foodType']) {
-  return foodType === 'veg' || foodType === 'vegan';
+function toFoodTypeVeg(foodType: MenuItem["foodType"]) {
+  return foodType === "veg" || foodType === "vegan";
 }
 
 function toPrepTimeLabel(minutes?: number) {
-  return minutes ? `${minutes} min` : '—';
+  return minutes ? `${minutes} min` : "—";
 }
 
-function adaptItems(items: MenuItem[], categories: MenuCategory[]): LegacyMenuItem[] {
+function adaptItems(
+  items: MenuItem[],
+  categories: MenuCategory[],
+): LegacyMenuItem[] {
   const categoryName = new Map(categories.map((c) => [c.id, c.name]));
   return items
     .filter((i) => i.isAvailable)
     .map((i) => ({
       id: i.id,
       name: i.name,
-      category: categoryName.get(i.categoryId) ?? 'Other',
+      category: categoryName.get(i.categoryId) ?? "Other",
       price: i.price,
       description: i.description,
-      image: i.imageUrl ?? '',
+      image: i.imageUrl ?? "",
       rating: i.rating ?? 4.8,
       reviews: i.reviewCount ?? 0,
       prepTime: toPrepTimeLabel(i.prepTimeMinutes),
@@ -63,45 +70,52 @@ function adaptAddons(addons: Addon[]): AddonCategory[] {
   addons
     .filter((a) => a.isAvailable)
     .forEach((a) => {
-      const key = a.group ?? 'Add-ons';
+      const key = a.group ?? "Add-ons";
       if (!groups.has(key)) groups.set(key, []);
       groups.get(key)!.push(a);
     });
   return Array.from(groups.entries()).map(([name, opts]) => ({
-    id: name.toLowerCase().replace(/\s+/g, '-'),
+    id: name.toLowerCase().replace(/\s+/g, "-"),
     name,
-    selection: opts[0]?.groupSelection ?? 'multiple',
-    options: opts.map((o) => ({ id: o.id, name: o.name, price: o.price, description: o.description, isVeg: o.isVeg })),
+    selection: opts[0]?.groupSelection ?? "multiple",
+    options: opts.map((o) => ({
+      id: o.id,
+      name: o.name,
+      price: o.price,
+      description: o.description,
+      isVeg: o.isVeg,
+    })),
   }));
 }
 
 export function PublicDataProvider({ children }: { children: ReactNode }) {
   const { restaurantId } = useRestaurant();
-  const isPreview = new URLSearchParams(window.location.search).get('preview') === 'true';
-  const version = isPreview ? 'draft' : 'published';
+  const isPreview =
+    new URLSearchParams(window.location.search).get("preview") === "true";
+  const version = isPreview ? "draft" : "published";
 
   const homepageQuery = useQuery({
-    queryKey: ['public-homepage', restaurantId, version],
+    queryKey: ["public-homepage", restaurantId, version],
     queryFn: () => getHomepage(restaurantId, version),
   });
   const brandQuery = useQuery({
-    queryKey: ['public-brand', restaurantId, version],
+    queryKey: ["public-brand", restaurantId, version],
     queryFn: () => getBrandSettings(restaurantId, version),
   });
   const menuQuery = useQuery({
-    queryKey: ['public-menu', restaurantId],
+    queryKey: ["public-menu", restaurantId],
     queryFn: () => getMenu(restaurantId),
   });
   const addonsQuery = useQuery({
-    queryKey: ['public-addons', restaurantId],
+    queryKey: ["public-addons", restaurantId],
     queryFn: () => getAddons(restaurantId),
   });
   const offersQuery = useQuery({
-    queryKey: ['public-offers', restaurantId],
+    queryKey: ["public-offers", restaurantId],
     queryFn: () => getOffers(restaurantId),
   });
   const mediaQuery = useQuery({
-    queryKey: ['public-media', restaurantId],
+    queryKey: ["public-media", restaurantId],
     queryFn: () => getMedia(restaurantId),
   });
 
@@ -111,19 +125,18 @@ export function PublicDataProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     if (menuQuery.data && addonsQuery.data) {
-      setMenuCatalog(adaptItems(menuQuery.data.items, menuQuery.data.categories), adaptAddons(addonsQuery.data));
+      setMenuCatalog(
+        adaptItems(menuQuery.data.items, menuQuery.data.categories),
+        adaptAddons(addonsQuery.data),
+      );
     }
   }, [menuQuery.data, addonsQuery.data]);
 
-  const isLoading =
-    homepageQuery.isLoading ||
-    brandQuery.isLoading ||
-    menuQuery.isLoading ||
-    addonsQuery.isLoading ||
-    offersQuery.isLoading ||
-    mediaQuery.isLoading;
+  const isLoading = homepageQuery.isLoading || brandQuery.isLoading;
 
-  const mediaMap = new Map((mediaQuery.data?.items ?? []).map((m) => [m.id, m]));
+  const mediaMap = new Map(
+    (mediaQuery.data?.items ?? []).map((m) => [m.id, m]),
+  );
 
   const value: PublicDataValue = {
     isLoading,
@@ -136,11 +149,16 @@ export function PublicDataProvider({ children }: { children: ReactNode }) {
     offers: offersQuery.data ?? [],
   };
 
-  return <PublicDataContext.Provider value={value}>{children}</PublicDataContext.Provider>;
+  return (
+    <PublicDataContext.Provider value={value}>
+      {children}
+    </PublicDataContext.Provider>
+  );
 }
 
 export function usePublicData() {
   const ctx = useContext(PublicDataContext);
-  if (!ctx) throw new Error('usePublicData must be used within PublicDataProvider');
+  if (!ctx)
+    throw new Error("usePublicData must be used within PublicDataProvider");
   return ctx;
 }

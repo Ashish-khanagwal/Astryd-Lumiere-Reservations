@@ -5,7 +5,7 @@ import { PublishBar } from '../../components/PublishBar';
 import type { BrandSettings } from '../../../types';
 
 export function ContactPage() {
-  const { data: brand } = useBrandDraft();
+  const { data: brand, isLoading } = useBrandDraft();
   const { data: website } = useWebsiteStatus();
   const updateBrand = useUpdateBrand();
   const publishWebsite = usePublishWebsite();
@@ -13,10 +13,13 @@ export function ContactPage() {
 
   const [draft, setDraft] = useState<BrandSettings | null>(null);
   useEffect(() => {
-    if (brand) setDraft(brand);
-  }, [brand]);
+    if (!isLoading) setDraft((brand ?? {}) as BrandSettings);
+  }, [brand, isLoading]);
 
-  if (!draft) return <p className="text-secondary text-sm">Loading...</p>;
+  if (isLoading && !draft) return <p className="text-secondary text-sm">Loading...</p>;
+  if (!draft) return null;
+  const contact: Partial<BrandSettings['contact']> = draft.contact ?? {};
+  const safeContact = { phone: '', email: '', address: '', ...contact };
   const isDirty = JSON.stringify(draft) !== JSON.stringify(brand);
 
   const handleSaveDraft = async () => {
@@ -46,32 +49,32 @@ export function ContactPage() {
         <div>
           <label className="block text-sm font-semibold text-on-surface mb-1.5">Phone</label>
           <input
-            value={draft.contact.phone}
-            onChange={(e) => setDraft({ ...draft, contact: { ...draft.contact, phone: e.target.value } })}
+            value={safeContact.phone ?? ''}
+            onChange={(e) => setDraft({ ...draft, contact: { ...safeContact, phone: e.target.value } })}
             className="w-full px-3 py-2 text-sm rounded-lg border border-outline-variant/40 bg-surface focus:border-primary outline-none"
           />
         </div>
         <div>
           <label className="block text-sm font-semibold text-on-surface mb-1.5">Email</label>
           <input
-            value={draft.contact.email}
-            onChange={(e) => setDraft({ ...draft, contact: { ...draft.contact, email: e.target.value } })}
+            value={safeContact.email ?? ''}
+            onChange={(e) => setDraft({ ...draft, contact: { ...safeContact, email: e.target.value } })}
             className="w-full px-3 py-2 text-sm rounded-lg border border-outline-variant/40 bg-surface focus:border-primary outline-none"
           />
         </div>
         <div>
           <label className="block text-sm font-semibold text-on-surface mb-1.5">Address</label>
           <input
-            value={draft.contact.address}
-            onChange={(e) => setDraft({ ...draft, contact: { ...draft.contact, address: e.target.value } })}
+            value={safeContact.address ?? ''}
+            onChange={(e) => setDraft({ ...draft, contact: { ...safeContact, address: e.target.value } })}
             className="w-full px-3 py-2 text-sm rounded-lg border border-outline-variant/40 bg-surface focus:border-primary outline-none"
           />
         </div>
         <div>
           <label className="block text-sm font-semibold text-on-surface mb-1.5">Google Maps Embed URL</label>
           <input
-            value={draft.contact.mapEmbedUrl ?? ''}
-            onChange={(e) => setDraft({ ...draft, contact: { ...draft.contact, mapEmbedUrl: e.target.value } })}
+            value={safeContact.mapEmbedUrl ?? ''}
+            onChange={(e) => setDraft({ ...draft, contact: { ...safeContact, mapEmbedUrl: e.target.value } })}
             placeholder="https://www.google.com/maps/embed?..."
             className="w-full px-3 py-2 text-sm rounded-lg border border-outline-variant/40 bg-surface focus:border-primary outline-none"
           />

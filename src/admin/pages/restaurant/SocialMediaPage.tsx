@@ -7,7 +7,7 @@ import type { BrandSettings } from '../../../types';
 const SOCIAL_KEYS = ['instagram', 'facebook', 'youtube', 'x', 'whatsapp'] as const;
 
 export function SocialMediaPage() {
-  const { data: brand } = useBrandDraft();
+  const { data: brand, isLoading } = useBrandDraft();
   const { data: website } = useWebsiteStatus();
   const updateBrand = useUpdateBrand();
   const publishWebsite = usePublishWebsite();
@@ -15,10 +15,11 @@ export function SocialMediaPage() {
 
   const [draft, setDraft] = useState<BrandSettings | null>(null);
   useEffect(() => {
-    if (brand) setDraft(brand);
-  }, [brand]);
+    if (!isLoading) setDraft((brand ?? {}) as BrandSettings);
+  }, [brand, isLoading]);
 
-  if (!draft) return <p className="text-secondary text-sm">Loading...</p>;
+  if (isLoading && !draft) return <p className="text-secondary text-sm">Loading...</p>;
+  if (!draft) return null;
   const isDirty = JSON.stringify(draft) !== JSON.stringify(brand);
 
   const handleSaveDraft = async () => {
@@ -49,8 +50,8 @@ export function SocialMediaPage() {
           <div key={key}>
             <label className="block text-sm font-semibold text-on-surface mb-1.5 capitalize">{key}</label>
             <input
-              value={draft.socialLinks[key] ?? ''}
-              onChange={(e) => setDraft({ ...draft, socialLinks: { ...draft.socialLinks, [key]: e.target.value } })}
+              value={draft.socialLinks?.[key] ?? ''}
+              onChange={(e) => setDraft({ ...draft, socialLinks: { ...(draft.socialLinks ?? {}), [key]: e.target.value } })}
               placeholder="https://..."
               className="w-full px-3 py-2 text-sm rounded-lg border border-outline-variant/40 bg-surface focus:border-primary outline-none"
             />
