@@ -26,11 +26,11 @@ export function SectionEditorPage() {
   const publishWebsite = usePublishWebsite();
   const { showToast } = useAdminToast();
 
-  const serverSection = homepage?.sections.find((s) => s.type === type);
+  const serverSection = homepage?.sections?.find((s) => s.type === type);
   const [draft, setDraft] = useState<HomepageSection['content'] | null>(null);
 
   useEffect(() => {
-    if (serverSection) setDraft(serverSection.content);
+    if (serverSection) setDraft((serverSection.content ?? {}) as HomepageSection['content']);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [serverSection?.id]);
 
@@ -38,7 +38,7 @@ export function SectionEditorPage() {
     return <p className="text-secondary text-sm">Loading section...</p>;
   }
 
-  const isDirty = JSON.stringify(draft) !== JSON.stringify(serverSection.content);
+  const isDirty = JSON.stringify(draft) !== JSON.stringify(serverSection.content ?? {});
 
   const handleSaveDraft = async () => {
     await updateSection.mutateAsync({ type, payload: { content: draft as unknown as Record<string, unknown> } });

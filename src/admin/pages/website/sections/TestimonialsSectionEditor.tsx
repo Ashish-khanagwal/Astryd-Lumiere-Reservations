@@ -3,12 +3,13 @@ import { ReorderableList } from '../../../components/ReorderableList';
 import type { TestimonialEntry, TestimonialsSectionContent } from '../../../../types';
 
 interface EditorProps {
-  content: TestimonialsSectionContent;
+  content?: Partial<TestimonialsSectionContent> | null;
   onChange: (patch: Partial<TestimonialsSectionContent>) => void;
 }
 
 export function TestimonialsSectionEditor({ content, onChange }: EditorProps) {
-  const testimonials = [...content.testimonials].sort((a, b) => a.order - b.order);
+  const testimonialEntries = content?.testimonials;
+  const testimonials = Array.isArray(testimonialEntries) ? [...testimonialEntries].sort((a, b) => a.order - b.order) : [];
 
   const update = (id: string, patch: Partial<TestimonialEntry>) => {
     onChange({ testimonials: testimonials.map((t) => (t.id === id ? { ...t, ...patch } : t)) });
@@ -32,7 +33,7 @@ export function TestimonialsSectionEditor({ content, onChange }: EditorProps) {
       <div>
         <label className="block text-sm font-semibold text-on-surface mb-1.5">Eyebrow</label>
         <input
-          value={content.eyebrow ?? ''}
+          value={content?.eyebrow ?? ''}
           onChange={(e) => onChange({ eyebrow: e.target.value })}
           className="w-full px-3 py-2 text-sm rounded-lg border border-outline-variant/40 bg-surface focus:border-primary outline-none"
         />
@@ -40,7 +41,7 @@ export function TestimonialsSectionEditor({ content, onChange }: EditorProps) {
       <div>
         <label className="block text-sm font-semibold text-on-surface mb-1.5">Heading</label>
         <input
-          value={content.heading}
+          value={content?.heading ?? ''}
           onChange={(e) => onChange({ heading: e.target.value })}
           className="w-full px-3 py-2 text-sm rounded-lg border border-outline-variant/40 bg-surface focus:border-primary outline-none"
         />
@@ -61,13 +62,13 @@ export function TestimonialsSectionEditor({ content, onChange }: EditorProps) {
             {dragHandle}
             <div className="flex-1 space-y-2">
               <input
-                value={t.customerName}
+                value={t.customerName ?? ''}
                 onChange={(e) => update(t.id, { customerName: e.target.value })}
                 placeholder="Customer name"
                 className="w-full px-3 py-1.5 text-sm rounded-lg border border-outline-variant/30 bg-surface-container-low"
               />
               <textarea
-                value={t.quote}
+                value={t.quote ?? ''}
                 onChange={(e) => update(t.id, { quote: e.target.value })}
                 placeholder="Quote"
                 rows={2}

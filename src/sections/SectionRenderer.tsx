@@ -10,7 +10,7 @@ import { LocationSection } from './LocationSection';
 
 interface SectionRendererProps {
   sections: HomepageSection[];
-  brand: BrandSettings;
+  brand?: BrandSettings;
   mediaMap: Map<string, MediaAsset>;
   items: MenuItem[];
   offers: Offer[];
@@ -43,34 +43,42 @@ export const SectionRenderer = ({
   return (
     <>
       {visibleSections.map((section) => {
-        switch (section.type) {
+        try {
+          switch (section.type) {
           case 'hero':
+            {
+              const backgroundMediaId = section.content?.backgroundMediaId;
             return (
               <HeroSection
                 key={section.id}
                 content={section.content}
-                backgroundImageUrl={section.content.backgroundMediaId ? mediaMap.get(section.content.backgroundMediaId)?.fileUrl : undefined}
+                backgroundImageUrl={backgroundMediaId ? mediaMap.get(backgroundMediaId)?.fileUrl : undefined}
                 onNavigate={onNavigate}
               />
             );
+            }
 
           case 'about':
+            {
+              const chefImageMediaId = section.content?.chefImageMediaId;
+              const imageMediaId = section.content?.imageMediaId;
             return (
               <AboutSection
                 key={section.id}
                 content={section.content}
                 imageUrl={
-                  (section.content.chefImageMediaId && mediaMap.get(section.content.chefImageMediaId)?.fileUrl) ||
-                  (section.content.imageMediaId ? mediaMap.get(section.content.imageMediaId)?.fileUrl : undefined)
+                  (chefImageMediaId && mediaMap.get(chefImageMediaId)?.fileUrl) ||
+                  (imageMediaId ? mediaMap.get(imageMediaId)?.fileUrl : undefined)
                 }
                 onImageClick={onAboutImageClick}
               />
             );
+            }
 
           case 'featured_menu': {
-            const selected = section.content.selectedItemIds.length
-              ? items.filter((i) => section.content.selectedItemIds.includes(i.id))
-              : items.filter((i) => i.isFeatured);
+            const configuredItemIds = section.content?.selectedItemIds;
+            const selectedItemIds = Array.isArray(configuredItemIds) ? configuredItemIds : [];
+            const selected = selectedItemIds.length ? items.filter((i) => selectedItemIds.includes(i.id)) : [];
             return (
               <FeaturedMenuSection
                 key={section.id}
@@ -99,8 +107,10 @@ export const SectionRenderer = ({
             );
 
           case 'offers': {
+            const configuredOfferIds = section.content?.selectedOfferIds;
+            const selectedOfferIds = Array.isArray(configuredOfferIds) ? configuredOfferIds : [];
             const selectedOffers = offers.filter(
-              (o) => o.isActive && (section.content.selectedOfferIds.length === 0 || section.content.selectedOfferIds.includes(o.id)),
+              (o) => o.isActive && selectedOfferIds.includes(o.id),
             );
             return (
               <OffersSection
@@ -123,19 +133,27 @@ export const SectionRenderer = ({
             return <TestimonialsSection key={section.id} content={section.content} />;
 
           case 'location':
+            {
+              const addressOverride = section.content?.addressOverride;
+              const mapEmbedUrlOverride = section.content?.mapEmbedUrlOverride;
             return (
               <LocationSection
                 key={section.id}
                 content={section.content}
-                address={section.content.addressOverride || brand.contact.address}
-                phone={brand.contact.phone}
-                mapEmbedUrl={section.content.mapEmbedUrlOverride || brand.contact.mapEmbedUrl}
-                businessHours={brand.businessHours}
+                address={addressOverride || brand?.contact?.address || ''}
+                phone={brand?.contact?.phone ?? ''}
+                mapEmbedUrl={mapEmbedUrlOverride || brand?.contact?.mapEmbedUrl}
+                businessHours={brand?.businessHours ?? []}
               />
             );
+            }
 
-          default:
-            return null;
+            default:
+              return null;
+          }
+        } catch {
+          // A malformed CMS section should not prevent the remaining sections from rendering.
+          return null;
         }
       })}
     </>

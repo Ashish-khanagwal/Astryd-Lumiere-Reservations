@@ -4,13 +4,15 @@ import { useMedia } from '../../../hooks/api/useMedia';
 import type { GalleryImageEntry, GallerySectionContent } from '../../../../types';
 
 interface EditorProps {
-  content: GallerySectionContent;
+  content?: Partial<GallerySectionContent> | null;
   onChange: (patch: Partial<GallerySectionContent>) => void;
 }
 
 export function GallerySectionEditor({ content, onChange }: EditorProps) {
   const { data: media } = useMedia();
-  const images = [...content.images].sort((a, b) => a.order - b.order);
+  const mediaItems = media?.items ?? [];
+  const galleryImages = content?.images;
+  const images = Array.isArray(galleryImages) ? [...galleryImages].sort((a, b) => a.order - b.order) : [];
 
   const updateImage = (mediaId: string, patch: Partial<GalleryImageEntry>) => {
     onChange({ images: images.map((img) => (img.mediaId === mediaId ? { ...img, ...patch } : img)) });
@@ -30,7 +32,7 @@ export function GallerySectionEditor({ content, onChange }: EditorProps) {
       <div>
         <label className="block text-sm font-semibold text-on-surface mb-1.5">Eyebrow</label>
         <input
-          value={content.eyebrow ?? ''}
+          value={content?.eyebrow ?? ''}
           onChange={(e) => onChange({ eyebrow: e.target.value })}
           className="w-full px-3 py-2 text-sm rounded-lg border border-outline-variant/40 bg-surface focus:border-primary outline-none"
         />
@@ -38,7 +40,7 @@ export function GallerySectionEditor({ content, onChange }: EditorProps) {
       <div>
         <label className="block text-sm font-semibold text-on-surface mb-1.5">Heading</label>
         <input
-          value={content.heading}
+          value={content?.heading ?? ''}
           onChange={(e) => onChange({ heading: e.target.value })}
           className="w-full px-3 py-2 text-sm rounded-lg border border-outline-variant/40 bg-surface focus:border-primary outline-none"
         />
@@ -55,7 +57,7 @@ export function GallerySectionEditor({ content, onChange }: EditorProps) {
           renderItem={(img, dragHandle) => (
             <div className="flex items-center gap-3 bg-surface rounded-xl border border-outline-variant/20 p-3">
               {dragHandle}
-              <img src={media?.items.find((m) => m.id === img.mediaId)?.fileUrl} alt="" className="w-14 h-14 rounded-lg object-cover" />
+              <img src={mediaItems.find((m) => m.id === img.mediaId)?.fileUrl} alt="" className="w-14 h-14 rounded-lg object-cover" />
               <input
                 value={img.caption ?? ''}
                 onChange={(e) => updateImage(img.mediaId, { caption: e.target.value })}

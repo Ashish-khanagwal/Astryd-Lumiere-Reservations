@@ -5,7 +5,7 @@ import { PublishBar } from '../../components/PublishBar';
 import type { BrandSettings } from '../../../types';
 
 export function InformationPage() {
-  const { data: brand } = useBrandDraft();
+  const { data: brand, isLoading } = useBrandDraft();
   const { data: website } = useWebsiteStatus();
   const updateBrand = useUpdateBrand();
   const publishWebsite = usePublishWebsite();
@@ -13,10 +13,11 @@ export function InformationPage() {
 
   const [draft, setDraft] = useState<BrandSettings | null>(null);
   useEffect(() => {
-    if (brand) setDraft(brand);
-  }, [brand]);
+    if (!isLoading) setDraft((brand ?? {}) as BrandSettings);
+  }, [brand, isLoading]);
 
-  if (!draft) return <p className="text-secondary text-sm">Loading...</p>;
+  if (isLoading && !draft) return <p className="text-secondary text-sm">Loading...</p>;
+  if (!draft) return null;
   const isDirty = JSON.stringify(draft) !== JSON.stringify(brand);
 
   const handleSaveDraft = async () => {
@@ -46,7 +47,7 @@ export function InformationPage() {
         <div>
           <label className="block text-sm font-semibold text-on-surface mb-1.5">Tagline</label>
           <input
-            value={draft.tagline ?? ''}
+            value={draft?.tagline ?? ''}
             onChange={(e) => setDraft({ ...draft, tagline: e.target.value })}
             className="w-full px-3 py-2 text-sm rounded-lg border border-outline-variant/40 bg-surface focus:border-primary outline-none"
           />
@@ -54,7 +55,7 @@ export function InformationPage() {
         <div>
           <label className="block text-sm font-semibold text-on-surface mb-1.5">Description</label>
           <textarea
-            value={draft.description}
+            value={draft?.description ?? ''}
             onChange={(e) => setDraft({ ...draft, description: e.target.value })}
             rows={4}
             maxLength={300}
@@ -64,7 +65,7 @@ export function InformationPage() {
         <div>
           <label className="block text-sm font-semibold text-on-surface mb-1.5">Cuisine Type</label>
           <input
-            value={draft.cuisineType}
+            value={draft?.cuisineType ?? ''}
             onChange={(e) => setDraft({ ...draft, cuisineType: e.target.value })}
             className="w-full px-3 py-2 text-sm rounded-lg border border-outline-variant/40 bg-surface focus:border-primary outline-none"
           />

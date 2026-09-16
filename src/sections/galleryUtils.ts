@@ -7,7 +7,10 @@ export function resolveGalleryImages(
 ): ResolvedGalleryImage[] {
   const gallery = sections.find((s) => s.type === 'gallery');
   if (!gallery || gallery.type !== 'gallery') return [];
-  return [...gallery.content.images]
+  const images = gallery.content?.images;
+  if (!Array.isArray(images)) return [];
+
+  return [...images]
     .sort((a, b) => a.order - b.order)
     .map((img, idx) => ({
       src: mediaMap.get(img.mediaId)?.fileUrl ?? '',

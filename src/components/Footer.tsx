@@ -20,6 +20,7 @@ export const Footer: React.FC<FooterProps> = ({
     brand?.description ??
     'Experience the invisible excellence of modern French cuisine in the heart of Mayfair. Part of the Haute-Cuisine Group.';
   const contact = brand?.contact;
+  const instagram = brand?.socialLinks?.instagram ?? '';
 
   return (
     <footer className="bg-[#241F17] text-[#E5D4B3] border-t border-[#C5A059]/30 pt-16 pb-8 w-full mt-auto shadow-2xl relative overflow-hidden">
@@ -75,7 +76,7 @@ export const Footer: React.FC<FooterProps> = ({
                 >
                   share
                 </span>
-                {brand?.socialLinks.instagram && (
+                {instagram && (
                   <span
                     className="material-symbols-outlined cursor-pointer hover:text-white transition-colors"
                     onClick={() => onToast?.('Instagram page opened')}

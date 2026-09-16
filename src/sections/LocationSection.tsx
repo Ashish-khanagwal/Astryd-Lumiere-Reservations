@@ -1,11 +1,11 @@
 import type { BusinessHoursEntry, LocationSectionContent } from '../types';
 
 interface LocationSectionProps {
-  content: LocationSectionContent;
-  address: string;
-  phone: string;
+  content?: Partial<LocationSectionContent> | null;
+  address?: string;
+  phone?: string;
   mapEmbedUrl?: string;
-  businessHours: BusinessHoursEntry[];
+  businessHours?: BusinessHoursEntry[];
 }
 
 const DAY_LABEL: Record<string, string> = {
@@ -13,11 +13,14 @@ const DAY_LABEL: Record<string, string> = {
 };
 
 export const LocationSection = ({ content, address, phone, mapEmbedUrl, businessHours }: LocationSectionProps) => {
+  if (!content || Object.keys(content).length === 0) return null;
+  const hours = Array.isArray(businessHours) ? businessHours : [];
+
   return (
     <section className="py-section-gap bg-[#F4EFE6] w-full">
       <div className="max-w-container-max mx-auto px-margin-mobile md:px-margin-desktop">
         <div className="mb-12 text-center">
-          <h2 className="font-serif text-3xl md:text-4xl font-semibold text-on-surface">{content.heading}</h2>
+          <h2 className="font-serif text-3xl md:text-4xl font-semibold text-on-surface">{content?.heading}</h2>
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-stretch">
@@ -34,18 +37,18 @@ export const LocationSection = ({ content, address, phone, mapEmbedUrl, business
           <div className="bg-surface rounded-2xl p-8 shadow-sm border border-outline-variant/20 space-y-6">
             <div className="flex items-start gap-3">
               <span className="material-symbols-outlined text-primary text-2xl">location_on</span>
-              <span className="font-sans text-sm text-on-surface font-medium">{address}</span>
+              <span className="font-sans text-sm text-on-surface font-medium">{address ?? ''}</span>
             </div>
             <div className="flex items-start gap-3">
               <span className="material-symbols-outlined text-primary text-2xl">call</span>
-              <span className="font-sans text-sm text-on-surface font-medium">{phone}</span>
+              <span className="font-sans text-sm text-on-surface font-medium">{phone ?? ''}</span>
             </div>
 
-            {content.showHoursTable && (
+            {content?.showHoursTable && (
               <div>
                 <h4 className="font-label-sm text-secondary uppercase tracking-widest mb-3">Opening Hours</h4>
                 <ul className="space-y-2 font-sans text-sm">
-                  {businessHours.map((h) => (
+                  {hours.map((h) => (
                     <li key={h.day} className="flex justify-between border-b border-outline-variant/10 pb-2">
                       <span className="text-secondary">{DAY_LABEL[h.day]}</span>
                       <span className="text-on-surface font-semibold">
