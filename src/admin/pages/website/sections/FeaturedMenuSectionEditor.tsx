@@ -1,4 +1,8 @@
+import { Star } from 'lucide-react';
 import { useMenu } from '../../../hooks/api/useMenu';
+import { TextField, TextareaField } from '../../../components/forms/Field';
+import { SectionCard } from '../../../components/SectionCard';
+import { StatusPill } from '../../../components/StatusPill';
 import type { FeaturedMenuSectionContent } from '../../../../types';
 
 interface EditorProps {
@@ -20,46 +24,29 @@ export function FeaturedMenuSectionEditor({ content, onChange }: EditorProps) {
 
   return (
     <div className="space-y-5">
-      <div>
-        <label className="block text-sm font-semibold text-on-surface mb-1.5">Eyebrow</label>
-        <input
-          value={content?.eyebrow ?? ''}
-          onChange={(e) => onChange({ eyebrow: e.target.value })}
-          className="w-full px-3 py-2 text-sm rounded-lg border border-outline-variant/40 bg-surface focus:border-primary outline-none"
-        />
-      </div>
-      <div>
-        <label className="block text-sm font-semibold text-on-surface mb-1.5">Heading</label>
-        <input
-          value={content?.heading ?? ''}
-          onChange={(e) => onChange({ heading: e.target.value })}
-          className="w-full px-3 py-2 text-sm rounded-lg border border-outline-variant/40 bg-surface focus:border-primary outline-none"
-        />
-      </div>
-      <div>
-        <label className="block text-sm font-semibold text-on-surface mb-1.5">Description</label>
-        <textarea
-          value={content?.description ?? ''}
-          onChange={(e) => onChange({ description: e.target.value })}
-          rows={2}
-          className="w-full px-3 py-2 text-sm rounded-lg border border-outline-variant/40 bg-surface focus:border-primary outline-none"
-        />
-      </div>
+      <SectionCard title="Content">
+        <div className="space-y-4">
+          <TextField label="Eyebrow" value={content?.eyebrow ?? ''} onChange={(e) => onChange({ eyebrow: e.target.value })} />
+          <TextField label="Heading" value={content?.heading ?? ''} onChange={(e) => onChange({ heading: e.target.value })} />
+          <TextareaField label="Description" rows={2} value={content?.description ?? ''} onChange={(e) => onChange({ description: e.target.value })} />
+        </div>
+      </SectionCard>
 
-      <div>
-        <label className="block text-sm font-semibold text-on-surface mb-2">
-          Featured Items {selectedItemIds.length === 0 && <span className="font-normal text-secondary">(none selected)</span>}
-        </label>
-        <div className="max-h-72 overflow-y-auto space-y-1.5 border border-outline-variant/30 rounded-xl p-2">
+      <SectionCard
+        title="Featured Items"
+        description={selectedItemIds.length === 0 ? 'None selected yet.' : `${selectedItemIds.length} item${selectedItemIds.length === 1 ? '' : 's'} selected.`}
+        icon={Star}
+      >
+        <div className="max-h-72 overflow-y-auto space-y-0.5 border border-outline-variant/30 rounded-xl p-2 bg-surface-container-low/40">
           {items.map((item) => (
-            <label key={item.id} className="flex items-center gap-3 p-2 rounded-lg hover:bg-surface-container-high cursor-pointer">
-              <input type="checkbox" checked={selectedItemIds.includes(item.id)} onChange={() => toggle(item.id)} className="accent-primary" />
+            <label key={item.id} className="flex items-center gap-3 p-2 rounded-lg hover:bg-surface-container-high cursor-pointer transition-colors">
+              <input type="checkbox" checked={selectedItemIds.includes(item.id)} onChange={() => toggle(item.id)} className="accent-primary h-4 w-4" />
               <span className="text-sm text-on-surface flex-1">{item.name}</span>
-              {item.isFeatured && <span className="text-[10px] font-bold text-primary uppercase">Featured</span>}
+              {item.isFeatured && <StatusPill label="Featured" tone="positive" />}
             </label>
           ))}
         </div>
-      </div>
+      </SectionCard>
     </div>
   );
 }

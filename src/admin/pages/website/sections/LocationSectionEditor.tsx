@@ -1,4 +1,6 @@
 import { ToggleField } from '../../../components/forms/ToggleField';
+import { TextField } from '../../../components/forms/Field';
+import { SectionCard } from '../../../components/SectionCard';
 import type { LocationSectionContent } from '../../../../types';
 
 interface EditorProps {
@@ -8,38 +10,25 @@ interface EditorProps {
 
 export function LocationSectionEditor({ content, onChange }: EditorProps) {
   return (
-    <div className="space-y-5">
-      <div>
-        <label className="block text-sm font-semibold text-on-surface mb-1.5">Heading</label>
-        <input
-          value={content.heading}
-          onChange={(e) => onChange({ heading: e.target.value })}
-          className="w-full px-3 py-2 text-sm rounded-lg border border-outline-variant/40 bg-surface focus:border-primary outline-none"
-        />
-      </div>
-      <div>
-        <label className="block text-sm font-semibold text-on-surface mb-1.5">Address Override (optional)</label>
-        <input
+    <SectionCard title="Location">
+      <div className="space-y-4">
+        <TextField label="Heading" value={content.heading} onChange={(e) => onChange({ heading: e.target.value })} />
+        <TextField
+          label="Address Override"
+          hint="Leave blank to use the address from Restaurant Information."
           value={content.addressOverride ?? ''}
           onChange={(e) => onChange({ addressOverride: e.target.value })}
-          placeholder="Leave blank to use Business Information address"
-          className="w-full px-3 py-2 text-sm rounded-lg border border-outline-variant/40 bg-surface focus:border-primary outline-none"
         />
-      </div>
-      <div>
-        <label className="block text-sm font-semibold text-on-surface mb-1.5">Google Maps Embed URL</label>
-        <input
+        <TextField
+          label="Google Maps Embed URL"
+          placeholder="https://www.google.com/maps/embed?..."
           value={content.mapEmbedUrlOverride ?? ''}
           onChange={(e) => onChange({ mapEmbedUrlOverride: e.target.value })}
-          placeholder="https://www.google.com/maps/embed?..."
-          className="w-full px-3 py-2 text-sm rounded-lg border border-outline-variant/40 bg-surface focus:border-primary outline-none"
         />
+        <div className="pt-1 border-t border-outline-variant/10">
+          <ToggleField label="Show Opening Hours Table" checked={content.showHoursTable} onChange={(showHoursTable) => onChange({ showHoursTable })} />
+        </div>
       </div>
-      <ToggleField
-        label="Show Opening Hours Table"
-        checked={content.showHoursTable}
-        onChange={(showHoursTable) => onChange({ showHoursTable })}
-      />
-    </div>
+    </SectionCard>
   );
 }

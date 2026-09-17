@@ -1,4 +1,6 @@
 import { ImagePickerField } from '../../../components/forms/ImagePickerField';
+import { TextField, TextareaField, SelectField } from '../../../components/forms/Field';
+import { SectionCard } from '../../../components/SectionCard';
 import { useMedia } from '../../../hooks/api/useMedia';
 import type { HeroSectionContent } from '../../../../types';
 
@@ -13,97 +15,54 @@ export function HeroSectionEditor({ content, onChange }: EditorProps) {
 
   return (
     <div className="space-y-5">
-      <div>
-        <label className="block text-sm font-semibold text-on-surface mb-1.5">Eyebrow</label>
-        <input
-          value={content.eyebrow ?? ''}
-          onChange={(e) => onChange({ eyebrow: e.target.value })}
-          maxLength={60}
-          className="w-full px-3 py-2 text-sm rounded-lg border border-outline-variant/40 bg-surface focus:border-primary outline-none"
-        />
-      </div>
-      <div>
-        <label className="block text-sm font-semibold text-on-surface mb-1.5">Heading</label>
-        <input
-          value={content.heading}
-          onChange={(e) => onChange({ heading: e.target.value })}
-          maxLength={80}
-          className="w-full px-3 py-2 text-sm rounded-lg border border-outline-variant/40 bg-surface focus:border-primary outline-none"
-        />
-      </div>
-      <div>
-        <label className="block text-sm font-semibold text-on-surface mb-1.5">Description</label>
-        <textarea
-          value={content.description}
-          onChange={(e) => onChange({ description: e.target.value })}
-          maxLength={240}
-          rows={3}
-          className="w-full px-3 py-2 text-sm rounded-lg border border-outline-variant/40 bg-surface focus:border-primary outline-none"
-        />
-      </div>
-      <div className="grid grid-cols-2 gap-4">
-        <div>
-          <label className="block text-sm font-semibold text-on-surface mb-1.5">Button Text</label>
-          <input
-            value={content.buttonText}
-            onChange={(e) => onChange({ buttonText: e.target.value })}
-            className="w-full px-3 py-2 text-sm rounded-lg border border-outline-variant/40 bg-surface focus:border-primary outline-none"
-          />
+      <SectionCard title="Content">
+        <div className="space-y-4">
+          <TextField label="Eyebrow" maxLength={60} value={content.eyebrow ?? ''} onChange={(e) => onChange({ eyebrow: e.target.value })} />
+          <TextField label="Heading" maxLength={80} value={content.heading} onChange={(e) => onChange({ heading: e.target.value })} />
+          <TextareaField label="Description" maxLength={240} rows={3} value={content.description} onChange={(e) => onChange({ description: e.target.value })} />
         </div>
-        <div>
-          <label className="block text-sm font-semibold text-on-surface mb-1.5">Button Link</label>
-          <select
-            value={content.buttonLink}
-            onChange={(e) => onChange({ buttonLink: e.target.value })}
-            className="w-full px-3 py-2 text-sm rounded-lg border border-outline-variant/40 bg-surface focus:border-primary outline-none"
-          >
-            <option value="/reservations">Reservations</option>
-            <option value="/menu">Menu</option>
-          </select>
-        </div>
-      </div>
-      <div className="grid grid-cols-2 gap-4">
-        <div>
-          <label className="block text-sm font-semibold text-on-surface mb-1.5">Secondary Button Text</label>
-          <input
-            value={content.secondaryButtonText ?? ''}
-            onChange={(e) => onChange({ secondaryButtonText: e.target.value })}
-            className="w-full px-3 py-2 text-sm rounded-lg border border-outline-variant/40 bg-surface focus:border-primary outline-none"
-          />
-        </div>
-        <div>
-          <label className="block text-sm font-semibold text-on-surface mb-1.5">Secondary Button Link</label>
-          <select
-            value={content.secondaryButtonLink ?? '/menu'}
-            onChange={(e) => onChange({ secondaryButtonLink: e.target.value })}
-            className="w-full px-3 py-2 text-sm rounded-lg border border-outline-variant/40 bg-surface focus:border-primary outline-none"
-          >
-            <option value="/menu">Menu</option>
-            <option value="/reservations">Reservations</option>
-          </select>
-        </div>
-      </div>
+      </SectionCard>
 
-      <ImagePickerField
-        label="Background Image"
-        currentImageUrl={currentImage}
-        onSelect={(asset) => onChange({ backgroundMediaId: asset.id })}
-        onRemove={() => onChange({ backgroundMediaId: null })}
-      />
+      <SectionCard title="Buttons">
+        <div className="space-y-4">
+          <div className="grid grid-cols-2 gap-4">
+            <TextField label="Button Text" value={content.buttonText} onChange={(e) => onChange({ buttonText: e.target.value })} />
+            <SelectField label="Button Link" value={content.buttonLink} onChange={(e) => onChange({ buttonLink: e.target.value })}>
+              <option value="/reservations">Reservations</option>
+              <option value="/menu">Menu</option>
+            </SelectField>
+          </div>
+          <div className="grid grid-cols-2 gap-4">
+            <TextField label="Secondary Button Text" value={content.secondaryButtonText ?? ''} onChange={(e) => onChange({ secondaryButtonText: e.target.value })} />
+            <SelectField label="Secondary Button Link" value={content.secondaryButtonLink ?? '/menu'} onChange={(e) => onChange({ secondaryButtonLink: e.target.value })}>
+              <option value="/menu">Menu</option>
+              <option value="/reservations">Reservations</option>
+            </SelectField>
+          </div>
+        </div>
+      </SectionCard>
 
-      <div>
-        <label className="block text-sm font-semibold text-on-surface mb-1.5">
-          Overlay Darkness ({content.overlayOpacity}%)
-        </label>
-        <input
-          type="range"
-          min={0}
-          max={90}
-          value={content.overlayOpacity}
-          onChange={(e) => onChange({ overlayOpacity: Number(e.target.value) })}
-          className="w-full accent-[#785600]"
-        />
-      </div>
+      <SectionCard title="Background">
+        <div className="space-y-5">
+          <ImagePickerField
+            label="Background Image"
+            currentImageUrl={currentImage}
+            onSelect={(asset) => onChange({ backgroundMediaId: asset.id })}
+            onRemove={() => onChange({ backgroundMediaId: null })}
+          />
+          <div>
+            <label className="block text-sm font-semibold text-on-surface mb-1.5">Overlay Darkness ({content.overlayOpacity}%)</label>
+            <input
+              type="range"
+              min={0}
+              max={90}
+              value={content.overlayOpacity}
+              onChange={(e) => onChange({ overlayOpacity: Number(e.target.value) })}
+              className="w-full accent-primary"
+            />
+          </div>
+        </div>
+      </SectionCard>
     </div>
   );
 }

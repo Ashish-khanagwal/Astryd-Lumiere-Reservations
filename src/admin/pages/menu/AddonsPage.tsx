@@ -1,9 +1,14 @@
 import { useState } from 'react';
+import { PlusCircle, SquarePen, Trash2 } from 'lucide-react';
 import { useAddons, useCreateAddon, useDeleteAddon, useUpdateAddon } from '../../hooks/api/useAddons';
 import { useAdminToast } from '../../context/AdminToastContext';
 import { DataTable } from '../../components/DataTable';
 import { ToggleField } from '../../components/forms/ToggleField';
 import { ConfirmDialog } from '../../components/ConfirmDialog';
+import { PageHeader } from '../../components/PageHeader';
+import { Button } from '../../components/Button';
+import { Modal } from '../../components/Modal';
+import { TextField, TextareaField } from '../../components/forms/Field';
 import type { Addon } from '../../../types';
 
 const EMPTY: Partial<Addon> = { name: '', price: 0, description: '', isAvailable: true, group: 'Add-on Items' };
@@ -17,8 +22,6 @@ export function AddonsPage() {
 
   const [form, setForm] = useState<Partial<Addon> | null>(null);
   const [pendingDelete, setPendingDelete] = useState<Addon | null>(null);
-
-  if (isLoading) return <p className="text-secondary text-sm">Loading add-ons...</p>;
 
   const handleSave = async () => {
     if (!form?.name?.trim()) return;
@@ -34,37 +37,40 @@ export function AddonsPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="font-serif text-3xl font-bold text-on-surface">Add-ons</h1>
-          <p className="text-secondary text-sm mt-1">Extras guests can add to a dish (extra cheese, sauces, drinks...).</p>
-        </div>
-        <button onClick={() => setForm(EMPTY)} className="px-4 py-2 rounded-xl bg-primary text-on-primary text-sm font-bold hover:bg-primary-container">
-          + Add Add-on
-        </button>
-      </div>
+      <PageHeader
+        icon={PlusCircle}
+        title="Add-ons"
+        description="Extras guests can add to a dish (extra cheese, sauces, drinks...)."
+        actions={
+          <Button variant="primary" icon={PlusCircle} onClick={() => setForm(EMPTY)}>
+            Add Add-on
+          </Button>
+        }
+      />
 
       <DataTable
         rows={addons ?? []}
         rowKey={(a) => a.id}
+        loading={isLoading}
         emptyMessage="No add-ons created yet."
         columns={[
           { header: 'Name', render: (a) => <span className="font-semibold text-on-surface">{a.name}</span> },
-          { header: 'Group', render: (a) => a.group ?? '—' },
-          { header: 'Price', render: (a) => `$${a.price.toFixed(2)}` },
+          { header: 'Group', render: (a) => <span className="text-secondary">{a.group ?? '—'}</span> },
+          { header: 'Price', render: (a) => <span className="font-medium">${a.price.toFixed(2)}</span> },
           {
             header: 'Available',
             render: (a) => <ToggleField label="" checked={a.isAvailable} onChange={(isAvailable) => updateAddon.mutate({ addonId: a.id, payload: { isAvailable } })} />,
           },
           {
             header: '',
+            className: 'text-right',
             render: (a) => (
-              <div className="flex gap-2 justify-end">
-                <button onClick={() => setForm(a)} className="px-3 py-1.5 rounded-lg border border-outline-variant/40 text-xs font-medium hover:bg-surface-container-high">
-                  Edit
+              <div className="flex gap-1.5 justify-end">
+                <button onClick={() => setForm(a)} className="p-2 rounded-lg text-secondary hover:bg-surface-container-high hover:text-on-surface transition-colors" aria-label="Edit">
+                  <SquarePen className="h-4 w-4" />
                 </button>
-                <button onClick={() => setPendingDelete(a)} className="text-error hover:opacity-70">
-                  <span className="material-symbols-outlined text-lg">delete</span>
+                <button onClick={() => setPendingDelete(a)} className="p-2 rounded-lg text-secondary hover:bg-error-container/40 hover:text-error transition-colors" aria-label="Delete">
+                  <Trash2 className="h-4 w-4" />
                 </button>
               </div>
             ),
@@ -72,37 +78,26 @@ export function AddonsPage() {
         ]}
       />
 
-      {form && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
-          <div className="bg-surface w-full max-w-md rounded-2xl shadow-2xl border border-outline-variant/20 p-6 space-y-4">
-            <h3 className="font-serif text-xl font-bold text-on-surface">{form.id ? 'Edit Add-on' : 'New Add-on'}</h3>
-            <div>
-              <label className="block text-sm font-semibold text-on-surface mb-1.5">Name</label>
-              <input value={form.name ?? ''} onChange={(e) => setForm({ ...form, name: e.target.value })} className="w-full px-3 py-2 text-sm rounded-lg border border-outline-variant/40 bg-surface" />
-            </div>
-            <div>
-              <label className="block text-sm font-semibold text-on-surface mb-1.5">Price ($)</label>
-              <input type="number" step={0.01} value={form.price ?? 0} onChange={(e) => setForm({ ...form, price: Number(e.target.value) })} className="w-full px-3 py-2 text-sm rounded-lg border border-outline-variant/40 bg-surface" />
-            </div>
-            <div>
-              <label className="block text-sm font-semibold text-on-surface mb-1.5">Description</label>
-              <input value={form.description ?? ''} onChange={(e) => setForm({ ...form, description: e.target.value })} className="w-full px-3 py-2 text-sm rounded-lg border border-outline-variant/40 bg-surface" />
-            </div>
-            <div>
-              <label className="block text-sm font-semibold text-on-surface mb-1.5">Group</label>
-              <input value={form.group ?? ''} onChange={(e) => setForm({ ...form, group: e.target.value })} placeholder="e.g. Beverages" className="w-full px-3 py-2 text-sm rounded-lg border border-outline-variant/40 bg-surface" />
-            </div>
-            <div className="flex justify-end gap-3 pt-2">
-              <button onClick={() => setForm(null)} className="px-4 py-2 rounded-xl border border-outline-variant/40 text-sm font-medium hover:bg-surface-container-high">
-                Cancel
-              </button>
-              <button onClick={handleSave} className="px-4 py-2 rounded-xl bg-primary text-on-primary text-sm font-bold hover:bg-primary-container">
-                Save
-              </button>
-            </div>
+      <Modal
+        isOpen={Boolean(form)}
+        onClose={() => setForm(null)}
+        title={form?.id ? 'Edit Add-on' : 'New Add-on'}
+        footer={
+          <>
+            <Button variant="outline" onClick={() => setForm(null)}>Cancel</Button>
+            <Button variant="primary" onClick={handleSave}>Save</Button>
+          </>
+        }
+      >
+        <div className="space-y-4">
+          <TextField label="Name" required value={form?.name ?? ''} onChange={(e) => setForm({ ...form, name: e.target.value })} />
+          <div className="grid grid-cols-2 gap-4">
+            <TextField label="Price ($)" type="number" step={0.01} value={form?.price ?? 0} onChange={(e) => setForm({ ...form, price: Number(e.target.value) })} />
+            <TextField label="Group" placeholder="e.g. Beverages" value={form?.group ?? ''} onChange={(e) => setForm({ ...form, group: e.target.value })} />
           </div>
+          <TextareaField label="Description" rows={2} value={form?.description ?? ''} onChange={(e) => setForm({ ...form, description: e.target.value })} />
         </div>
-      )}
+      </Modal>
 
       <ConfirmDialog
         isOpen={Boolean(pendingDelete)}

@@ -1,10 +1,18 @@
 import { useEffect, useState } from 'react';
+import { Share2, Link2 } from 'lucide-react';
 import { useBrandDraft, usePublishWebsite, useUpdateBrand, useWebsiteStatus } from '../../hooks/api/useWebsite';
 import { useAdminToast } from '../../context/AdminToastContext';
 import { PublishBar } from '../../components/PublishBar';
+import { PageHeader } from '../../components/PageHeader';
+import { SectionCard } from '../../components/SectionCard';
+import { TextField } from '../../components/forms/Field';
+import { FormSkeleton } from '../../components/Skeleton';
 import type { BrandSettings } from '../../../types';
 
 const SOCIAL_KEYS = ['instagram', 'facebook', 'youtube', 'x', 'whatsapp'] as const;
+const SOCIAL_LABEL: Record<(typeof SOCIAL_KEYS)[number], string> = {
+  instagram: 'Instagram', facebook: 'Facebook', youtube: 'YouTube', x: 'X (Twitter)', whatsapp: 'WhatsApp',
+};
 
 export function SocialMediaPage() {
   const { data: brand, isLoading } = useBrandDraft();
@@ -18,7 +26,16 @@ export function SocialMediaPage() {
     if (!isLoading) setDraft((brand ?? {}) as BrandSettings);
   }, [brand, isLoading]);
 
-  if (isLoading && !draft) return <p className="text-secondary text-sm">Loading...</p>;
+  const header = <PageHeader icon={Share2} title="Social Media" description="Links shown in your website footer and header." />;
+
+  if (isLoading && !draft) {
+    return (
+      <div className="space-y-6">
+        {header}
+        <FormSkeleton />
+      </div>
+    );
+  }
   if (!draft) return null;
   const isDirty = JSON.stringify(draft) !== JSON.stringify(brand);
 
@@ -39,24 +56,27 @@ export function SocialMediaPage() {
         isSaving={updateBrand.isPending}
         isPublishing={publishWebsite.isPending}
         onSaveDraft={handleSaveDraft}
-        onPreview={() => window.open('/?preview=true', '_blank')}
         onPublish={handlePublish}
         lastPublishedAt={website?.publishedAt}
       />
-      <h1 className="font-serif text-2xl font-bold text-on-surface mb-6">Social Media</h1>
 
-      <div className="space-y-4 max-w-xl">
-        {SOCIAL_KEYS.map((key) => (
-          <div key={key}>
-            <label className="block text-sm font-semibold text-on-surface mb-1.5 capitalize">{key}</label>
-            <input
-              value={draft.socialLinks?.[key] ?? ''}
-              onChange={(e) => setDraft({ ...draft, socialLinks: { ...(draft.socialLinks ?? {}), [key]: e.target.value } })}
-              placeholder="https://..."
-              className="w-full px-3 py-2 text-sm rounded-lg border border-outline-variant/40 bg-surface focus:border-primary outline-none"
-            />
+      <div className="space-y-6 max-w-4xl">
+        {header}
+
+        <SectionCard title="Profile Links" description="Paste the full URL for each platform you're active on.">
+          <div className="grid sm:grid-cols-2 gap-4">
+            {SOCIAL_KEYS.map((key) => (
+              <TextField
+                key={key}
+                label={SOCIAL_LABEL[key]}
+                icon={Link2}
+                value={draft.socialLinks?.[key] ?? ''}
+                onChange={(e) => setDraft({ ...draft, socialLinks: { ...(draft.socialLinks ?? {}), [key]: e.target.value } })}
+                placeholder="https://..."
+              />
+            ))}
           </div>
-        ))}
+        </SectionCard>
       </div>
     </div>
   );

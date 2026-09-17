@@ -1,5 +1,9 @@
+import { Trash2, ImagePlus } from 'lucide-react';
 import { ImagePickerField } from '../../../components/forms/ImagePickerField';
 import { ReorderableList } from '../../../components/ReorderableList';
+import { TextField } from '../../../components/forms/Field';
+import { SectionCard } from '../../../components/SectionCard';
+import { EmptyState } from '../../../components/EmptyState';
 import { useMedia } from '../../../hooks/api/useMedia';
 import type { GalleryImageEntry, GallerySectionContent } from '../../../../types';
 
@@ -29,48 +33,42 @@ export function GallerySectionEditor({ content, onChange }: EditorProps) {
 
   return (
     <div className="space-y-5">
-      <div>
-        <label className="block text-sm font-semibold text-on-surface mb-1.5">Eyebrow</label>
-        <input
-          value={content?.eyebrow ?? ''}
-          onChange={(e) => onChange({ eyebrow: e.target.value })}
-          className="w-full px-3 py-2 text-sm rounded-lg border border-outline-variant/40 bg-surface focus:border-primary outline-none"
-        />
-      </div>
-      <div>
-        <label className="block text-sm font-semibold text-on-surface mb-1.5">Heading</label>
-        <input
-          value={content?.heading ?? ''}
-          onChange={(e) => onChange({ heading: e.target.value })}
-          className="w-full px-3 py-2 text-sm rounded-lg border border-outline-variant/40 bg-surface focus:border-primary outline-none"
-        />
-      </div>
-
-      <div>
-        <div className="flex items-center justify-between mb-2">
-          <label className="block text-sm font-semibold text-on-surface">Images</label>
-          <ImagePickerField label="" onSelect={(asset) => addImage(asset.id)} />
+      <SectionCard title="Content">
+        <div className="space-y-4">
+          <TextField label="Eyebrow" value={content?.eyebrow ?? ''} onChange={(e) => onChange({ eyebrow: e.target.value })} />
+          <TextField label="Heading" value={content?.heading ?? ''} onChange={(e) => onChange({ heading: e.target.value })} />
         </div>
-        <ReorderableList
-          items={images.map((img) => ({ ...img, id: img.mediaId }))}
-          onReorder={(next) => onChange({ images: next.map((img, idx) => ({ ...img, order: idx })) })}
-          renderItem={(img, dragHandle) => (
-            <div className="flex items-center gap-3 bg-surface rounded-xl border border-outline-variant/20 p-3">
-              {dragHandle}
-              <img src={mediaItems.find((m) => m.id === img.mediaId)?.fileUrl} alt="" className="w-14 h-14 rounded-lg object-cover" />
-              <input
-                value={img.caption ?? ''}
-                onChange={(e) => updateImage(img.mediaId, { caption: e.target.value })}
-                placeholder="Caption"
-                className="flex-1 px-3 py-2 text-sm rounded-lg border border-outline-variant/30 bg-surface-container-low"
-              />
-              <button onClick={() => removeImage(img.mediaId)} className="text-error hover:opacity-70">
-                <span className="material-symbols-outlined text-lg">delete</span>
-              </button>
-            </div>
-          )}
-        />
-      </div>
+      </SectionCard>
+
+      <SectionCard title="Images" icon={ImagePlus}>
+        <div className="mb-4">
+          <ImagePickerField label="Add an image" onSelect={(asset) => addImage(asset.id)} />
+        </div>
+
+        {images.length === 0 ? (
+          <EmptyState icon={ImagePlus} title="No images yet" description="Add photos from your media library to build the gallery." />
+        ) : (
+          <ReorderableList
+            items={images.map((img) => ({ ...img, id: img.mediaId }))}
+            onReorder={(next) => onChange({ images: next.map((img, idx) => ({ ...img, order: idx })) })}
+            renderItem={(img, dragHandle) => (
+              <div className="flex items-center gap-3 bg-surface rounded-xl border border-outline-variant/20 p-3 shadow-sm">
+                {dragHandle}
+                <img src={mediaItems.find((m) => m.id === img.mediaId)?.fileUrl} alt="" className="w-14 h-14 rounded-lg object-cover shrink-0" />
+                <input
+                  value={img.caption ?? ''}
+                  onChange={(e) => updateImage(img.mediaId, { caption: e.target.value })}
+                  placeholder="Caption"
+                  className="flex-1 rounded-lg border border-outline-variant/30 bg-surface-container-low px-3 py-2 text-sm outline-none focus:border-primary"
+                />
+                <button onClick={() => removeImage(img.mediaId)} className="p-2 rounded-lg text-secondary hover:bg-error-container/40 hover:text-error transition-colors" aria-label="Remove image">
+                  <Trash2 className="h-4 w-4" />
+                </button>
+              </div>
+            )}
+          />
+        )}
+      </SectionCard>
     </div>
   );
 }

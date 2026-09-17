@@ -34,7 +34,7 @@ export function LoginPage() {
           value={email}
           onChange={(e) => setEmail(e.target.value)}
           required
-          className="w-full px-3 py-2.5 text-sm rounded-lg border border-outline-variant/40 bg-surface focus:border-primary outline-none"
+          className="w-full px-3 py-2.5 text-sm rounded-xl border border-outline-variant/40 bg-surface-container-low focus:border-primary outline-none"
         />
       </div>
       <div>
@@ -45,7 +45,7 @@ export function LoginPage() {
           onChange={(e) => setPassword(e.target.value)}
           required
           placeholder="password123"
-          className="w-full px-3 py-2.5 text-sm rounded-lg border border-outline-variant/40 bg-surface focus:border-primary outline-none"
+          className="w-full px-3 py-2.5 text-sm rounded-xl border border-outline-variant/40 bg-surface-container-low focus:border-primary outline-none"
         />
         <p className="text-xs text-secondary mt-1">Demo password: password123</p>
       </div>
@@ -55,7 +55,7 @@ export function LoginPage() {
       <button
         type="submit"
         disabled={isSubmitting}
-        className="w-full py-3 rounded-xl bg-primary text-on-primary font-bold text-sm hover:bg-primary-container transition-colors disabled:opacity-50"
+        className="w-full py-3 rounded-full bg-primary text-on-primary font-bold text-sm hover:bg-primary-container transition-colors disabled:opacity-50 shadow-md shadow-primary/20"
       >
         {isSubmitting ? 'Signing in...' : 'Sign In'}
       </button>

@@ -1,8 +1,11 @@
 import { useEffect, useState } from 'react';
+import { Clock } from 'lucide-react';
 import { useBrandDraft, usePublishWebsite, useUpdateBrand, useWebsiteStatus } from '../../hooks/api/useWebsite';
 import { useAdminToast } from '../../context/AdminToastContext';
 import { PublishBar } from '../../components/PublishBar';
+import { PageHeader } from '../../components/PageHeader';
 import { ToggleField } from '../../components/forms/ToggleField';
+import { ListSkeleton } from '../../components/Skeleton';
 import type { BusinessHoursEntry } from '../../../types';
 
 const DEFAULT_BUSINESS_HOURS: BusinessHoursEntry[] = [
@@ -16,7 +19,7 @@ const DEFAULT_BUSINESS_HOURS: BusinessHoursEntry[] = [
 ];
 
 const DAY_LABEL: Record<BusinessHoursEntry['day'], string> = {
-  mon: 'Mon', tue: 'Tue', wed: 'Wed', thu: 'Thu', fri: 'Fri', sat: 'Sat', sun: 'Sun',
+  mon: 'Monday', tue: 'Tuesday', wed: 'Wednesday', thu: 'Thursday', fri: 'Friday', sat: 'Saturday', sun: 'Sunday',
 };
 
 function normalizeBusinessHours(hours: BusinessHoursEntry[] | undefined): BusinessHoursEntry[] {
@@ -40,7 +43,16 @@ export function HoursPage() {
     if (!isLoading) setBusinessHours(normalizeBusinessHours(brand?.businessHours));
   }, [brand?.businessHours, isLoading]);
 
-  if (isLoading) return <p className="text-secondary text-sm">Loading...</p>;
+  const header = <PageHeader icon={Clock} title="Opening Hours" description="Set the weekly hours shown on your public website." />;
+
+  if (isLoading) {
+    return (
+      <div className="space-y-6 max-w-4xl">
+        {header}
+        <ListSkeleton rows={7} />
+      </div>
+    );
+  }
 
   const persistedHours = normalizeBusinessHours(brand?.businessHours);
   const isDirty = JSON.stringify(businessHours) !== JSON.stringify(persistedHours);
@@ -69,39 +81,44 @@ export function HoursPage() {
         isSaving={updateBrand.isPending}
         isPublishing={publishWebsite.isPending}
         onSaveDraft={handleSaveDraft}
-        onPreview={() => window.open('/?preview=true', '_blank')}
         onPublish={handlePublish}
         lastPublishedAt={website?.publishedAt}
       />
-      <h1 className="font-serif text-2xl font-bold text-on-surface mb-2">Opening Hours</h1>
-      <p className="text-sm text-secondary mb-6">Set the weekly hours shown on your public website.</p>
 
-      <div className="space-y-2 max-w-2xl">
-        {businessHours.map((entry) => (
-          <div key={entry.day} className="flex flex-wrap items-center gap-4 bg-surface rounded-xl border border-outline-variant/20 p-4">
-            <span className="w-12 font-semibold text-on-surface text-sm">{DAY_LABEL[entry.day]}</span>
-            <ToggleField label="Closed" checked={entry.isClosed} onChange={(isClosed) => updateDay(entry.day, { isClosed })} />
-            {!entry.isClosed && (
-              <div className="flex items-center gap-3">
-                <input
-                  type="time"
-                  value={entry.openTime ?? ''}
-                  onChange={(event) => updateDay(entry.day, { openTime: event.target.value })}
-                  className="px-3 py-1.5 text-sm rounded-lg border border-outline-variant/30 bg-surface-container-low"
-                  aria-label={`${DAY_LABEL[entry.day]} opening time`}
-                />
-                <span className="text-secondary text-sm">to</span>
-                <input
-                  type="time"
-                  value={entry.closeTime ?? ''}
-                  onChange={(event) => updateDay(entry.day, { closeTime: event.target.value })}
-                  className="px-3 py-1.5 text-sm rounded-lg border border-outline-variant/30 bg-surface-container-low"
-                  aria-label={`${DAY_LABEL[entry.day]} closing time`}
-                />
-              </div>
-            )}
-          </div>
-        ))}
+      <div className="space-y-6 max-w-4xl">
+        {header}
+
+        <div className="rounded-2xl border border-outline-variant/20 bg-surface shadow-sm divide-y divide-outline-variant/10 overflow-hidden">
+          {businessHours.map((entry) => (
+            <div key={entry.day} className={`flex flex-wrap items-center gap-4 p-4 transition-colors ${entry.isClosed ? 'bg-surface-container-low/40' : ''}`}>
+              <span className={`w-24 shrink-0 text-sm font-semibold ${entry.isClosed ? 'text-secondary' : 'text-on-surface'}`}>{DAY_LABEL[entry.day]}</span>
+
+              {!entry.isClosed ? (
+                <div className="flex items-center gap-3 flex-1">
+                  <input
+                    type="time"
+                    value={entry.openTime ?? ''}
+                    onChange={(event) => updateDay(entry.day, { openTime: event.target.value })}
+                    className="rounded-lg border border-outline-variant/30 bg-surface-container-low px-3 py-1.5 text-sm outline-none focus:border-primary"
+                    aria-label={`${DAY_LABEL[entry.day]} opening time`}
+                  />
+                  <span className="text-secondary text-sm">to</span>
+                  <input
+                    type="time"
+                    value={entry.closeTime ?? ''}
+                    onChange={(event) => updateDay(entry.day, { closeTime: event.target.value })}
+                    className="rounded-lg border border-outline-variant/30 bg-surface-container-low px-3 py-1.5 text-sm outline-none focus:border-primary"
+                    aria-label={`${DAY_LABEL[entry.day]} closing time`}
+                  />
+                </div>
+              ) : (
+                <span className="flex-1 text-sm text-secondary italic">Closed all day</span>
+              )}
+
+              <ToggleField label="Closed" checked={entry.isClosed} onChange={(isClosed) => updateDay(entry.day, { isClosed })} />
+            </div>
+          ))}
+        </div>
       </div>
     </div>
   );

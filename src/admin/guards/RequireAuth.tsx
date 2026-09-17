@@ -1,4 +1,5 @@
 import { Navigate, Outlet, useLocation } from 'react-router-dom';
+import { Loader2 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 
 export function RequireAuth() {
@@ -7,8 +8,8 @@ export function RequireAuth() {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-surface-container-low">
-        <span className="material-symbols-outlined animate-spin text-4xl text-primary">progress_activity</span>
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <Loader2 className="h-9 w-9 animate-spin text-primary" />
       </div>
     );
   }

@@ -12,7 +12,7 @@ export function ConfirmDialog({ isOpen, title, description, confirmLabel = 'Dele
   return (
     <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
       <div className="bg-surface w-full max-w-sm rounded-2xl shadow-2xl border border-outline-variant/20 p-6 space-y-4">
-        <h3 className="font-serif text-xl font-bold text-on-surface">{title}</h3>
+        <h3 className="text-xl font-bold text-on-surface tracking-tight">{title}</h3>
         <p className="text-sm text-secondary leading-relaxed">{description}</p>
         <div className="flex justify-end gap-3 pt-2">
           <button

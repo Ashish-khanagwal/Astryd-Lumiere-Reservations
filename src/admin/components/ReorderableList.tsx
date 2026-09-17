@@ -15,6 +15,7 @@ import {
   useSortable,
 } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
+import { GripVertical } from 'lucide-react';
 
 interface ReorderableListProps<T extends { id: string }> {
   items: T[];
@@ -35,10 +36,10 @@ function SortableRow({ id, children }: { id: string; children: (dragHandle: Reac
       type="button"
       {...attributes}
       {...listeners}
-      className="cursor-grab active:cursor-grabbing text-secondary hover:text-on-surface p-1.5 touch-none"
+      className="cursor-grab active:cursor-grabbing text-secondary hover:text-on-surface p-1.5 touch-none rounded-lg hover:bg-surface-container-high transition-colors"
       aria-label="Drag to reorder"
     >
-      <span className="material-symbols-outlined">drag_indicator</span>
+      <GripVertical className="h-4 w-4" />
     </button>
   );
 

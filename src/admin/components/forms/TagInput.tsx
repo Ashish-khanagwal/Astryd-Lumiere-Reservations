@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { X } from 'lucide-react';
 
 interface TagInputProps {
   label?: string;
@@ -25,7 +26,7 @@ export function TagInput({ label, tags, onChange, maxTags = 5 }: TagInputProps) 
           <span key={tag} className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-primary/10 text-primary text-xs font-semibold">
             {tag}
             <button type="button" onClick={() => onChange(tags.filter((t) => t !== tag))} className="hover:text-error">
-              <span className="material-symbols-outlined text-xs">close</span>
+              <X className="h-3 w-3" />
             </button>
           </span>
         ))}

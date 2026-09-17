@@ -1,7 +1,10 @@
 import { useNavigate } from 'react-router-dom';
+import { Rows3, Image, Info, UtensilsCrossed, Images, Tag, Quote, MapPin, SquarePen, type LucideIcon } from 'lucide-react';
 import { useHomepageDraft, useReorderSections, useUpdateSection } from '../../hooks/api/useWebsite';
 import { ReorderableList } from '../../components/ReorderableList';
 import { ToggleField } from '../../components/forms/ToggleField';
+import { PageHeader } from '../../components/PageHeader';
+import { ListSkeleton } from '../../components/Skeleton';
 import type { HomepageSection } from '../../../types';
 
 const SECTION_LABEL: Record<string, string> = {
@@ -14,14 +17,31 @@ const SECTION_LABEL: Record<string, string> = {
   location: 'Location',
 };
 
+const SECTION_ICON: Record<string, LucideIcon> = {
+  hero: Image,
+  about: Info,
+  featured_menu: UtensilsCrossed,
+  gallery: Images,
+  offers: Tag,
+  testimonials: Quote,
+  location: MapPin,
+};
+
 export function HomepageSectionsPage() {
   const { data: homepage, isLoading } = useHomepageDraft();
   const reorderSections = useReorderSections();
   const updateSection = useUpdateSection();
   const navigate = useNavigate();
 
+  const header = <PageHeader icon={Rows3} title="Homepage Sections" description="Drag to reorder, toggle visibility, or edit each section's content." />;
+
   if (isLoading || !homepage) {
-    return <p className="text-secondary text-sm">Loading homepage...</p>;
+    return (
+      <div className="space-y-6">
+        {header}
+        <ListSkeleton rows={7} />
+      </div>
+    );
   }
 
   const sections = [...homepage.sections].sort((a, b) => a.order - b.order);
@@ -32,33 +52,38 @@ export function HomepageSectionsPage() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="font-serif text-3xl font-bold text-on-surface">Homepage Sections</h1>
-        <p className="text-secondary text-sm mt-1">Drag to reorder, toggle visibility, or edit each section's content.</p>
-      </div>
+      {header}
 
       <ReorderableList
         items={sections}
         onReorder={handleReorder}
-        renderItem={(section, dragHandle) => (
-          <div className="flex items-center gap-3 bg-surface rounded-xl border border-outline-variant/20 p-4 shadow-sm">
-            {dragHandle}
-            <div className="flex-1 min-w-0">
-              <div className="font-semibold text-on-surface">{SECTION_LABEL[section.type] ?? section.type}</div>
+        renderItem={(section, dragHandle) => {
+          const Icon = SECTION_ICON[section.type] ?? Rows3;
+          return (
+            <div className={`flex items-center gap-3 rounded-xl border border-outline-variant/20 p-4 shadow-sm transition-all hover:shadow-md ${section.visible ? 'bg-surface' : 'bg-surface-container-low/50'}`}>
+              {dragHandle}
+              <div className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl ${section.visible ? 'bg-primary/10 text-primary' : 'bg-surface-container-high text-secondary'}`}>
+                <Icon className="h-5 w-5" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <div className={`font-semibold ${section.visible ? 'text-on-surface' : 'text-secondary'}`}>{SECTION_LABEL[section.type] ?? section.type}</div>
+                {!section.visible && <div className="text-xs text-secondary">Hidden from website</div>}
+              </div>
+              <ToggleField
+                label=""
+                checked={section.visible}
+                onChange={(visible) => updateSection.mutate({ type: section.type, payload: { visible } })}
+              />
+              <button
+                onClick={() => navigate(`/admin/website/homepage/${section.type}`)}
+                className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg border border-outline-variant/40 text-sm font-medium hover:bg-surface-container-high transition-colors"
+              >
+                <SquarePen className="h-4 w-4" />
+                Edit
+              </button>
             </div>
-            <ToggleField
-              label=""
-              checked={section.visible}
-              onChange={(visible) => updateSection.mutate({ type: section.type, payload: { visible } })}
-            />
-            <button
-              onClick={() => navigate(`/admin/website/homepage/${section.type}`)}
-              className="px-4 py-2 rounded-lg border border-outline-variant/40 text-sm font-medium hover:bg-surface-container-high transition-colors"
-            >
-              Edit
-            </button>
-          </div>
-        )}
+          );
+        }}
       />
     </div>
   );

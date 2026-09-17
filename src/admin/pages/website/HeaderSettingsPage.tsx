@@ -1,10 +1,15 @@
 import { useEffect, useState } from 'react';
+import { PanelTop } from 'lucide-react';
 import { useBrandDraft, usePublishWebsite, useUpdateBrand, useWebsiteStatus } from '../../hooks/api/useWebsite';
 import { useAdminToast } from '../../context/AdminToastContext';
 import { PublishBar } from '../../components/PublishBar';
 import { ImagePickerField } from '../../components/forms/ImagePickerField';
 import { ColorTokenSelect } from '../../components/forms/ColorTokenSelect';
 import { useMedia } from '../../hooks/api/useMedia';
+import { PageHeader } from '../../components/PageHeader';
+import { SectionCard } from '../../components/SectionCard';
+import { TextField } from '../../components/forms/Field';
+import { FormSkeleton } from '../../components/Skeleton';
 import type { BrandSettings } from '../../../types';
 
 export function HeaderSettingsPage() {
@@ -20,7 +25,16 @@ export function HeaderSettingsPage() {
     if (brand) setDraft(brand);
   }, [brand]);
 
-  if (!draft) return <p className="text-secondary text-sm">Loading header settings...</p>;
+  const header = <PageHeader icon={PanelTop} title="Header" description="Logo, restaurant name, and header appearance." />;
+
+  if (!draft) {
+    return (
+      <div className="space-y-6">
+        {header}
+        <FormSkeleton />
+      </div>
+    );
+  }
 
   const isDirty = JSON.stringify(draft) !== JSON.stringify(brand);
   const logoUrl = media?.items.find((m) => m.id === draft.logoMediaId)?.fileUrl;
@@ -43,36 +57,37 @@ export function HeaderSettingsPage() {
         isSaving={updateBrand.isPending}
         isPublishing={publishWebsite.isPending}
         onSaveDraft={handleSaveDraft}
-        onPreview={() => window.open('/?preview=true', '_blank')}
         onPublish={handlePublish}
         lastPublishedAt={website?.publishedAt}
       />
-      <h1 className="font-serif text-2xl font-bold text-on-surface mb-6">Header</h1>
 
-      <div className="space-y-6 max-w-xl">
-        <ImagePickerField
-          label="Logo"
-          currentImageUrl={logoUrl}
-          onSelect={(asset) => setDraft({ ...draft, logoMediaId: asset.id })}
-          onRemove={() => setDraft({ ...draft, logoMediaId: null })}
-        />
+      <div className="space-y-6 max-w-4xl">
+        {header}
 
-        <div>
-          <label className="block text-sm font-semibold text-on-surface mb-1.5">Restaurant Name</label>
-          <input
-            value={draft.restaurantName}
-            onChange={(e) => setDraft({ ...draft, restaurantName: e.target.value })}
-            maxLength={100}
-            className="w-full px-3 py-2 text-sm rounded-lg border border-outline-variant/40 bg-surface focus:border-primary outline-none"
+        <SectionCard title="Logo & Name">
+          <div className="space-y-5">
+            <ImagePickerField
+              label="Logo"
+              currentImageUrl={logoUrl}
+              onSelect={(asset) => setDraft({ ...draft, logoMediaId: asset.id })}
+              onRemove={() => setDraft({ ...draft, logoMediaId: null })}
+            />
+            <TextField
+              label="Restaurant Name"
+              maxLength={100}
+              value={draft.restaurantName}
+              onChange={(e) => setDraft({ ...draft, restaurantName: e.target.value })}
+            />
+          </div>
+        </SectionCard>
+
+        <SectionCard title="Appearance" description="Header background, text and button colors follow this site-wide theme.">
+          <ColorTokenSelect
+            themePresetId={draft.themePresetId}
+            customPrimaryColor={draft.customPrimaryColor}
+            onChange={(value) => setDraft({ ...draft, ...value })}
           />
-        </div>
-
-        <ColorTokenSelect
-          themePresetId={draft.themePresetId}
-          customPrimaryColor={draft.customPrimaryColor}
-          onChange={(value) => setDraft({ ...draft, ...value })}
-        />
-        <p className="text-xs text-secondary -mt-3">Header background, text and button colors follow this site-wide theme.</p>
+        </SectionCard>
       </div>
     </div>
   );

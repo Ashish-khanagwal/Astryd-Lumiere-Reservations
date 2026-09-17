@@ -1,10 +1,15 @@
 import { useState } from 'react';
+import { Tag, SquarePen, Trash2 } from 'lucide-react';
 import { useCreateOffer, useDeleteOffer, useOffers, useUpdateOffer } from '../../hooks/api/useOffers';
 import { useMenu } from '../../hooks/api/useMenu';
 import { useAdminToast } from '../../context/AdminToastContext';
 import { DataTable } from '../../components/DataTable';
 import { ToggleField } from '../../components/forms/ToggleField';
 import { ConfirmDialog } from '../../components/ConfirmDialog';
+import { PageHeader } from '../../components/PageHeader';
+import { Button } from '../../components/Button';
+import { Modal } from '../../components/Modal';
+import { TextField, SelectField } from '../../components/forms/Field';
 import type { Offer, OfferType } from '../../../types';
 
 const EMPTY: Partial<Offer> = {
@@ -29,8 +34,6 @@ export function OffersPage() {
   const [form, setForm] = useState<Partial<Offer> | null>(null);
   const [pendingDelete, setPendingDelete] = useState<Offer | null>(null);
 
-  if (isLoading) return <p className="text-secondary text-sm">Loading offers...</p>;
-
   const handleSave = async () => {
     if (!form?.name?.trim()) return;
     if (form.id) {
@@ -49,39 +52,44 @@ export function OffersPage() {
     setForm({ ...form, appliesToItemIds: ids.includes(itemId) ? ids.filter((i) => i !== itemId) : [...ids, itemId] });
   };
 
+  const selectedCount = (form?.appliesToItemIds ?? []).length;
+
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="font-serif text-3xl font-bold text-on-surface">Offers & Promotions</h1>
-          <p className="text-secondary text-sm mt-1">Discounts and promotions linked to menu items.</p>
-        </div>
-        <button onClick={() => setForm(EMPTY)} className="px-4 py-2 rounded-xl bg-primary text-on-primary text-sm font-bold hover:bg-primary-container">
-          + Add Offer
-        </button>
-      </div>
+      <PageHeader
+        icon={Tag}
+        title="Offers & Promotions"
+        description="Discounts and promotions linked to menu items."
+        actions={
+          <Button variant="primary" icon={Tag} onClick={() => setForm(EMPTY)}>
+            Add Offer
+          </Button>
+        }
+      />
 
       <DataTable
         rows={offers ?? []}
         rowKey={(o) => o.id}
+        loading={isLoading}
         emptyMessage="No offers created yet."
         columns={[
           { header: 'Name', render: (o) => <span className="font-semibold text-on-surface">{o.name}</span> },
-          { header: 'Type', render: (o) => OFFER_TYPE_LABEL[o.type] },
-          { header: 'Valid Through', render: (o) => new Date(o.endDate).toLocaleDateString() },
+          { header: 'Type', render: (o) => <span className="text-secondary">{OFFER_TYPE_LABEL[o.type]}</span> },
+          { header: 'Valid Through', render: (o) => <span className="text-secondary">{new Date(o.endDate).toLocaleDateString()}</span> },
           {
             header: 'Active',
             render: (o) => <ToggleField label="" checked={o.isActive} onChange={(isActive) => updateOffer.mutate({ offerId: o.id, payload: { isActive } })} />,
           },
           {
             header: '',
+            className: 'text-right',
             render: (o) => (
-              <div className="flex gap-2 justify-end">
-                <button onClick={() => setForm(o)} className="px-3 py-1.5 rounded-lg border border-outline-variant/40 text-xs font-medium hover:bg-surface-container-high">
-                  Edit
+              <div className="flex gap-1.5 justify-end">
+                <button onClick={() => setForm(o)} className="p-2 rounded-lg text-secondary hover:bg-surface-container-high hover:text-on-surface transition-colors" aria-label="Edit">
+                  <SquarePen className="h-4 w-4" />
                 </button>
-                <button onClick={() => setPendingDelete(o)} className="text-error hover:opacity-70">
-                  <span className="material-symbols-outlined text-lg">delete</span>
+                <button onClick={() => setPendingDelete(o)} className="p-2 rounded-lg text-secondary hover:bg-error-container/40 hover:text-error transition-colors" aria-label="Delete">
+                  <Trash2 className="h-4 w-4" />
                 </button>
               </div>
             ),
@@ -89,71 +97,67 @@ export function OffersPage() {
         ]}
       />
 
-      {form && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm overflow-y-auto">
-          <div className="bg-surface w-full max-w-lg rounded-2xl shadow-2xl border border-outline-variant/20 p-6 space-y-4 my-8">
-            <h3 className="font-serif text-xl font-bold text-on-surface">{form.id ? 'Edit Offer' : 'New Offer'}</h3>
-            <div>
-              <label className="block text-sm font-semibold text-on-surface mb-1.5">Offer Name</label>
-              <input value={form.name ?? ''} onChange={(e) => setForm({ ...form, name: e.target.value })} className="w-full px-3 py-2 text-sm rounded-lg border border-outline-variant/40 bg-surface" />
-            </div>
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <label className="block text-sm font-semibold text-on-surface mb-1.5">Offer Type</label>
-                <select value={form.type} onChange={(e) => setForm({ ...form, type: e.target.value as OfferType })} className="w-full px-3 py-2 text-sm rounded-lg border border-outline-variant/40 bg-surface">
-                  {Object.entries(OFFER_TYPE_LABEL).map(([value, label]) => (
-                    <option key={value} value={value}>{label}</option>
-                  ))}
-                </select>
-              </div>
-              {form.type === 'special_price' ? (
-                <div>
-                  <label className="block text-sm font-semibold text-on-surface mb-1.5">Special Price ($)</label>
-                  <input type="number" value={form.specialPrice ?? 0} onChange={(e) => setForm({ ...form, specialPrice: Number(e.target.value) })} className="w-full px-3 py-2 text-sm rounded-lg border border-outline-variant/40 bg-surface" />
-                </div>
-              ) : form.type !== 'bogo' ? (
-                <div>
-                  <label className="block text-sm font-semibold text-on-surface mb-1.5">Discount Value {form.type === 'percentage' ? '(%)' : '($)'}</label>
-                  <input type="number" value={form.discountValue ?? 0} onChange={(e) => setForm({ ...form, discountValue: Number(e.target.value) })} className="w-full px-3 py-2 text-sm rounded-lg border border-outline-variant/40 bg-surface" />
-                </div>
-              ) : null}
-            </div>
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <label className="block text-sm font-semibold text-on-surface mb-1.5">Start Date</label>
-                <input type="date" value={form.startDate?.slice(0, 10)} onChange={(e) => setForm({ ...form, startDate: e.target.value })} className="w-full px-3 py-2 text-sm rounded-lg border border-outline-variant/40 bg-surface" />
-              </div>
-              <div>
-                <label className="block text-sm font-semibold text-on-surface mb-1.5">End Date</label>
-                <input type="date" value={form.endDate?.slice(0, 10)} onChange={(e) => setForm({ ...form, endDate: e.target.value })} className="w-full px-3 py-2 text-sm rounded-lg border border-outline-variant/40 bg-surface" />
-              </div>
-            </div>
-            <div>
-              <label className="block text-sm font-semibold text-on-surface mb-1.5">CTA Text</label>
-              <input value={form.cta ?? ''} onChange={(e) => setForm({ ...form, cta: e.target.value })} placeholder="Order Now" className="w-full px-3 py-2 text-sm rounded-lg border border-outline-variant/40 bg-surface" />
-            </div>
-            <div>
-              <label className="block text-sm font-semibold text-on-surface mb-1.5">Applies to Items</label>
-              <div className="max-h-40 overflow-y-auto space-y-1 border border-outline-variant/30 rounded-lg p-2">
-                {menu?.items.map((item) => (
-                  <label key={item.id} className="flex items-center gap-2 p-1.5 rounded hover:bg-surface-container-high cursor-pointer text-sm">
-                    <input type="checkbox" checked={(form.appliesToItemIds ?? []).includes(item.id)} onChange={() => toggleItem(item.id)} className="accent-primary" />
-                    {item.name}
-                  </label>
-                ))}
-              </div>
-            </div>
-            <div className="flex justify-end gap-3 pt-2">
-              <button onClick={() => setForm(null)} className="px-4 py-2 rounded-xl border border-outline-variant/40 text-sm font-medium hover:bg-surface-container-high">
-                Cancel
-              </button>
-              <button onClick={handleSave} className="px-4 py-2 rounded-xl bg-primary text-on-primary text-sm font-bold hover:bg-primary-container">
-                Save
-              </button>
+      <Modal
+        isOpen={Boolean(form)}
+        onClose={() => setForm(null)}
+        title={form?.id ? 'Edit Offer' : 'New Offer'}
+        maxWidth="max-w-lg"
+        footer={
+          <>
+            <Button variant="outline" onClick={() => setForm(null)}>Cancel</Button>
+            <Button variant="primary" onClick={handleSave}>Save</Button>
+          </>
+        }
+      >
+        <div className="space-y-4">
+          <TextField label="Offer Name" required value={form?.name ?? ''} onChange={(e) => setForm({ ...form, name: e.target.value })} />
+
+          <div className="grid grid-cols-2 gap-4">
+            <SelectField
+              label="Offer Type"
+              value={form?.type}
+              onChange={(e) => setForm({ ...form, type: e.target.value as OfferType })}
+            >
+              {Object.entries(OFFER_TYPE_LABEL).map(([value, label]) => (
+                <option key={value} value={value}>{label}</option>
+              ))}
+            </SelectField>
+            {form?.type === 'special_price' ? (
+              <TextField label="Special Price ($)" type="number" value={form?.specialPrice ?? 0} onChange={(e) => setForm({ ...form, specialPrice: Number(e.target.value) })} />
+            ) : form?.type !== 'bogo' ? (
+              <TextField
+                label={`Discount Value ${form?.type === 'percentage' ? '(%)' : '($)'}`}
+                type="number"
+                value={form?.discountValue ?? 0}
+                onChange={(e) => setForm({ ...form, discountValue: Number(e.target.value) })}
+              />
+            ) : (
+              <div />
+            )}
+          </div>
+
+          <div className="grid grid-cols-2 gap-4">
+            <TextField label="Start Date" type="date" value={form?.startDate?.slice(0, 10)} onChange={(e) => setForm({ ...form, startDate: e.target.value })} />
+            <TextField label="End Date" type="date" value={form?.endDate?.slice(0, 10)} onChange={(e) => setForm({ ...form, endDate: e.target.value })} />
+          </div>
+
+          <TextField label="CTA Text" placeholder="Order Now" value={form?.cta ?? ''} onChange={(e) => setForm({ ...form, cta: e.target.value })} />
+
+          <div>
+            <label className="block text-sm font-semibold text-on-surface mb-1.5">
+              Applies to Items {selectedCount > 0 && <span className="text-secondary font-normal">({selectedCount} selected)</span>}
+            </label>
+            <div className="max-h-40 overflow-y-auto space-y-0.5 border border-outline-variant/30 rounded-xl p-2 bg-surface-container-low/40">
+              {menu?.items.map((item) => (
+                <label key={item.id} className="flex items-center gap-2.5 p-2 rounded-lg hover:bg-surface-container-high cursor-pointer text-sm transition-colors">
+                  <input type="checkbox" checked={(form?.appliesToItemIds ?? []).includes(item.id)} onChange={() => toggleItem(item.id)} className="accent-primary h-4 w-4" />
+                  {item.name}
+                </label>
+              ))}
             </div>
           </div>
         </div>
-      )}
+      </Modal>
 
       <ConfirmDialog
         isOpen={Boolean(pendingDelete)}

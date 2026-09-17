@@ -6,14 +6,16 @@ import { AdminRoutes } from './routes';
 
 export function AdminApp() {
   return (
-    <BrowserRouter>
-      <AuthProvider>
-        <AdminRestaurantProvider>
-          <AdminToastProvider>
-            <AdminRoutes />
-          </AdminToastProvider>
-        </AdminRestaurantProvider>
-      </AuthProvider>
-    </BrowserRouter>
+    <div className="admin-shell min-h-screen">
+      <BrowserRouter>
+        <AuthProvider>
+          <AdminRestaurantProvider>
+            <AdminToastProvider>
+              <AdminRoutes />
+            </AdminToastProvider>
+          </AdminRestaurantProvider>
+        </AuthProvider>
+      </BrowserRouter>
+    </div>
   );
 }

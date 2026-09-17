@@ -1,5 +1,10 @@
+import { Quote, Plus, Trash2 } from 'lucide-react';
 import { tempId } from '../../../utils/tempId';
 import { ReorderableList } from '../../../components/ReorderableList';
+import { TextField } from '../../../components/forms/Field';
+import { SectionCard } from '../../../components/SectionCard';
+import { EmptyState } from '../../../components/EmptyState';
+import { Button } from '../../../components/Button';
 import type { TestimonialEntry, TestimonialsSectionContent } from '../../../../types';
 
 interface EditorProps {
@@ -30,57 +35,54 @@ export function TestimonialsSectionEditor({ content, onChange }: EditorProps) {
 
   return (
     <div className="space-y-5">
-      <div>
-        <label className="block text-sm font-semibold text-on-surface mb-1.5">Eyebrow</label>
-        <input
-          value={content?.eyebrow ?? ''}
-          onChange={(e) => onChange({ eyebrow: e.target.value })}
-          className="w-full px-3 py-2 text-sm rounded-lg border border-outline-variant/40 bg-surface focus:border-primary outline-none"
-        />
-      </div>
-      <div>
-        <label className="block text-sm font-semibold text-on-surface mb-1.5">Heading</label>
-        <input
-          value={content?.heading ?? ''}
-          onChange={(e) => onChange({ heading: e.target.value })}
-          className="w-full px-3 py-2 text-sm rounded-lg border border-outline-variant/40 bg-surface focus:border-primary outline-none"
-        />
-      </div>
+      <SectionCard title="Content">
+        <div className="space-y-4">
+          <TextField label="Eyebrow" value={content?.eyebrow ?? ''} onChange={(e) => onChange({ eyebrow: e.target.value })} />
+          <TextField label="Heading" value={content?.heading ?? ''} onChange={(e) => onChange({ heading: e.target.value })} />
+        </div>
+      </SectionCard>
 
-      <div className="flex items-center justify-between">
-        <label className="text-sm font-semibold text-on-surface">Testimonials</label>
-        <button onClick={add} className="px-3 py-1.5 rounded-lg bg-primary text-on-primary text-xs font-bold hover:bg-primary-container">
-          + Add Testimonial
-        </button>
-      </div>
-
-      <ReorderableList
-        items={testimonials}
-        onReorder={(next) => onChange({ testimonials: next.map((t, idx) => ({ ...t, order: idx })) })}
-        renderItem={(t, dragHandle) => (
-          <div className="flex items-start gap-3 bg-surface rounded-xl border border-outline-variant/20 p-3">
-            {dragHandle}
-            <div className="flex-1 space-y-2">
-              <input
-                value={t.customerName ?? ''}
-                onChange={(e) => update(t.id, { customerName: e.target.value })}
-                placeholder="Customer name"
-                className="w-full px-3 py-1.5 text-sm rounded-lg border border-outline-variant/30 bg-surface-container-low"
-              />
-              <textarea
-                value={t.quote ?? ''}
-                onChange={(e) => update(t.id, { quote: e.target.value })}
-                placeholder="Quote"
-                rows={2}
-                className="w-full px-3 py-1.5 text-sm rounded-lg border border-outline-variant/30 bg-surface-container-low"
-              />
-            </div>
-            <button onClick={() => remove(t.id)} className="text-error hover:opacity-70 mt-1">
-              <span className="material-symbols-outlined text-lg">delete</span>
-            </button>
-          </div>
+      <SectionCard
+        title="Testimonials"
+        icon={Quote}
+        actions={
+          <Button variant="outline" size="sm" icon={Plus} onClick={add}>
+            Add Testimonial
+          </Button>
+        }
+      >
+        {testimonials.length === 0 ? (
+          <EmptyState icon={Quote} title="No testimonials yet" description="Add a guest quote to build social proof on your homepage." />
+        ) : (
+          <ReorderableList
+            items={testimonials}
+            onReorder={(next) => onChange({ testimonials: next.map((t, idx) => ({ ...t, order: idx })) })}
+            renderItem={(t, dragHandle) => (
+              <div className="flex items-start gap-3 bg-surface rounded-xl border border-outline-variant/20 p-3 shadow-sm">
+                {dragHandle}
+                <div className="flex-1 space-y-2 pt-1">
+                  <input
+                    value={t.customerName ?? ''}
+                    onChange={(e) => update(t.id, { customerName: e.target.value })}
+                    placeholder="Customer name"
+                    className="w-full rounded-lg border border-outline-variant/30 bg-surface-container-low px-3 py-1.5 text-sm outline-none focus:border-primary"
+                  />
+                  <textarea
+                    value={t.quote ?? ''}
+                    onChange={(e) => update(t.id, { quote: e.target.value })}
+                    placeholder="Quote"
+                    rows={2}
+                    className="w-full rounded-lg border border-outline-variant/30 bg-surface-container-low px-3 py-1.5 text-sm outline-none focus:border-primary resize-none"
+                  />
+                </div>
+                <button onClick={() => remove(t.id)} className="p-2 mt-1 rounded-lg text-secondary hover:bg-error-container/40 hover:text-error transition-colors" aria-label="Remove testimonial">
+                  <Trash2 className="h-4 w-4" />
+                </button>
+              </div>
+            )}
+          />
         )}
-      />
+      </SectionCard>
     </div>
   );
 }

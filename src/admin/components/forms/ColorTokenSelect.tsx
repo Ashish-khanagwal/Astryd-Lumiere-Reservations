@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { Pipette } from 'lucide-react';
 import { CUSTOM_THEME_ID, THEME_PRESETS } from '../../../types';
 import { isValidHexColor } from '../../../theme/paletteFromColor';
 
@@ -9,6 +10,17 @@ interface ColorTokenSelectProps {
 }
 
 const DEFAULT_CUSTOM_COLOR = '#785600';
+
+/** Picks a legible icon tone (light or dark) against an arbitrary hex fill. */
+function getContrastTone(hex: string): string {
+  const clean = hex.replace('#', '');
+  if (clean.length !== 6) return 'rgba(255,255,255,0.9)';
+  const r = parseInt(clean.slice(0, 2), 16);
+  const g = parseInt(clean.slice(2, 4), 16);
+  const b = parseInt(clean.slice(4, 6), 16);
+  const luminance = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
+  return luminance > 0.6 ? 'rgba(0,0,0,0.55)' : 'rgba(255,255,255,0.9)';
+}
 
 /** Admins pick a contrast-checked preset, or "Custom" to choose any color via a picker - a full palette is then derived and contrast-checked automatically. */
 export function ColorTokenSelect({ themePresetId, customPrimaryColor, onChange }: ColorTokenSelectProps) {
@@ -52,13 +64,13 @@ export function ColorTokenSelect({ themePresetId, customPrimaryColor, onChange }
           }`}
         >
           <span
-            className="w-10 h-10 rounded-full border border-black/10"
-            style={
-              isCustom
-                ? { backgroundColor: currentCustomColor }
-                : { background: 'conic-gradient(from 0deg, red, yellow, lime, cyan, blue, magenta, red)' }
-            }
-          />
+            className={`w-10 h-10 rounded-full flex items-center justify-center ${
+              isCustom ? 'border border-black/10' : 'border-2 border-dashed border-outline-variant/50 bg-surface-container-high'
+            }`}
+            style={isCustom ? { backgroundColor: currentCustomColor } : undefined}
+          >
+            <Pipette className={`h-4 w-4 ${isCustom ? '' : 'text-secondary'}`} style={isCustom ? { color: getContrastTone(currentCustomColor) } : undefined} />
+          </span>
           <span className="text-xs font-semibold text-on-surface">Custom</span>
         </button>
       </div>

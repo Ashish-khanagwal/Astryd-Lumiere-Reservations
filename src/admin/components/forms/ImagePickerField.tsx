@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { ImageIcon } from 'lucide-react';
 import { MediaPickerModal } from '../MediaPickerModal';
 import type { MediaAsset } from '../../../types';
 
@@ -21,7 +22,7 @@ export function ImagePickerField({ label, currentImageUrl, onSelect, onRemove }:
           {currentImageUrl ? (
             <img src={currentImageUrl} alt={label} className="w-full h-full object-cover" />
           ) : (
-            <span className="material-symbols-outlined text-secondary text-2xl">image</span>
+            <ImageIcon className="h-6 w-6 text-secondary" />
           )}
         </div>
         <div className="flex flex-col gap-2">

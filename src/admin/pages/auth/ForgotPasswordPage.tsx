@@ -34,10 +34,10 @@ export function ForgotPasswordPage() {
           value={email}
           onChange={(e) => setEmail(e.target.value)}
           required
-          className="w-full px-3 py-2.5 text-sm rounded-lg border border-outline-variant/40 bg-surface focus:border-primary outline-none"
+          className="w-full px-3 py-2.5 text-sm rounded-xl border border-outline-variant/40 bg-surface-container-low focus:border-primary outline-none"
         />
       </div>
-      <button type="submit" className="w-full py-3 rounded-xl bg-primary text-on-primary font-bold text-sm hover:bg-primary-container transition-colors">
+      <button type="submit" className="w-full py-3 rounded-full bg-primary text-on-primary font-bold text-sm hover:bg-primary-container transition-colors shadow-md shadow-primary/20">
         Send Reset Link
       </button>
       <div className="text-center">

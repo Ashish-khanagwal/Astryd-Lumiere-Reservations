@@ -1,7 +1,12 @@
 import { useEffect, useState } from 'react';
+import { Phone, Mail, MapPin, Map } from 'lucide-react';
 import { useBrandDraft, usePublishWebsite, useUpdateBrand, useWebsiteStatus } from '../../hooks/api/useWebsite';
 import { useAdminToast } from '../../context/AdminToastContext';
 import { PublishBar } from '../../components/PublishBar';
+import { PageHeader } from '../../components/PageHeader';
+import { SectionCard } from '../../components/SectionCard';
+import { TextField } from '../../components/forms/Field';
+import { FormSkeleton } from '../../components/Skeleton';
 import type { BrandSettings } from '../../../types';
 
 export function ContactPage() {
@@ -16,7 +21,16 @@ export function ContactPage() {
     if (!isLoading) setDraft((brand ?? {}) as BrandSettings);
   }, [brand, isLoading]);
 
-  if (isLoading && !draft) return <p className="text-secondary text-sm">Loading...</p>;
+  const header = <PageHeader icon={Phone} title="Contact" description="How guests can reach and find your restaurant." />;
+
+  if (isLoading && !draft) {
+    return (
+      <div className="space-y-6">
+        {header}
+        <FormSkeleton />
+      </div>
+    );
+  }
   if (!draft) return null;
   const contact: Partial<BrandSettings['contact']> = draft.contact ?? {};
   const safeContact = { phone: '', email: '', address: '', ...contact };
@@ -39,46 +53,52 @@ export function ContactPage() {
         isSaving={updateBrand.isPending}
         isPublishing={publishWebsite.isPending}
         onSaveDraft={handleSaveDraft}
-        onPreview={() => window.open('/?preview=true', '_blank')}
         onPublish={handlePublish}
         lastPublishedAt={website?.publishedAt}
       />
-      <h1 className="font-serif text-2xl font-bold text-on-surface mb-6">Contact</h1>
 
-      <div className="space-y-5 max-w-xl">
-        <div>
-          <label className="block text-sm font-semibold text-on-surface mb-1.5">Phone</label>
-          <input
-            value={safeContact.phone ?? ''}
-            onChange={(e) => setDraft({ ...draft, contact: { ...safeContact, phone: e.target.value } })}
-            className="w-full px-3 py-2 text-sm rounded-lg border border-outline-variant/40 bg-surface focus:border-primary outline-none"
-          />
-        </div>
-        <div>
-          <label className="block text-sm font-semibold text-on-surface mb-1.5">Email</label>
-          <input
-            value={safeContact.email ?? ''}
-            onChange={(e) => setDraft({ ...draft, contact: { ...safeContact, email: e.target.value } })}
-            className="w-full px-3 py-2 text-sm rounded-lg border border-outline-variant/40 bg-surface focus:border-primary outline-none"
-          />
-        </div>
-        <div>
-          <label className="block text-sm font-semibold text-on-surface mb-1.5">Address</label>
-          <input
-            value={safeContact.address ?? ''}
-            onChange={(e) => setDraft({ ...draft, contact: { ...safeContact, address: e.target.value } })}
-            className="w-full px-3 py-2 text-sm rounded-lg border border-outline-variant/40 bg-surface focus:border-primary outline-none"
-          />
-        </div>
-        <div>
-          <label className="block text-sm font-semibold text-on-surface mb-1.5">Google Maps Embed URL</label>
-          <input
+      <div className="space-y-6 max-w-4xl">
+        {header}
+
+        <SectionCard title="Reach Us">
+          <div className="space-y-4">
+            <div className="grid grid-cols-2 gap-4">
+              <TextField
+                label="Phone"
+                icon={Phone}
+                value={safeContact.phone ?? ''}
+                onChange={(e) => setDraft({ ...draft, contact: { ...safeContact, phone: e.target.value } })}
+              />
+              <TextField
+                label="Email"
+                icon={Mail}
+                type="email"
+                value={safeContact.email ?? ''}
+                onChange={(e) => setDraft({ ...draft, contact: { ...safeContact, email: e.target.value } })}
+              />
+            </div>
+            <TextField
+              label="Address"
+              icon={MapPin}
+              value={safeContact.address ?? ''}
+              onChange={(e) => setDraft({ ...draft, contact: { ...safeContact, address: e.target.value } })}
+            />
+          </div>
+        </SectionCard>
+
+        <SectionCard title="Map" description="Embed a Google Maps location on your website." icon={Map}>
+          <TextField
+            label="Google Maps Embed URL"
+            placeholder="https://www.google.com/maps/embed?..."
             value={safeContact.mapEmbedUrl ?? ''}
             onChange={(e) => setDraft({ ...draft, contact: { ...safeContact, mapEmbedUrl: e.target.value } })}
-            placeholder="https://www.google.com/maps/embed?..."
-            className="w-full px-3 py-2 text-sm rounded-lg border border-outline-variant/40 bg-surface focus:border-primary outline-none"
           />
-        </div>
+          {safeContact.mapEmbedUrl && (
+            <div className="mt-4 rounded-xl overflow-hidden border border-outline-variant/20">
+              <iframe title="Location preview" src={safeContact.mapEmbedUrl} className="w-full h-56" style={{ border: 0 }} loading="lazy" />
+            </div>
+          )}
+        </SectionCard>
       </div>
     </div>
   );
