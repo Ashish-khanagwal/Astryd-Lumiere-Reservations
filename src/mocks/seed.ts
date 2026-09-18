@@ -210,6 +210,7 @@ function buildSeed(): MockDbShape {
     fontWeight: 'regular',
     buttonStyle: 'rounded',
     borderRadius: 'lg',
+    navPosition: 'right',
     socialLinks: { instagram: '', facebook: '', whatsapp: '' },
     contact: {
       phone: '+44 (0) 20 7123 4567',

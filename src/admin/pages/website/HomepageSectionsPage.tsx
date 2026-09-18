@@ -1,31 +1,12 @@
 import { useNavigate } from 'react-router-dom';
-import { Rows3, Image, Info, UtensilsCrossed, Images, Tag, Quote, MapPin, SquarePen, type LucideIcon } from 'lucide-react';
+import { Rows3, SquarePen } from 'lucide-react';
 import { useHomepageDraft, useReorderSections, useUpdateSection } from '../../hooks/api/useWebsite';
 import { ReorderableList } from '../../components/ReorderableList';
 import { ToggleField } from '../../components/forms/ToggleField';
 import { PageHeader } from '../../components/PageHeader';
 import { ListSkeleton } from '../../components/Skeleton';
+import { SECTION_LABEL, SECTION_ICON } from './sectionMeta';
 import type { HomepageSection } from '../../../types';
-
-const SECTION_LABEL: Record<string, string> = {
-  hero: 'Hero',
-  about: 'About',
-  featured_menu: 'Featured Menu',
-  gallery: 'Gallery',
-  offers: 'Offers',
-  testimonials: 'Testimonials',
-  location: 'Location',
-};
-
-const SECTION_ICON: Record<string, LucideIcon> = {
-  hero: Image,
-  about: Info,
-  featured_menu: UtensilsCrossed,
-  gallery: Images,
-  offers: Tag,
-  testimonials: Quote,
-  location: MapPin,
-};
 
 export function HomepageSectionsPage() {
   const { data: homepage, isLoading } = useHomepageDraft();

@@ -52,6 +52,9 @@ export type ButtonStyle = (typeof BUTTON_STYLES)[number];
 export const BORDER_RADII = ['none', 'sm', 'md', 'lg', 'full'] as const;
 export type BorderRadius = (typeof BORDER_RADII)[number];
 
+export const NAV_POSITIONS = ['right', 'center'] as const;
+export type NavPosition = (typeof NAV_POSITIONS)[number];
+
 export interface ThemePreset {
   id: string;
   name: string;
@@ -142,6 +145,10 @@ export interface BrandSettings extends Tenant, Timestamps {
   fontWeight: FontWeight;
   buttonStyle: ButtonStyle;
   borderRadius: BorderRadius;
+  navPosition?: NavPosition;
+  headerBackgroundColor?: string;
+  headerTextColor?: string;
+  headerTextHoverColor?: string;
   socialLinks: SocialLinks;
   contact: ContactInfo;
   description: string;

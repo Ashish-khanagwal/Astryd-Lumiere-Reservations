@@ -23,6 +23,14 @@ export const Header: React.FC<HeaderProps> = ({
   const { brand, mediaMap } = usePublicData();
   const brandName = brand?.restaurantName ?? 'Lumière';
   const logoUrl = brand?.logoMediaId ? mediaMap.get(brand.logoMediaId)?.fileUrl : undefined;
+  const navPosition = brand?.navPosition ?? 'right';
+
+  const headerStyle: React.CSSProperties & Record<string, string | undefined> = {
+    backgroundColor: brand?.headerBackgroundColor,
+    '--nav-color': brand?.headerTextColor,
+    '--nav-hover-color': brand?.headerTextHoverColor,
+  };
+  const navLinkInactiveClass = 'text-[var(--nav-color,#5f5e5e)] hover:text-[var(--nav-hover-color,#1b1c1c)]';
 
   const cartButton = onOpenCart ? (
     <button
@@ -45,8 +53,11 @@ export const Header: React.FC<HeaderProps> = ({
   ) : null;
 
   return (
-    <header className="fixed top-0 left-0 right-0 z-50 bg-surface/90 backdrop-blur-md shadow-[0_4px_20px_rgba(0,0,0,0.04)] h-20 border-b border-outline-variant/20 transition-all">
-      <div className="max-w-container-max mx-auto px-margin-mobile md:px-margin-desktop h-full flex justify-between items-center">
+    <header
+      style={headerStyle}
+      className="fixed top-0 left-0 right-0 z-50 bg-surface shadow-[0_4px_20px_rgba(0,0,0,0.04)] h-20 border-b border-outline-variant/20 transition-all"
+    >
+      <div className="relative max-w-container-max mx-auto px-margin-mobile md:px-margin-desktop h-full flex justify-between items-center">
         <div
           onClick={onNavigateLanding}
           className="font-serif text-2xl sm:text-3xl tracking-tight font-semibold text-on-surface flex items-center gap-2.5 cursor-pointer group"
@@ -61,42 +72,48 @@ export const Header: React.FC<HeaderProps> = ({
           <span className="group-hover:text-primary transition-colors">{brandName}</span>
         </div>
 
-        <nav className="hidden md:flex items-center space-x-9">
-          <button
-            onClick={onNavigateLanding}
-            className={`font-sans text-sm tracking-wide py-1 font-medium transition-colors hover:text-primary relative ${
-              currentPage === 'landing'
-                ? 'text-primary font-bold after:content-[""] after:absolute after:bottom-0 after:left-0 after:right-0 after:h-0.5 after:bg-primary after:rounded-full'
-                : 'text-secondary hover:text-on-surface'
+        <div className="hidden md:flex items-center gap-3">
+          <nav
+            className={`flex items-center space-x-9 ${
+              navPosition === 'center' ? 'absolute left-1/2 top-0 h-full -translate-x-1/2 flex items-center' : ''
             }`}
           >
-            Discover
-          </button>
+            <button
+              onClick={onNavigateLanding}
+              className={`font-sans text-sm tracking-wide py-1 font-medium transition-colors relative ${
+                currentPage === 'landing'
+                  ? 'text-primary font-bold after:content-[""] after:absolute after:bottom-0 after:left-0 after:right-0 after:h-0.5 after:bg-primary after:rounded-full'
+                  : navLinkInactiveClass
+              }`}
+            >
+              Discover
+            </button>
 
-          <button
-            onClick={onNavigateMenu}
-            className={`font-sans text-sm tracking-wide py-1 font-medium transition-colors hover:text-primary relative ${
-              currentPage === 'menu'
-                ? 'text-primary font-bold after:content-[""] after:absolute after:bottom-0 after:left-0 after:right-0 after:h-0.5 after:bg-primary after:rounded-full'
-                : 'text-secondary hover:text-on-surface'
-            }`}
-          >
-            Menu
-          </button>
+            <button
+              onClick={onNavigateMenu}
+              className={`font-sans text-sm tracking-wide py-1 font-medium transition-colors relative ${
+                currentPage === 'menu'
+                  ? 'text-primary font-bold after:content-[""] after:absolute after:bottom-0 after:left-0 after:right-0 after:h-0.5 after:bg-primary after:rounded-full'
+                  : navLinkInactiveClass
+              }`}
+            >
+              Menu
+            </button>
 
-          <button
-            onClick={onNavigateReservations}
-            className={`font-sans text-sm tracking-wide py-1 font-medium transition-colors hover:text-primary relative ${
-              currentPage === 'reservations'
-                ? 'text-primary font-bold after:content-[""] after:absolute after:bottom-0 after:left-0 after:right-0 after:h-0.5 after:bg-primary after:rounded-full'
-                : 'text-secondary hover:text-on-surface'
-            }`}
-          >
-            Reservation
-          </button>
+            <button
+              onClick={onNavigateReservations}
+              className={`font-sans text-sm tracking-wide py-1 font-medium transition-colors relative ${
+                currentPage === 'reservations'
+                  ? 'text-primary font-bold after:content-[""] after:absolute after:bottom-0 after:left-0 after:right-0 after:h-0.5 after:bg-primary after:rounded-full'
+                  : navLinkInactiveClass
+              }`}
+            >
+              Reservation
+            </button>
+          </nav>
 
           {cartButton}
-        </nav>
+        </div>
 
         <div className="md:hidden flex items-center gap-1">
           {cartButton}
@@ -111,14 +128,17 @@ export const Header: React.FC<HeaderProps> = ({
       </div>
 
       {isMobileMenuOpen && (
-        <div className="md:hidden bg-surface border-b border-outline-variant/20 px-6 py-5 space-y-3.5 animate-fadeIn shadow-xl">
+        <div
+          style={{ backgroundColor: brand?.headerBackgroundColor }}
+          className="md:hidden bg-surface border-b border-outline-variant/20 px-6 py-5 space-y-3.5 animate-fadeIn shadow-xl"
+        >
           <button
             onClick={() => {
               onNavigateLanding();
               setIsMobileMenuOpen(false);
             }}
             className={`block w-full text-left font-sans text-base py-2.5 font-medium transition-colors ${
-              currentPage === 'landing' ? 'text-primary font-bold' : 'text-secondary hover:text-on-surface'
+              currentPage === 'landing' ? 'text-primary font-bold' : navLinkInactiveClass
             }`}
           >
             Discover
@@ -129,7 +149,7 @@ export const Header: React.FC<HeaderProps> = ({
               setIsMobileMenuOpen(false);
             }}
             className={`block w-full text-left font-sans text-base py-2.5 font-medium transition-colors ${
-              currentPage === 'menu' ? 'text-primary font-bold' : 'text-secondary hover:text-on-surface'
+              currentPage === 'menu' ? 'text-primary font-bold' : navLinkInactiveClass
             }`}
           >
             Menu
@@ -140,7 +160,7 @@ export const Header: React.FC<HeaderProps> = ({
               setIsMobileMenuOpen(false);
             }}
             className={`block w-full text-left font-sans text-base py-2.5 font-medium transition-colors ${
-              currentPage === 'reservations' ? 'text-primary font-bold' : 'text-secondary hover:text-on-surface'
+              currentPage === 'reservations' ? 'text-primary font-bold' : navLinkInactiveClass
             }`}
           >
             Reservation
