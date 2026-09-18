@@ -22,6 +22,7 @@ import {
   PanelLeftClose,
   PanelLeftOpen,
   ExternalLink,
+  ShoppingBag,
   type LucideIcon,
 } from 'lucide-react';
 import { usePermissions } from '../hooks/usePermissions';
@@ -133,7 +134,10 @@ export function Sidebar() {
         title: '',
         flat: true,
         visible: true,
-        items: [{ to: '/admin', label: 'Dashboard', icon: LayoutDashboard, end: true }],
+        items: [
+          { to: '/admin', label: 'Dashboard', icon: LayoutDashboard, end: true },
+          { to: '/admin/orders', label: 'Orders', icon: ShoppingBag },
+        ],
       },
       {
         key: 'website',

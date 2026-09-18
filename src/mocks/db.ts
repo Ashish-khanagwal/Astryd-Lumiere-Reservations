@@ -6,6 +6,7 @@ import type {
   MenuCategory,
   MenuItem,
   Offer,
+  Order,
   Restaurant,
   User,
   WebsiteSettings,
@@ -27,6 +28,7 @@ export interface MockDbShape {
   items: MenuItem[];
   addons: Addon[];
   offers: Offer[];
+  orders: Order[];
 }
 
 const STORAGE_KEY = 'lumiere-cms-mock-db-v1';
@@ -43,6 +45,7 @@ function emptyDb(): MockDbShape {
     items: [],
     addons: [],
     offers: [],
+    orders: [],
   };
 }
 

@@ -7,6 +7,7 @@ import { addonHandlers } from './addons';
 import { offerHandlers } from './offers';
 import { auditLogHandlers } from './auditLog';
 import { userHandlers } from './users';
+import { orderHandlers } from './orders';
 
 export const handlers = [
   ...authHandlers,
@@ -18,4 +19,5 @@ export const handlers = [
   ...offerHandlers,
   ...auditLogHandlers,
   ...userHandlers,
+  ...orderHandlers,
 ];

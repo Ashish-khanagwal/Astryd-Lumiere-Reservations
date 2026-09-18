@@ -6,6 +6,9 @@ import {
   getCartLineItems,
   getCartSubtotal,
 } from '../data/menuItems';
+import { useRestaurant } from '../context/RestaurantContext';
+import { createOrder } from '../services/orders';
+import type { OrderLineItem } from '../types';
 
 const TAX_RATE = 0.085;
 const DELIVERY_FEE = 15;
@@ -110,6 +113,7 @@ export const OrderSummaryView = ({
   const [address, setAddress] = useState('');
   const [instructions, setInstructions] = useState('');
   const [submitState, setSubmitState] = useState<SubmitState>('idle');
+  const { restaurantId } = useRestaurant();
 
   const lineItems = getCartLineItems(cart);
   const subtotal = getCartSubtotal(cart);
@@ -123,7 +127,7 @@ export const OrderSummaryView = ({
     }
   }, [lineItems.length, onNavigateMenu, submitState]);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (submitState !== 'idle') return;
 
@@ -134,7 +138,32 @@ export const OrderSummaryView = ({
 
     setSubmitState('verifying');
 
-    window.setTimeout(() => {
+    const orderItems: OrderLineItem[] = lineItems.map((item) => ({
+      itemId: item.itemId,
+      name: item.name,
+      quantity: item.quantity,
+      unitPrice: item.unitPrice,
+      lineTotal: item.lineTotal,
+      addons: item.addons,
+      note: item.note || undefined,
+    }));
+
+    try {
+      await createOrder(restaurantId, {
+        service,
+        paymentMethod: payment,
+        customerName: fullName,
+        customerPhone: phone,
+        customerEmail: email,
+        address: service === 'delivery' ? address : undefined,
+        instructions: instructions || undefined,
+        items: orderItems,
+        subtotal,
+        taxes,
+        deliveryFee,
+        total,
+      });
+
       setSubmitState('success');
       window.setTimeout(() => {
         onToast(
@@ -146,7 +175,10 @@ export const OrderSummaryView = ({
         setSubmitState('idle');
         onNavigateMenu();
       }, 1200);
-    }, 1800);
+    } catch {
+      setSubmitState('idle');
+      onToast('Something went wrong placing your order. Please try again.');
+    }
   };
 
   if (lineItems.length === 0) {

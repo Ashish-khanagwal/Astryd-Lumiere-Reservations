@@ -8,6 +8,11 @@ import type {
   MenuCategory,
   MenuItem,
   Offer,
+  Order,
+  OrderLineItem,
+  OrderPaymentMethod,
+  OrderServiceType,
+  OrderStatus,
   Restaurant,
   User,
 } from '../types';
@@ -198,6 +203,115 @@ function buildSeed(): MockDbShape {
     },
   ];
 
+  const minutesAgo = (mins: number) => new Date(Date.now() - mins * 60 * 1000).toISOString();
+
+  const buildOrderItem = (item: MenuItem, quantity: number, addonList: Addon[] = []): OrderLineItem => {
+    const addonsTotal = addonList.reduce((sum, a) => sum + a.price, 0);
+    const unitPrice = item.price + addonsTotal;
+    return {
+      itemId: item.id,
+      name: item.name,
+      quantity,
+      unitPrice,
+      lineTotal: unitPrice * quantity,
+      addons: addonList.map((a) => ({ id: a.id, name: a.name, price: a.price })),
+    };
+  };
+
+  const buildOrder = (opts: {
+    id: string;
+    orderNumber: string;
+    status: OrderStatus;
+    service: OrderServiceType;
+    paymentMethod?: OrderPaymentMethod;
+    customerName: string;
+    customerPhone: string;
+    customerEmail: string;
+    address?: string;
+    items: OrderLineItem[];
+    placedMinutesAgo: number;
+    statusUpdatedMinutesAgo?: number;
+  }): Order => {
+    const subtotal = opts.items.reduce((sum, i) => sum + i.lineTotal, 0);
+    const taxes = Math.round(subtotal * 0.085 * 100) / 100;
+    const deliveryFee = opts.service === 'delivery' ? 15 : 0;
+    const total = subtotal + taxes + deliveryFee;
+    const placedAt = minutesAgo(opts.placedMinutesAgo);
+    const statusUpdatedAt = minutesAgo(opts.statusUpdatedMinutesAgo ?? opts.placedMinutesAgo);
+    return {
+      id: opts.id,
+      restaurantId: RESTAURANT_ID,
+      orderNumber: opts.orderNumber,
+      status: opts.status,
+      service: opts.service,
+      paymentMethod: opts.paymentMethod ?? 'card',
+      customerName: opts.customerName,
+      customerPhone: opts.customerPhone,
+      customerEmail: opts.customerEmail,
+      address: opts.address,
+      items: opts.items,
+      subtotal,
+      taxes,
+      deliveryFee,
+      total,
+      placedAt,
+      statusUpdatedAt,
+      createdAt: placedAt,
+      updatedAt: statusUpdatedAt,
+    };
+  };
+
+  const orders: Order[] =
+    items.length >= 4
+      ? [
+          buildOrder({
+            id: 'order_1', orderNumber: '1042', status: 'pending', service: 'pickup',
+            customerName: 'Sarah Chen', customerPhone: '+44 7700 900001', customerEmail: 'sarah.chen@example.com',
+            items: [buildOrderItem(items[0], 2), buildOrderItem(items[2], 1)],
+            placedMinutesAgo: 3,
+          }),
+          buildOrder({
+            id: 'order_2', orderNumber: '1041', status: 'confirmed', service: 'delivery',
+            customerName: 'Marcus Reid', customerPhone: '+44 7700 900002', customerEmail: 'marcus.reid@example.com',
+            address: '22 Berkeley Square, Mayfair, London',
+            items: [buildOrderItem(items[1], 1, addons.slice(0, 1))],
+            placedMinutesAgo: 9, statusUpdatedMinutesAgo: 6,
+          }),
+          buildOrder({
+            id: 'order_3', orderNumber: '1040', status: 'preparing', service: 'pickup',
+            customerName: 'Aiko Tanaka', customerPhone: '+44 7700 900003', customerEmail: 'aiko.t@example.com',
+            items: [buildOrderItem(items[3], 1), buildOrderItem(items[0], 1)],
+            placedMinutesAgo: 18, statusUpdatedMinutesAgo: 10,
+          }),
+          buildOrder({
+            id: 'order_4', orderNumber: '1039', status: 'preparing', service: 'delivery',
+            customerName: 'Oliver Bennett', customerPhone: '+44 7700 900004', customerEmail: 'oliver.b@example.com',
+            address: '5 Curzon Street, Mayfair, London',
+            items: [buildOrderItem(items[2], 2)],
+            placedMinutesAgo: 24, statusUpdatedMinutesAgo: 20,
+          }),
+          buildOrder({
+            id: 'order_5', orderNumber: '1038', status: 'ready', service: 'pickup',
+            customerName: 'Priya Anand', customerPhone: '+44 7700 900005', customerEmail: 'priya.a@example.com',
+            items: [buildOrderItem(items[1], 1)],
+            placedMinutesAgo: 16, statusUpdatedMinutesAgo: 4,
+          }),
+          buildOrder({
+            id: 'order_6', orderNumber: '1037', status: 'completed', service: 'pickup',
+            customerName: 'James Whitmore', customerPhone: '+44 7700 900006', customerEmail: 'james.w@example.com',
+            items: [buildOrderItem(items[0], 3)],
+            placedMinutesAgo: 65, statusUpdatedMinutesAgo: 40,
+          }),
+          buildOrder({
+            id: 'order_7', orderNumber: '1036', status: 'cancelled', service: 'delivery',
+            customerName: 'Eleanor Cross', customerPhone: '+44 7700 900007', customerEmail: 'eleanor.c@example.com',
+            address: '10 Grosvenor Square, Mayfair, London',
+            items: [buildOrderItem(items[3], 1)],
+            placedMinutesAgo: 90, statusUpdatedMinutesAgo: 85,
+          }),
+        ]
+      : [];
+
   const brandSettings: BrandSettings = {
     restaurantId: RESTAURANT_ID,
     restaurantName: 'Lumière',
@@ -334,6 +448,7 @@ function buildSeed(): MockDbShape {
     items,
     addons,
     offers,
+    orders,
   };
 }
 

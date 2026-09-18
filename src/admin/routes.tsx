@@ -7,6 +7,7 @@ import { LoginPage } from './pages/auth/LoginPage';
 import { ForgotPasswordPage } from './pages/auth/ForgotPasswordPage';
 import { ResetPasswordPage } from './pages/auth/ResetPasswordPage';
 import { DashboardPage } from './pages/DashboardPage';
+import { OrdersPage } from './pages/orders/OrdersPage';
 import { HomepageSectionsPage } from './pages/website/HomepageSectionsPage';
 import { SectionEditorPage } from './pages/website/SectionEditorPage';
 import { HeaderSettingsPage } from './pages/website/HeaderSettingsPage';
@@ -36,6 +37,7 @@ export function AdminRoutes() {
       <Route path="/admin" element={<RequireAuth />}>
         <Route element={<AdminLayout />}>
           <Route index element={<DashboardPage />} />
+          <Route path="orders" element={<OrdersPage />} />
 
           <Route path="website/homepage" element={<HomepageSectionsPage />} />
           <Route path="website/homepage/:type" element={<SectionEditorPage />} />
