@@ -8,6 +8,7 @@ interface MetricCardProps {
   hint?: string;
   tone?: 'primary' | 'tertiary' | 'secondary' | 'error';
   onClick?: () => void;
+  className?: string;
 }
 
 const TONE_CLASSES: Record<Required<MetricCardProps>['tone'], string> = {
@@ -17,15 +18,15 @@ const TONE_CLASSES: Record<Required<MetricCardProps>['tone'], string> = {
   error: 'bg-rose-50 text-rose-500',
 };
 
-export function MetricCard({ label, value, icon: Icon, hint, tone = 'primary', onClick }: MetricCardProps) {
+export function MetricCard({ label, value, icon: Icon, hint, tone = 'primary', onClick, className = '' }: MetricCardProps) {
   const Tag = onClick ? 'button' : 'div';
 
   return (
     <Tag
       onClick={onClick}
-      className={`group text-left admin-card p-5 w-full transition-all ${
+      className={`group text-left admin-card p-5 w-full h-full flex flex-col justify-between transition-all ${
         onClick ? 'hover:-translate-y-0.5 hover:shadow-lg cursor-pointer' : ''
-      }`}
+      } ${className}`}
     >
       <div className="flex items-start justify-between">
         <div className={`flex h-11 w-11 items-center justify-center rounded-2xl ${TONE_CLASSES[tone]}`}>
@@ -35,9 +36,11 @@ export function MetricCard({ label, value, icon: Icon, hint, tone = 'primary', o
           <ArrowUpRight className="h-4 w-4 text-secondary opacity-0 -translate-x-1 translate-y-1 transition-all group-hover:opacity-100 group-hover:translate-x-0 group-hover:translate-y-0" />
         )}
       </div>
-      <div className="text-[11px] text-secondary font-medium mt-4">{label}</div>
-      <div className="text-2xl font-bold text-on-surface mt-1 tracking-tight">{value}</div>
-      {hint && <div className="text-[11px] text-secondary/80 mt-1.5">{hint}</div>}
+      <div className="mt-4">
+        <div className="text-[11px] text-secondary font-medium">{label}</div>
+        <div className="text-2xl font-bold text-on-surface mt-1 tracking-tight">{value}</div>
+        {hint && <div className="text-[11px] text-secondary/80 mt-1.5">{hint}</div>}
+      </div>
     </Tag>
   );
 }

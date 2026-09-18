@@ -187,9 +187,10 @@ export function DashboardPage() {
         </div>
       </div>
 
-      <div className="grid grid-cols-12 gap-4 lg:gap-5 items-start">
-        <div className="col-span-12 lg:col-span-6 grid grid-cols-1 sm:grid-cols-3 gap-4 min-w-0">
+      <div className="grid grid-cols-12 gap-4 lg:gap-5">
+        <div className="col-span-12 lg:col-span-6 flex flex-col sm:flex-row gap-4 min-w-0">
           <MetricCard
+            className="flex-1"
             label="Menu Items"
             value={items.length}
             icon={UtensilsCrossed}
@@ -197,6 +198,7 @@ export function DashboardPage() {
             onClick={() => navigate('/admin/menu/items')}
           />
           <MetricCard
+            className="flex-1"
             label="Categories"
             value={categories.length}
             icon={LayoutGrid}
@@ -204,6 +206,7 @@ export function DashboardPage() {
             onClick={() => navigate('/admin/menu/categories')}
           />
           <MetricCard
+            className="flex-1"
             label="Active Offers"
             value={activeOffers}
             icon={Tag}
@@ -235,7 +238,7 @@ export function DashboardPage() {
         </div>
 
         <div className="col-span-12 lg:col-span-7 min-w-0 admin-card p-6 sm:p-8 flex flex-col sm:flex-row gap-6">
-          <div className="min-w-0 flex-1">
+          <div className="min-w-0 flex-1 flex flex-col justify-center">
             <h2 className="text-2xl font-bold text-on-surface tracking-tight">
               {isPublished ? 'Your site is live' : 'Publish your site'}
             </h2>
@@ -246,12 +249,12 @@ export function DashboardPage() {
             </p>
             <button
               onClick={() => navigate('/admin/website/homepage')}
-              className="mt-5 inline-flex items-center gap-2 rounded-full bg-primary px-5 py-2.5 text-sm font-bold text-on-primary shadow-md shadow-primary/20 hover:bg-primary-container transition-colors"
+              className="mt-5 inline-flex items-center gap-2 rounded-full bg-primary px-5 py-2.5 text-sm font-bold text-on-primary shadow-md shadow-primary/20 hover:bg-primary-container transition-colors self-start"
             >
               {isPublished ? 'Edit website' : 'Set up website'}
             </button>
           </div>
-          <div className="w-full sm:w-56 shrink-0 rounded-3xl bg-gradient-to-br from-[#6366f1] via-[#7c6cf0] to-[#c4b5fd] p-5 text-white shadow-lg shadow-primary/20">
+          <div className="w-full sm:w-56 shrink-0 rounded-3xl bg-gradient-to-br from-[#6366f1] via-[#7c6cf0] to-[#c4b5fd] p-5 text-white shadow-lg shadow-primary/20 flex flex-col justify-between">
             <div className="flex items-center justify-between">
               <span className="text-xs font-semibold tracking-wide uppercase text-white/80">Website</span>
               <CreditCard className="h-5 w-5 text-white/80" />
