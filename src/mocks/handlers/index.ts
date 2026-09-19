@@ -8,6 +8,7 @@ import { offerHandlers } from './offers';
 import { auditLogHandlers } from './auditLog';
 import { userHandlers } from './users';
 import { orderHandlers } from './orders';
+import { reservationHandlers } from './reservations';
 
 export const handlers = [
   ...authHandlers,
@@ -20,4 +21,5 @@ export const handlers = [
   ...auditLogHandlers,
   ...userHandlers,
   ...orderHandlers,
+  ...reservationHandlers,
 ];

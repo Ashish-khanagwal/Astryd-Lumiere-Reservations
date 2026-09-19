@@ -23,6 +23,7 @@ import {
   PanelLeftOpen,
   ExternalLink,
   ShoppingBag,
+  CalendarDays,
   type LucideIcon,
 } from 'lucide-react';
 import { usePermissions } from '../hooks/usePermissions';
@@ -137,6 +138,7 @@ export function Sidebar() {
         items: [
           { to: '/admin', label: 'Dashboard', icon: LayoutDashboard, end: true },
           { to: '/admin/orders', label: 'Orders', icon: ShoppingBag },
+          { to: '/admin/reservations', label: 'Reservations', icon: CalendarDays },
         ],
       },
       {

@@ -6,3 +6,4 @@ export * from './media';
 export * from './menu';
 export * from './audit';
 export * from './orders';
+export * from './reservations';

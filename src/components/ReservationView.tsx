@@ -1,7 +1,64 @@
-import React, { useState } from "react";
+import React, { useMemo, useState } from "react";
+import { Loader2 } from "lucide-react";
 import { createReservation } from "../services/reservations";
+import { useRestaurant } from "../context/RestaurantContext";
 import { Header } from "./Header";
 import { Footer } from "./Footer";
+
+function startOfDay(d: Date) {
+  return new Date(d.getFullYear(), d.getMonth(), d.getDate());
+}
+
+function isSameDay(a: Date, b: Date) {
+  return (
+    a.getFullYear() === b.getFullYear() &&
+    a.getMonth() === b.getMonth() &&
+    a.getDate() === b.getDate()
+  );
+}
+
+function toIsoDate(d: Date) {
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, "0");
+  const day = String(d.getDate()).padStart(2, "0");
+  return `${y}-${m}-${day}`;
+}
+
+function formatReservationDate(d: Date) {
+  return d.toLocaleDateString("en-US", {
+    weekday: "long",
+    month: "short",
+    day: "numeric",
+  });
+}
+
+interface CalendarCell {
+  date: Date;
+  inMonth: boolean;
+}
+
+/** Monday-first grid (matches the Mo/Tu/We/.../Su header), padded with adjacent-month days so every row is full. */
+function getCalendarCells(displayMonth: Date): CalendarCell[] {
+  const year = displayMonth.getFullYear();
+  const month = displayMonth.getMonth();
+  const firstOfMonth = new Date(year, month, 1);
+  const daysInMonth = new Date(year, month + 1, 0).getDate();
+  const prevMonthDays = new Date(year, month, 0).getDate();
+  const firstWeekdayMonFirst = (firstOfMonth.getDay() + 6) % 7;
+
+  const cells: CalendarCell[] = [];
+  for (let i = firstWeekdayMonFirst; i > 0; i--) {
+    cells.push({ date: new Date(year, month - 1, prevMonthDays - i + 1), inMonth: false });
+  }
+  for (let day = 1; day <= daysInMonth; day++) {
+    cells.push({ date: new Date(year, month, day), inMonth: true });
+  }
+  while (cells.length % 7 !== 0) {
+    const last = cells[cells.length - 1].date;
+    cells.push({ date: new Date(last.getFullYear(), last.getMonth(), last.getDate() + 1), inMonth: false });
+  }
+  return cells;
+}
 
 interface ReservationViewProps {
   onNavigateLanding: () => void;
@@ -18,10 +75,12 @@ export const ReservationView = ({
   cartUniqueCount = 0,
   onOpenCart,
 }: ReservationViewProps) => {
+  const { restaurantId } = useRestaurant();
   const [step, setStep] = useState(1);
   const [partySize, setPartySize] = useState(2);
-  const [selectedDay, setSelectedDay] = useState(4);
-  const [selectedMonth] = useState("September 2026");
+  const today = useMemo(() => startOfDay(new Date()), []);
+  const [displayMonth, setDisplayMonth] = useState(() => new Date(today.getFullYear(), today.getMonth(), 1));
+  const [selectedDate, setSelectedDate] = useState<Date>(today);
   const [selectedTime, setSelectedTime] = useState("6:30 PM");
   const [selectedSeating, setSelectedSeating] = useState<string | null>(
     "Indoor",
@@ -40,23 +99,14 @@ export const ReservationView = ({
   const [isProcessing, setIsProcessing] = useState(false);
   const [confirmationCode, setConfirmationCode] = useState("LUM-82910");
 
-  const daysInMonth = [
-    { day: 1, text: "Tu" },
-    { day: 2, text: "We" },
-    { day: 3, text: "Th" },
-    { day: 4, text: "Fr" },
-    { day: 5, text: "Sa" },
-    { day: 6, text: "Su" },
-    { day: 7, text: "Mo" },
-    { day: 8, text: "Tu" },
-    { day: 9, text: "We" },
-    { day: 10, text: "Th" },
-    { day: 11, text: "Fr" },
-    { day: 12, text: "Sa" },
-    { day: 13, text: "Su" },
-    { day: 14, text: "Mo" },
-    { day: 15, text: "Tu" },
-  ];
+  const calendarCells = useMemo(() => getCalendarCells(displayMonth), [displayMonth]);
+  const isPrevMonthDisabled =
+    displayMonth.getFullYear() === today.getFullYear() && displayMonth.getMonth() === today.getMonth();
+  const goToPrevMonth = () => {
+    if (isPrevMonthDisabled) return;
+    setDisplayMonth((d) => new Date(d.getFullYear(), d.getMonth() - 1, 1));
+  };
+  const goToNextMonth = () => setDisplayMonth((d) => new Date(d.getFullYear(), d.getMonth() + 1, 1));
 
   const afternoonTimes = [
     { time: "12:00 PM", available: true },
@@ -119,33 +169,29 @@ export const ReservationView = ({
   const handleFinalConfirm = async () => {
     setIsProcessing(true);
     try {
-      const response = await createReservation({
-        business_id: "lumiere-mayfair",
-        booking: {
-          date: `2026-09-${String(selectedDay).padStart(2, "0")}`,
-          time_slot: selectedTime.replace(
-            /(\d+):(\d+) (AM|PM)/,
-            (_, h, m, period) => {
-              let hour = parseInt(h);
-              if (period === "PM" && hour !== 12) hour += 12;
-              if (period === "AM" && hour === 12) hour = 0;
-              return `${String(hour).padStart(2, "0")}:${m}`;
-            },
-          ),
-          party_size: partySize,
-          seating_preference: selectedSeating || "Indoor",
+      const timeSlot = selectedTime.replace(
+        /(\d+):(\d+) (AM|PM)/,
+        (_, h, m, period) => {
+          let hour = parseInt(h);
+          if (period === "PM" && hour !== 12) hour += 12;
+          if (period === "AM" && hour === 12) hour = 0;
+          return `${String(hour).padStart(2, "0")}:${m}`;
         },
-        guest: {
-          full_name: fullName,
-          email: email,
-          phone: phone,
-          special_requests: specialRequests,
-          newsletter_opt_in: newsletterOptIn,
-        },
+      );
+      const reservation = await createReservation(restaurantId, {
+        date: toIsoDate(selectedDate),
+        timeSlot,
+        partySize,
+        seatingPreference: selectedSeating || "Indoor",
+        guestName: fullName,
+        guestEmail: email,
+        guestPhone: phone,
+        specialRequests,
+        newsletterOptIn,
       });
-      setConfirmationCode(response.confirmation_code);
+      setConfirmationCode(reservation.confirmationCode);
       setStep(5);
-      onToast(`Reservation confirmed! Code: ${response.confirmation_code}`);
+      onToast(`Reservation confirmed! Code: ${reservation.confirmationCode}`);
     } catch (error: any) {
       onToast(error.message || "Something went wrong. Please try again.");
     } finally {
@@ -240,12 +286,23 @@ export const ReservationView = ({
                       <span>Date</span>
                     </h3>
                     <div className="flex gap-1">
-                      <button className="p-2 hover:bg-surface-container rounded-full text-secondary">
+                      <button
+                        type="button"
+                        onClick={goToPrevMonth}
+                        disabled={isPrevMonthDisabled}
+                        aria-label="Previous month"
+                        className="p-2 hover:bg-surface-container rounded-full text-secondary disabled:opacity-30 disabled:hover:bg-transparent disabled:cursor-not-allowed"
+                      >
                         <span className="material-symbols-outlined text-sm">
                           chevron_left
                         </span>
                       </button>
-                      <button className="p-2 hover:bg-surface-container rounded-full text-secondary">
+                      <button
+                        type="button"
+                        onClick={goToNextMonth}
+                        aria-label="Next month"
+                        className="p-2 hover:bg-surface-container rounded-full text-secondary"
+                      >
                         <span className="material-symbols-outlined text-sm">
                           chevron_right
                         </span>
@@ -253,7 +310,7 @@ export const ReservationView = ({
                     </div>
                   </div>
                   <div className="text-center font-bold font-sans text-sm mb-4 text-on-surface">
-                    {selectedMonth}
+                    {displayMonth.toLocaleDateString("en-US", { month: "long", year: "numeric" })}
                   </div>
                   <div className="grid grid-cols-7 gap-y-2 text-center text-xs font-bold text-secondary uppercase tracking-wider mb-3">
                     <div>Mo</div>
@@ -265,25 +322,35 @@ export const ReservationView = ({
                     <div>Su</div>
                   </div>
                   <div className="grid grid-cols-7 gap-1.5 font-sans">
-                    <div className="aspect-square flex items-center justify-center text-outline/30 text-sm">
-                      30
-                    </div>
-                    <div className="aspect-square flex items-center justify-center text-outline/30 text-sm">
-                      31
-                    </div>
-                    {daysInMonth.map((d) => (
-                      <button
-                        key={d.day}
-                        onClick={() => setSelectedDay(d.day)}
-                        className={`aspect-square flex items-center justify-center rounded-xl text-sm font-semibold transition-all ${
-                          selectedDay === d.day
-                            ? "bg-primary text-on-primary font-bold shadow-md scale-105"
-                            : "hover:bg-surface-container text-on-surface"
-                        }`}
-                      >
-                        {d.day}
-                      </button>
-                    ))}
+                    {calendarCells.map((cell, idx) => {
+                      const isPast = cell.date < today;
+                      const isSelected = isSameDay(cell.date, selectedDate);
+                      const disabled = isPast;
+                      return (
+                        <button
+                          key={idx}
+                          type="button"
+                          disabled={disabled}
+                          onClick={() => {
+                            if (!cell.inMonth) {
+                              setDisplayMonth(new Date(cell.date.getFullYear(), cell.date.getMonth(), 1));
+                            }
+                            setSelectedDate(cell.date);
+                          }}
+                          className={`aspect-square flex items-center justify-center rounded-xl text-sm font-semibold transition-all ${
+                            disabled
+                              ? "text-secondary cursor-not-allowed"
+                              : isSelected
+                                ? "bg-primary text-on-primary font-bold shadow-md scale-105"
+                                : !cell.inMonth
+                                  ? "text-secondary hover:bg-surface-container hover:text-on-surface"
+                                  : "hover:bg-surface-container text-on-surface"
+                          }`}
+                        >
+                          {cell.date.getDate()}
+                        </button>
+                      );
+                    })}
                   </div>
                 </section>
 
@@ -375,7 +442,7 @@ export const ReservationView = ({
                       <div className="flex justify-between items-center text-sm">
                         <span className="text-secondary">Date</span>
                         <span className="font-bold text-on-surface">
-                          Wednesday, Sep {selectedDay}
+                          {formatReservationDate(selectedDate)}
                         </span>
                       </div>
                       <div className="flex justify-between items-center text-sm">
@@ -724,7 +791,7 @@ export const ReservationView = ({
                             DATE & TIME
                           </p>
                           <p className="text-on-surface font-semibold text-sm">
-                            Wednesday, Sep {selectedDay} • {selectedTime}
+                            {formatReservationDate(selectedDate)} • {selectedTime}
                           </p>
                         </div>
                       </div>
@@ -822,7 +889,7 @@ export const ReservationView = ({
                             Date & Time
                           </p>
                           <p className="font-serif text-xl font-bold text-on-surface">
-                            Wednesday, Sep {selectedDay}
+                            {formatReservationDate(selectedDate)}
                           </p>
                           <p className="text-sm text-on-surface/70">
                             at {selectedTime}
@@ -930,9 +997,7 @@ export const ReservationView = ({
                   >
                     {isProcessing ? (
                       <>
-                        <span className="material-symbols-outlined animate-spin text-xl">
-                          sync
-                        </span>
+                        <Loader2 className="h-5 w-5 animate-spin" />
                         <span>Processing...</span>
                       </>
                     ) : (

@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
+import { Loader2 } from 'lucide-react';
 import { ReservationModal } from './components/ReservationModal';
 import { OrderOnlineModal } from './components/OrderOnlineModal';
 import { GalleryLightbox } from './components/GalleryLightbox';
@@ -170,7 +171,7 @@ function AppShell() {
   if (isLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background text-on-surface font-sans">
-        <span className="material-symbols-outlined animate-spin text-4xl text-primary">progress_activity</span>
+        <Loader2 className="h-10 w-10 animate-spin text-primary" />
       </div>
     );
   }

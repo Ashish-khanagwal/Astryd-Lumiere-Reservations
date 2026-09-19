@@ -13,8 +13,12 @@ import type {
   OrderPaymentMethod,
   OrderServiceType,
   OrderStatus,
+  Reservation,
+  ReservationAvailabilitySettings,
+  ReservationStatus,
   Restaurant,
   User,
+  WeekDay,
 } from '../types';
 
 export const RESTAURANT_ID = 'rest_lumiere';
@@ -312,6 +316,105 @@ function buildSeed(): MockDbShape {
         ]
       : [];
 
+  const buildReservation = (opts: {
+    id: string;
+    confirmationCode: string;
+    status: ReservationStatus;
+    date: string;
+    timeSlot: string;
+    partySize: number;
+    seatingPreference: string;
+    guestName: string;
+    guestEmail: string;
+    guestPhone: string;
+    specialRequests?: string;
+    newsletterOptIn?: boolean;
+    placedMinutesAgo: number;
+  }): Reservation => {
+    const placedAt = minutesAgo(opts.placedMinutesAgo);
+    return {
+      id: opts.id,
+      restaurantId: RESTAURANT_ID,
+      confirmationCode: opts.confirmationCode,
+      status: opts.status,
+      date: opts.date,
+      timeSlot: opts.timeSlot,
+      partySize: opts.partySize,
+      seatingPreference: opts.seatingPreference,
+      guestName: opts.guestName,
+      guestEmail: opts.guestEmail,
+      guestPhone: opts.guestPhone,
+      specialRequests: opts.specialRequests,
+      newsletterOptIn: opts.newsletterOptIn ?? false,
+      placedAt,
+      createdAt: placedAt,
+      updatedAt: placedAt,
+    };
+  };
+
+  const isoDate = (daysFromToday: number) => {
+    const d = new Date();
+    d.setDate(d.getDate() + daysFromToday);
+    return d.toISOString().slice(0, 10);
+  };
+
+  const reservations: Reservation[] = [
+    buildReservation({
+      id: 'reservation_1', confirmationCode: 'LUM-82910', status: 'confirmed',
+      date: isoDate(2), timeSlot: '19:00', partySize: 2, seatingPreference: 'Window',
+      guestName: 'Sarah Chen', guestEmail: 'sarah.chen@example.com', guestPhone: '+44 7700 900001',
+      newsletterOptIn: true, placedMinutesAgo: 40,
+    }),
+    buildReservation({
+      id: 'reservation_2', confirmationCode: 'LUM-82911', status: 'confirmed',
+      date: isoDate(0), timeSlot: '20:15', partySize: 4, seatingPreference: 'Booth',
+      guestName: 'Marcus Reid', guestEmail: 'marcus.reid@example.com', guestPhone: '+44 7700 900002',
+      specialRequests: 'Anniversary dinner, quiet table if possible.', placedMinutesAgo: 120,
+    }),
+    buildReservation({
+      id: 'reservation_3', confirmationCode: 'LUM-82912', status: 'seated',
+      date: isoDate(0), timeSlot: '13:30', partySize: 2, seatingPreference: 'Bar',
+      guestName: 'Aiko Tanaka', guestEmail: 'aiko.t@example.com', guestPhone: '+44 7700 900003',
+      placedMinutesAgo: 90,
+    }),
+    buildReservation({
+      id: 'reservation_4', confirmationCode: 'LUM-82913', status: 'completed',
+      date: isoDate(-1), timeSlot: '18:30', partySize: 6, seatingPreference: 'Large Group (8+)',
+      guestName: 'Oliver Bennett', guestEmail: 'oliver.b@example.com', guestPhone: '+44 7700 900004',
+      placedMinutesAgo: 1600,
+    }),
+    buildReservation({
+      id: 'reservation_5', confirmationCode: 'LUM-82914', status: 'cancelled',
+      date: isoDate(-2), timeSlot: '21:00', partySize: 2, seatingPreference: 'Window',
+      guestName: 'Priya Anand', guestEmail: 'priya.a@example.com', guestPhone: '+44 7700 900005',
+      placedMinutesAgo: 2900,
+    }),
+    buildReservation({
+      id: 'reservation_6', confirmationCode: 'LUM-82915', status: 'no_show',
+      date: isoDate(-3), timeSlot: '19:45', partySize: 3, seatingPreference: 'Booth',
+      guestName: 'James Whitmore', guestEmail: 'james.w@example.com', guestPhone: '+44 7700 900006',
+      placedMinutesAgo: 4200,
+    }),
+    buildReservation({
+      id: 'reservation_7', confirmationCode: 'LUM-82916', status: 'confirmed',
+      date: isoDate(5), timeSlot: '12:00', partySize: 2, seatingPreference: 'Window',
+      guestName: 'Eleanor Cross', guestEmail: 'eleanor.c@example.com', guestPhone: '+44 7700 900007',
+      placedMinutesAgo: 30,
+    }),
+  ];
+
+  const AFTERNOON_TIMES = ['12:00', '13:30', '14:45', '15:30'];
+  const EVENING_TIMES = ['18:30', '19:00', '20:15', '21:00', '21:45', '22:30'];
+  const WEEK_DAYS: WeekDay[] = ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'];
+
+  const reservationAvailabilitySettings: ReservationAvailabilitySettings = {
+    restaurantId: RESTAURANT_ID,
+    days: WEEK_DAYS.map((day) => ({
+      day,
+      slots: [...AFTERNOON_TIMES, ...EVENING_TIMES].map((time) => ({ time, isOpen: true })),
+    })),
+  };
+
   const brandSettings: BrandSettings = {
     restaurantId: RESTAURANT_ID,
     restaurantName: 'Lumière',
@@ -449,6 +552,8 @@ function buildSeed(): MockDbShape {
     addons,
     offers,
     orders,
+    reservations,
+    reservationAvailability: { [RESTAURANT_ID]: reservationAvailabilitySettings },
   };
 }
 
