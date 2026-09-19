@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { NavLink, useLocation } from 'react-router-dom';
 import {
   LayoutDashboard,
@@ -18,7 +18,6 @@ import {
   Users,
   Sparkles,
   X,
-  ChevronDown,
   PanelLeftClose,
   PanelLeftOpen,
   ExternalLink,
@@ -42,83 +41,9 @@ interface NavGroup {
   title: string;
   items: NavItem[];
   visible: boolean;
-  flat?: boolean;
 }
 
 const COLLAPSED_STORAGE_KEY = 'admin_sidebar_collapsed';
-const EXPANDED_GROUPS_STORAGE_KEY = 'admin_sidebar_expanded_groups';
-
-function loadExpandedGroups(): Set<string> {
-  try {
-    const raw = localStorage.getItem(EXPANDED_GROUPS_STORAGE_KEY);
-    if (raw) return new Set(JSON.parse(raw));
-  } catch {
-    /* ignore */
-  }
-  return new Set(['website', 'menu', 'restaurant', 'settings']);
-}
-
-function saveExpandedGroups(groups: Set<string>) {
-  localStorage.setItem(EXPANDED_GROUPS_STORAGE_KEY, JSON.stringify([...groups]));
-}
-
-function CollapsibleGroup({
-  label,
-  itemCount,
-  hasActiveChild,
-  isExpanded,
-  onToggle,
-  children,
-}: {
-  label: string;
-  itemCount: number;
-  hasActiveChild: boolean;
-  isExpanded: boolean;
-  onToggle: () => void;
-  children: ReactNode;
-}) {
-  const innerRef = useRef<HTMLDivElement>(null);
-  const [measuredHeight, setMeasuredHeight] = useState<number | undefined>(undefined);
-
-  useEffect(() => {
-    if (!innerRef.current) return;
-    const ro = new ResizeObserver(([entry]) => setMeasuredHeight(entry.contentRect.height));
-    ro.observe(innerRef.current);
-    return () => ro.disconnect();
-  }, []);
-
-  return (
-    <div>
-      <button
-        type="button"
-        onClick={onToggle}
-        className={`flex w-full items-center gap-1.5 rounded-lg px-3 py-1.5 transition-colors select-none ${
-          hasActiveChild ? 'text-primary' : 'text-secondary hover:text-on-surface'
-        }`}
-      >
-        <span className="flex-1 text-left text-[11px] font-bold uppercase tracking-widest">{label}</span>
-        {!isExpanded && itemCount > 0 && (
-          <span
-            className={`rounded-full min-w-[16px] text-center px-1 py-px text-[9px] font-semibold leading-tight ${
-              hasActiveChild ? 'bg-primary/10 text-primary' : 'bg-surface-container-high text-secondary'
-            }`}
-          >
-            {itemCount}
-          </span>
-        )}
-        <ChevronDown className={`h-3 w-3 shrink-0 transition-transform duration-200 ${!isExpanded ? '-rotate-90' : ''}`} />
-      </button>
-      <div
-        className="overflow-hidden transition-[max-height,opacity] duration-200 ease-in-out"
-        style={{ maxHeight: isExpanded ? measuredHeight ?? 1000 : 0, opacity: isExpanded ? 1 : 0 }}
-      >
-        <div ref={innerRef} className="space-y-0.5 pt-1 pb-1">
-          {children}
-        </div>
-      </div>
-    </div>
-  );
-}
 
 export function Sidebar() {
   const perms = usePermissions();
@@ -126,14 +51,12 @@ export function Sidebar() {
   const { mobileOpen, closeMobile, searchQuery, setSearchQuery } = useSidebar();
 
   const [isCollapsed, setIsCollapsed] = useState<boolean>(() => localStorage.getItem(COLLAPSED_STORAGE_KEY) === 'true');
-  const [expandedGroups, setExpandedGroups] = useState<Set<string>>(loadExpandedGroups);
 
   const groups: NavGroup[] = useMemo(
     () => [
       {
         key: 'main',
         title: '',
-        flat: true,
         visible: true,
         items: [
           { to: '/admin', label: 'Dashboard', icon: LayoutDashboard, end: true },
@@ -202,24 +125,6 @@ export function Sidebar() {
     [location.pathname]
   );
 
-  const prevPathRef = useRef(location.pathname);
-  useEffect(() => {
-    if (location.pathname === prevPathRef.current) return;
-    prevPathRef.current = location.pathname;
-    for (const group of visibleGroups) {
-      if (group.flat) continue;
-      if (group.items.some((item) => isActive(item))) {
-        setExpandedGroups((prev) => {
-          if (prev.has(group.key)) return prev;
-          const next = new Set(prev).add(group.key);
-          saveExpandedGroups(next);
-          return next;
-        });
-        break;
-      }
-    }
-  }, [location.pathname, visibleGroups, isActive]);
-
   useEffect(() => {
     closeMobile();
   }, [location.pathname, closeMobile]);
@@ -227,16 +132,6 @@ export function Sidebar() {
   useEffect(() => {
     setSearchQuery('');
   }, [location.pathname, setSearchQuery]);
-
-  const toggleGroup = useCallback((key: string) => {
-    setExpandedGroups((prev) => {
-      const next = new Set(prev);
-      if (next.has(key)) next.delete(key);
-      else next.add(key);
-      saveExpandedGroups(next);
-      return next;
-    });
-  }, []);
 
   const toggleCollapse = useCallback(() => {
     setIsCollapsed((prev) => {
@@ -286,9 +181,6 @@ export function Sidebar() {
   const renderNav = (collapsed: boolean) => (
     <nav className={`flex-1 overflow-y-auto py-4 ${collapsed ? 'px-2 flex flex-col items-center gap-1' : 'px-3 space-y-1'}`}>
       {displayGroups.map((group, idx) => {
-        const hasActiveChild = group.items.some((item) => isActive(item));
-        const isSearching = searchQuery.trim().length > 0;
-
         if (collapsed) {
           return (
             <div key={group.key} className="flex flex-col items-center gap-1 w-full">
@@ -298,34 +190,13 @@ export function Sidebar() {
           );
         }
 
-        if (group.flat) {
-          return (
-            <div key={group.key} className="space-y-0.5 pb-2">
-              {group.items.map((item) => renderItem(item, false))}
-            </div>
-          );
-        }
-
-        if (isSearching) {
-          return (
-            <div key={group.key} className="pb-2">
-              <div className="px-3 mb-1.5 text-[11px] font-bold uppercase tracking-widest text-secondary">{group.title}</div>
-              <div className="space-y-0.5">{group.items.map((item) => renderItem(item, false))}</div>
-            </div>
-          );
-        }
-
         return (
-          <CollapsibleGroup
-            key={group.key}
-            label={group.title}
-            itemCount={group.items.length}
-            hasActiveChild={hasActiveChild}
-            isExpanded={expandedGroups.has(group.key)}
-            onToggle={() => toggleGroup(group.key)}
-          >
-            {group.items.map((item) => renderItem(item, false))}
-          </CollapsibleGroup>
+          <div key={group.key} className="pb-2">
+            {group.title && (
+              <div className="px-3 mb-1.5 text-[11px] font-bold uppercase tracking-widest text-secondary">{group.title}</div>
+            )}
+            <div className="space-y-0.5">{group.items.map((item) => renderItem(item, false))}</div>
+          </div>
         );
       })}
     </nav>
