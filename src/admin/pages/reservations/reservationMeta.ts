@@ -29,7 +29,9 @@ export const WEEK_DAY_LABEL: Record<WeekDay, string> = {
   sun: 'Sunday',
 };
 
-export function formatTimeSlot(time: string): string {
+export function formatTimeSlot(time: string | undefined | null): string {
+  if (!time || !/^(?:[01]\d|2[0-3]):[0-5]\d$/.test(time)) return '—';
+
   const [h, m] = time.split(':').map(Number);
   const period = h >= 12 ? 'PM' : 'AM';
   const hour12 = h % 12 === 0 ? 12 : h % 12;

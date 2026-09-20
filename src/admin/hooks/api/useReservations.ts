@@ -7,7 +7,7 @@ export function useReservations() {
   const { restaurantId } = useRestaurant();
   return useQuery({
     queryKey: ['admin-reservations', restaurantId],
-    queryFn: () => reservationService.getReservations(restaurantId),
+    queryFn: () => reservationService.getReservations(),
     refetchInterval: 15000,
   });
 }
@@ -19,11 +19,10 @@ function useInvalidateReservations() {
 }
 
 export function useUpdateReservationStatus() {
-  const { restaurantId } = useRestaurant();
   const invalidate = useInvalidateReservations();
   return useMutation({
     mutationFn: ({ reservationId, status }: { reservationId: string; status: ReservationStatus }) =>
-      reservationService.updateReservationStatus(restaurantId, reservationId, status),
+      reservationService.updateReservationStatus(reservationId, status),
     onSuccess: invalidate,
   });
 }
