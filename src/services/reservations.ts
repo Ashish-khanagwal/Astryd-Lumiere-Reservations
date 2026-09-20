@@ -129,14 +129,105 @@ export async function createPublicReservation(
   };
 }
 
-export const getReservations = (restaurantId: string) =>
-  http.get<Reservation[]>(`/restaurants/${restaurantId}/reservations`);
+interface AdminReservationResponse {
+  id?: string;
+  businessId?: string;
+  business_id?: string;
+  confirmationCode?: string;
+  confirmation_code?: string;
+  status?: ReservationStatus;
+  booking?: {
+    date?: string;
+    timeSlot?: string;
+    time_slot?: string;
+    timeDisplay?: string;
+    time_display?: string;
+    partySize?: number;
+    party_size?: number;
+    seatingPreference?: string;
+    seating_preference?: string;
+  };
+  guest?: {
+    fullName?: string;
+    full_name?: string;
+    email?: string;
+    phone?: string;
+    specialRequests?: string;
+    special_requests?: string;
+    newsletterOptIn?: boolean;
+    newsletter_opt_in?: boolean;
+  };
+  createdAt?: string;
+  created_at?: string;
+  updatedAt?: string;
+  updated_at?: string;
+}
+
+interface AdminReservationListResponse {
+  reservations: AdminReservationResponse[];
+  total: number;
+  page: number;
+  limit: number;
+  pages: number;
+}
+
+function toTimeSlot(value: string | undefined): string {
+  if (!value) return '';
+
+  const twentyFourHour = /^(?:[01]\d|2[0-3]):[0-5]\d$/;
+  if (twentyFourHour.test(value)) return value;
+
+  const twelveHour = /^(\d{1,2}):([0-5]\d)\s*(AM|PM)$/i.exec(value.trim());
+  if (!twelveHour) return '';
+
+  const hour = Number(twelveHour[1]);
+  const minute = twelveHour[2];
+  const period = twelveHour[3].toUpperCase();
+  if (hour < 1 || hour > 12) return '';
+
+  const hour24 = (hour % 12) + (period === 'PM' ? 12 : 0);
+  return `${String(hour24).padStart(2, '0')}:${minute}`;
+}
+
+function mapAdminReservation(reservation: AdminReservationResponse): Reservation {
+  const booking = reservation.booking ?? {};
+  const guest = reservation.guest ?? {};
+  const createdAt = reservation.createdAt ?? reservation.created_at ?? '';
+  return {
+    id: reservation.id ?? '',
+    restaurantId: reservation.businessId ?? reservation.business_id ?? '',
+    confirmationCode: reservation.confirmationCode ?? reservation.confirmation_code ?? '',
+    status: reservation.status ?? 'confirmed',
+    date: booking.date ?? '',
+    timeSlot: toTimeSlot(booking.timeSlot ?? booking.time_slot ?? booking.timeDisplay ?? booking.time_display),
+    partySize: booking.partySize ?? booking.party_size ?? 0,
+    seatingPreference: booking.seatingPreference ?? booking.seating_preference ?? '',
+    guestName: guest.fullName ?? guest.full_name ?? '',
+    guestEmail: guest.email ?? '',
+    guestPhone: guest.phone ?? '',
+    specialRequests: guest.specialRequests ?? guest.special_requests,
+    newsletterOptIn: guest.newsletterOptIn ?? guest.newsletter_opt_in ?? false,
+    placedAt: createdAt,
+    createdAt,
+    updatedAt: reservation.updatedAt ?? reservation.updated_at ?? createdAt,
+  };
+}
+
+export async function getReservations(): Promise<Reservation[]> {
+  const response = await http.get<AdminReservationListResponse>('/admin/reservations?limit=100');
+  return response.reservations.map(mapAdminReservation);
+}
 
 export const createReservation = (restaurantId: string, payload: Partial<Reservation>) =>
   http.post<Reservation>(`/restaurants/${restaurantId}/reservations`, payload);
 
-export const updateReservationStatus = (restaurantId: string, reservationId: string, status: ReservationStatus) =>
-  http.patch<Reservation>(`/restaurants/${restaurantId}/reservations/${reservationId}/status`, { status });
+export async function updateReservationStatus(reservationId: string, status: ReservationStatus): Promise<Reservation> {
+  const response = await http.patch<{ reservation: AdminReservationResponse }>(
+    `/admin/reservations/${reservationId}/status`,
+    { status },
+  );
+  return mapAdminReservation(response.reservation);
+}
 
 export const getReservationAvailability = (restaurantId: string) =>
   http.get<ReservationAvailabilitySettings>(`/restaurants/${restaurantId}/reservation-availability`);
