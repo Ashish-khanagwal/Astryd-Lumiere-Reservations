@@ -411,8 +411,14 @@ function buildSeed(): MockDbShape {
     restaurantId: RESTAURANT_ID,
     days: WEEK_DAYS.map((day) => ({
       day,
+      isClosed: false,
+      openTime: '12:00',
+      closeTime: '23:00',
+      slotDurationMins: 90,
+      maxPerSlot: 4,
       slots: [...AFTERNOON_TIMES, ...EVENING_TIMES].map((time) => ({ time, isOpen: true })),
     })),
+    blockedDates: [],
   };
 
   const brandSettings: BrandSettings = {

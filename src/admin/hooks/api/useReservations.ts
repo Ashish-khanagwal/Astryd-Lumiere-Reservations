@@ -1,7 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useRestaurant } from '../../../context/RestaurantContext';
 import * as reservationService from '../../../services/reservations';
-import type { ReservationDayAvailability, ReservationStatus } from '../../../types';
+import type { ReservationAvailabilitySettings, ReservationStatus } from '../../../types';
 
 export function useReservations() {
   const { restaurantId } = useRestaurant();
@@ -31,7 +31,7 @@ export function useReservationAvailability() {
   const { restaurantId } = useRestaurant();
   return useQuery({
     queryKey: ['admin-reservation-availability', restaurantId],
-    queryFn: () => reservationService.getReservationAvailability(restaurantId),
+    queryFn: () => reservationService.getReservationAvailability(),
   });
 }
 
@@ -39,8 +39,8 @@ export function useUpdateReservationAvailability() {
   const { restaurantId } = useRestaurant();
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: (days: ReservationDayAvailability[]) =>
-      reservationService.updateReservationAvailability(restaurantId, { days }),
+    mutationFn: (settings: Pick<ReservationAvailabilitySettings, 'days' | 'blockedDates'>) =>
+      reservationService.updateReservationAvailability(settings),
     onSuccess: () =>
       queryClient.invalidateQueries({ queryKey: ['admin-reservation-availability', restaurantId] }),
   });

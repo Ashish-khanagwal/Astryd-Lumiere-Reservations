@@ -171,6 +171,23 @@ interface AdminReservationListResponse {
   pages: number;
 }
 
+interface AdminAvailabilityResponse {
+  business_id: string;
+  operating_hours: Array<{
+    day_of_week: number;
+    open_time: string;
+    close_time: string;
+    slot_duration_mins: number;
+    max_per_slot: number;
+    is_closed: boolean;
+    disabled_slots?: string[];
+    slots?: Array<{ time: string; is_open: boolean }>;
+  }>;
+  blocked_dates: Array<{ date: string; reason?: string }>;
+}
+
+const WEEK_DAYS = ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'] as const;
+
 function toTimeSlot(value: string | undefined): string {
   if (!value) return '';
 
@@ -229,10 +246,47 @@ export async function updateReservationStatus(reservationId: string, status: Res
   return mapAdminReservation(response.reservation);
 }
 
-export const getReservationAvailability = (restaurantId: string) =>
-  http.get<ReservationAvailabilitySettings>(`/restaurants/${restaurantId}/reservation-availability`);
+function mapAvailabilitySettings(response: AdminAvailabilityResponse): ReservationAvailabilitySettings {
+  return {
+    restaurantId: response.business_id,
+    days: response.operating_hours.map((hours) => ({
+      day: WEEK_DAYS[hours.day_of_week],
+      isClosed: hours.is_closed,
+      openTime: hours.open_time,
+      closeTime: hours.close_time,
+      slotDurationMins: hours.slot_duration_mins,
+      maxPerSlot: hours.max_per_slot,
+      slots: (hours.slots ?? []).map((slot) => ({ time: slot.time, isOpen: slot.is_open })),
+    })),
+    blockedDates: (response.blocked_dates ?? []).map((blockedDate) => ({
+      date: blockedDate.date,
+      reason: blockedDate.reason ?? '',
+    })),
+  };
+}
 
-export const updateReservationAvailability = (
-  restaurantId: string,
-  payload: Pick<ReservationAvailabilitySettings, 'days'>,
-) => http.put<ReservationAvailabilitySettings>(`/restaurants/${restaurantId}/reservation-availability`, payload);
+export async function getReservationAvailability(): Promise<ReservationAvailabilitySettings> {
+  const response = await http.get<AdminAvailabilityResponse>('/admin/reservation-availability');
+  return mapAvailabilitySettings(response);
+}
+
+export async function updateReservationAvailability(
+  settings: Pick<ReservationAvailabilitySettings, 'days' | 'blockedDates'>,
+): Promise<ReservationAvailabilitySettings> {
+  const response = await http.put<AdminAvailabilityResponse>('/admin/reservation-availability', {
+    operating_hours: settings.days.map((day) => ({
+      day_of_week: WEEK_DAYS.indexOf(day.day),
+      open_time: day.openTime,
+      close_time: day.closeTime,
+      slot_duration_mins: day.slotDurationMins,
+      max_per_slot: day.maxPerSlot,
+      is_closed: day.isClosed,
+      disabled_slots: day.slots.filter((slot) => !slot.isOpen).map((slot) => slot.time),
+    })),
+    blocked_dates: settings.blockedDates.map((blockedDate) => ({
+      date: blockedDate.date,
+      reason: blockedDate.reason,
+    })),
+  });
+  return mapAvailabilitySettings(response);
+}
