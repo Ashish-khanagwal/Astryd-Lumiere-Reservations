@@ -1,9 +1,11 @@
-import React, { useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { Loader2 } from "lucide-react";
-import { createReservation } from "../services/reservations";
+import { ApiError } from "../services/http";
+import { createPublicReservation, getPublicAvailability } from "../services/reservations";
 import { useRestaurant } from "../context/RestaurantContext";
 import { Header } from "./Header";
 import { Footer } from "./Footer";
+import type { PublicAvailability } from "../types";
 
 function startOfDay(d: Date) {
   return new Date(d.getFullYear(), d.getMonth(), d.getDate());
@@ -81,7 +83,7 @@ export const ReservationView = ({
   const today = useMemo(() => startOfDay(new Date()), []);
   const [displayMonth, setDisplayMonth] = useState(() => new Date(today.getFullYear(), today.getMonth(), 1));
   const [selectedDate, setSelectedDate] = useState<Date>(today);
-  const [selectedTime, setSelectedTime] = useState("6:30 PM");
+  const [selectedTimeSlot, setSelectedTimeSlot] = useState<string | null>(null);
   const [selectedSeating, setSelectedSeating] = useState<string | null>(
     "Indoor",
   );
@@ -98,6 +100,9 @@ export const ReservationView = ({
   const [termsAgreed, setTermsAgreed] = useState(true);
   const [isProcessing, setIsProcessing] = useState(false);
   const [confirmationCode, setConfirmationCode] = useState("LUM-82910");
+  const [availability, setAvailability] = useState<PublicAvailability["slots"]>({ afternoon: [], evening: [] });
+  const [availabilityLoading, setAvailabilityLoading] = useState(true);
+  const [availabilityError, setAvailabilityError] = useState<string | null>(null);
 
   const calendarCells = useMemo(() => getCalendarCells(displayMonth), [displayMonth]);
   const isPrevMonthDisabled =
@@ -108,21 +113,33 @@ export const ReservationView = ({
   };
   const goToNextMonth = () => setDisplayMonth((d) => new Date(d.getFullYear(), d.getMonth() + 1, 1));
 
-  const afternoonTimes = [
-    { time: "12:00 PM", available: true },
-    { time: "1:30 PM", available: true },
-    { time: "2:45 PM", available: true },
-    { time: "3:30 PM", available: false },
-  ];
+  const selectedDateIso = toIsoDate(selectedDate);
+  const selectedTimeDisplay = useMemo(
+    () => [...availability.afternoon, ...availability.evening].find((slot) => slot.time24 === selectedTimeSlot)?.time ?? "Select a time",
+    [availability, selectedTimeSlot],
+  );
 
-  const eveningTimes = [
-    { time: "6:30 PM", available: true },
-    { time: "7:00 PM", available: true },
-    { time: "8:15 PM", available: true },
-    { time: "9:00 PM", available: true },
-    { time: "9:45 PM", available: true },
-    { time: "10:30 PM", available: false },
-  ];
+  useEffect(() => {
+    let active = true;
+    setAvailabilityLoading(true);
+    setAvailabilityError(null);
+    setSelectedTimeSlot(null);
+    getPublicAvailability(restaurantId, selectedDateIso, partySize)
+      .then((result) => {
+        if (!active) return;
+        setAvailability(result.slots);
+        if (!result.available) setAvailabilityError("No tables are available for this date and party size.");
+      })
+      .catch((error: unknown) => {
+        if (!active) return;
+        setAvailability({ afternoon: [], evening: [] });
+        setAvailabilityError(error instanceof Error ? error.message : "Unable to load available times. Please try again.");
+      })
+      .finally(() => {
+        if (active) setAvailabilityLoading(false);
+      });
+    return () => { active = false; };
+  }, [partySize, restaurantId, selectedDateIso]);
 
   const seatingOptions = [
     {
@@ -169,18 +186,13 @@ export const ReservationView = ({
   const handleFinalConfirm = async () => {
     setIsProcessing(true);
     try {
-      const timeSlot = selectedTime.replace(
-        /(\d+):(\d+) (AM|PM)/,
-        (_, h, m, period) => {
-          let hour = parseInt(h);
-          if (period === "PM" && hour !== 12) hour += 12;
-          if (period === "AM" && hour === 12) hour = 0;
-          return `${String(hour).padStart(2, "0")}:${m}`;
-        },
-      );
-      const reservation = await createReservation(restaurantId, {
-        date: toIsoDate(selectedDate),
-        timeSlot,
+      if (!selectedTimeSlot) {
+        onToast("Please select an available time before confirming your reservation.");
+        return;
+      }
+      const reservation = await createPublicReservation(restaurantId, {
+        date: selectedDateIso,
+        timeSlot: selectedTimeSlot,
         partySize,
         seatingPreference: selectedSeating || "Indoor",
         guestName: fullName,
@@ -192,8 +204,17 @@ export const ReservationView = ({
       setConfirmationCode(reservation.confirmationCode);
       setStep(5);
       onToast(`Reservation confirmed! Code: ${reservation.confirmationCode}`);
-    } catch (error: any) {
-      onToast(error.message || "Something went wrong. Please try again.");
+    } catch (error: unknown) {
+      if (error instanceof ApiError && error.status === 409) {
+        onToast("That time slot is no longer available. Please choose another time.");
+        setStep(1);
+      } else if (error instanceof ApiError && error.status === 400) {
+        onToast(error.message || "Please check your reservation details and try again.");
+      } else if (error instanceof ApiError && error.status >= 500) {
+        onToast("The reservation service is temporarily unavailable. Please try again shortly.");
+      } else {
+        onToast(error instanceof Error ? error.message : "Unable to confirm your reservation. Please try again.");
+      }
     } finally {
       setIsProcessing(false);
     }
@@ -363,20 +384,28 @@ export const ReservationView = ({
                     <span>Available Time</span>
                   </h3>
                   <div className="space-y-6 max-h-[380px] overflow-y-auto pr-1 font-sans">
+                    {availabilityLoading && (
+                      <div className="flex items-center gap-2 text-sm text-secondary py-4">
+                        <Loader2 className="h-4 w-4 animate-spin" /> Loading available times…
+                      </div>
+                    )}
+                    {availabilityError && !availabilityLoading && (
+                      <p className="text-sm text-secondary py-4">{availabilityError}</p>
+                    )}
                     <div>
                       <h4 className="text-xs font-bold text-secondary uppercase tracking-widest mb-3">
                         Afternoon
                       </h4>
                       <div className="grid grid-cols-2 gap-3">
-                        {afternoonTimes.map((t) => (
+                        {availability.afternoon.map((t) => (
                           <button
-                            key={t.time}
+                            key={t.time24}
                             disabled={!t.available}
-                            onClick={() => setSelectedTime(t.time)}
+                            onClick={() => setSelectedTimeSlot(t.time24)}
                             className={`py-3 px-4 rounded-xl font-medium text-sm transition-all ${
                               !t.available
                                 ? "bg-surface-container text-secondary/40 cursor-not-allowed border border-transparent"
-                                : selectedTime === t.time
+                                : selectedTimeSlot === t.time24
                                   ? "border-2 border-primary bg-primary text-on-primary font-bold shadow-md scale-105"
                                   : "border border-primary/20 bg-primary/5 text-primary hover:bg-primary hover:text-white"
                             }`}
@@ -391,15 +420,15 @@ export const ReservationView = ({
                         Evening
                       </h4>
                       <div className="grid grid-cols-2 gap-3">
-                        {eveningTimes.map((t) => (
+                        {availability.evening.map((t) => (
                           <button
-                            key={t.time}
+                            key={t.time24}
                             disabled={!t.available}
-                            onClick={() => setSelectedTime(t.time)}
+                            onClick={() => setSelectedTimeSlot(t.time24)}
                             className={`py-3 px-4 rounded-xl font-medium text-sm transition-all ${
                               !t.available
                                 ? "bg-surface-container text-secondary/40 cursor-not-allowed border border-transparent"
-                                : selectedTime === t.time
+                                : selectedTimeSlot === t.time24
                                   ? "border-2 border-primary bg-primary text-on-primary font-bold shadow-md scale-105"
                                   : "border border-primary/20 bg-primary/5 text-primary hover:bg-primary hover:text-white"
                             }`}
@@ -448,7 +477,7 @@ export const ReservationView = ({
                       <div className="flex justify-between items-center text-sm">
                         <span className="text-secondary">Time</span>
                         <span className="font-bold text-on-surface">
-                          {selectedTime}
+                          {selectedTimeDisplay}
                         </span>
                       </div>
                     </div>
@@ -471,8 +500,9 @@ export const ReservationView = ({
                     </div>
 
                     <button
+                      disabled={!selectedTimeSlot || availabilityLoading}
                       onClick={() => setStep(2)}
-                      className="w-full py-4 bg-on-surface text-surface rounded-xl font-bold text-sm tracking-wide uppercase hover:bg-on-surface/90 transition-all duration-300 shadow-xl active:scale-[0.98] flex items-center justify-center gap-2 group"
+                      className="w-full py-4 bg-on-surface text-surface rounded-xl font-bold text-sm tracking-wide uppercase hover:bg-on-surface/90 transition-all duration-300 shadow-xl active:scale-[0.98] flex items-center justify-center gap-2 group disabled:opacity-50 disabled:cursor-not-allowed"
                     >
                       <span>Continue to Seating</span>
                       <span className="material-symbols-outlined transition-transform group-hover:translate-x-1">
@@ -791,7 +821,7 @@ export const ReservationView = ({
                             DATE & TIME
                           </p>
                           <p className="text-on-surface font-semibold text-sm">
-                            {formatReservationDate(selectedDate)} • {selectedTime}
+                            {formatReservationDate(selectedDate)} • {selectedTimeDisplay}
                           </p>
                         </div>
                       </div>
@@ -892,7 +922,7 @@ export const ReservationView = ({
                             {formatReservationDate(selectedDate)}
                           </p>
                           <p className="text-sm text-on-surface/70">
-                            at {selectedTime}
+                            at {selectedTimeDisplay}
                           </p>
                         </div>
                       </div>

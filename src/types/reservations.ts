@@ -33,3 +33,44 @@ export interface ReservationDayAvailability {
 export interface ReservationAvailabilitySettings extends Tenant {
   days: ReservationDayAvailability[];
 }
+
+/** Public booking form values. Kept separate from the admin reservation model. */
+export interface PublicReservationInput {
+  date: string;
+  timeSlot: string;
+  partySize: number;
+  seatingPreference: string;
+  guestName: string;
+  guestEmail: string;
+  guestPhone: string;
+  specialRequests: string;
+  newsletterOptIn: boolean;
+}
+
+export interface PublicReservationConfirmation {
+  confirmationCode: string;
+  date: string;
+  timeSlot: string;
+  timeDisplay: string;
+  partySize: number;
+  seatingPreference: string;
+  guestName: string;
+  guestEmail: string;
+}
+
+export interface PublicAvailabilitySlot {
+  time: string;
+  time24: string;
+  available: boolean;
+}
+
+export interface PublicAvailability {
+  available: boolean;
+  date?: string;
+  partySize?: number;
+  reason?: string;
+  slots: {
+    afternoon: PublicAvailabilitySlot[];
+    evening: PublicAvailabilitySlot[];
+  };
+}
