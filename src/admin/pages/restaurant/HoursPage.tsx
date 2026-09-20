@@ -1,7 +1,8 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { Clock } from 'lucide-react';
 import { useBrandDraft, usePublishWebsite, useUpdateBrand, useWebsiteStatus } from '../../hooks/api/useWebsite';
 import { useAdminToast } from '../../context/AdminToastContext';
+import { useAutoSave } from '../../hooks/useAutoSave';
 import { PublishBar } from '../../components/PublishBar';
 import { PageHeader } from '../../components/PageHeader';
 import { ToggleField } from '../../components/forms/ToggleField';
@@ -38,10 +39,25 @@ export function HoursPage() {
   const publishWebsite = usePublishWebsite();
   const { showToast } = useAdminToast();
   const [businessHours, setBusinessHours] = useState<BusinessHoursEntry[]>(DEFAULT_BUSINESS_HOURS);
+  const hydratedRef = useRef(false);
 
   useEffect(() => {
-    if (!isLoading) setBusinessHours(normalizeBusinessHours(brand?.businessHours));
+    if (isLoading || hydratedRef.current) return;
+    setBusinessHours(normalizeBusinessHours(brand?.businessHours));
+    hydratedRef.current = true;
   }, [brand?.businessHours, isLoading]);
+
+  const persistedHours = normalizeBusinessHours(brand?.businessHours);
+  const isDirty = hydratedRef.current && JSON.stringify(businessHours) !== JSON.stringify(persistedHours);
+  const persistDraft = useCallback(async () => {
+    await updateBrand.mutateAsync({ businessHours });
+  }, [businessHours, updateBrand]);
+  const { status: autoSaveStatus } = useAutoSave({
+    isDirty,
+    value: businessHours,
+    onSave: persistDraft,
+    enabled: hydratedRef.current,
+  });
 
   const header = <PageHeader icon={Clock} title="Opening Hours" description="Set the weekly hours shown on your public website." />;
 
@@ -54,9 +70,6 @@ export function HoursPage() {
     );
   }
 
-  const persistedHours = normalizeBusinessHours(brand?.businessHours);
-  const isDirty = JSON.stringify(businessHours) !== JSON.stringify(persistedHours);
-
   const updateDay = (day: BusinessHoursEntry['day'], patch: Partial<BusinessHoursEntry>) => {
     setBusinessHours((currentHours) =>
       currentHours.map((entry) => (entry.day === day ? { ...entry, ...patch } : entry)),
@@ -64,7 +77,7 @@ export function HoursPage() {
   };
 
   const handleSaveDraft = async () => {
-    await updateBrand.mutateAsync({ businessHours });
+    await persistDraft();
     showToast('Opening hours saved.');
   };
 
@@ -83,6 +96,7 @@ export function HoursPage() {
         onSaveDraft={handleSaveDraft}
         onPublish={handlePublish}
         lastPublishedAt={website?.publishedAt}
+        autoSaveStatus={autoSaveStatus}
       />
 
       <div className="space-y-6 max-w-4xl">

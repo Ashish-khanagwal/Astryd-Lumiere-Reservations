@@ -1,5 +1,7 @@
 import { useState } from 'react';
 import { PreviewModal } from './PreviewModal';
+import { useDraftSave, draftPreviewUrl } from '../context/DraftSaveContext';
+import type { AutoSaveStatus } from '../hooks/useAutoSave';
 
 interface PublishBarProps {
   isDirty: boolean;
@@ -9,35 +11,72 @@ interface PublishBarProps {
   onPublish: () => void;
   lastPublishedAt?: string | null;
   previewUrl?: string;
+  autoSaveStatus?: AutoSaveStatus;
 }
 
-export function PublishBar({ isDirty, isSaving, isPublishing, onSaveDraft, onPublish, lastPublishedAt, previewUrl }: PublishBarProps) {
+export function PublishBar({
+  isDirty,
+  isSaving,
+  isPublishing,
+  onSaveDraft,
+  onPublish,
+  lastPublishedAt,
+  previewUrl,
+  autoSaveStatus = 'idle',
+}: PublishBarProps) {
   const [isPreviewOpen, setIsPreviewOpen] = useState(false);
+  const [activePreviewUrl, setActivePreviewUrl] = useState(previewUrl ?? draftPreviewUrl());
+  const [isPreviewing, setIsPreviewing] = useState(false);
+  const { flushDraft } = useDraftSave();
+
+  const saving = isSaving || autoSaveStatus === 'saving' || isPreviewing;
+
+  const statusLabel = (() => {
+    if (autoSaveStatus === 'error') return 'Couldn’t save changes. Retrying…';
+    if (saving) return 'Saving…';
+    if (isDirty) return 'Unsaved changes';
+    if (autoSaveStatus === 'saved') return 'All changes saved';
+    return lastPublishedAt ? `Last published ${new Date(lastPublishedAt).toLocaleString()}` : 'Not published yet';
+  })();
+
+  const handlePreview = async () => {
+    setIsPreviewing(true);
+    try {
+      await flushDraft();
+      setActivePreviewUrl(previewUrl ?? draftPreviewUrl());
+      setIsPreviewOpen(true);
+    } finally {
+      setIsPreviewing(false);
+    }
+  };
 
   return (
     <>
       <div className="sticky top-0 z-30 flex flex-wrap items-center justify-between gap-3 bg-surface/95 backdrop-blur-md border-b border-outline-variant/20 px-4 sm:px-6 lg:px-8 py-3 -mx-4 sm:-mx-6 lg:-mx-8 mb-6">
         <div className="text-xs text-secondary">
-          {lastPublishedAt ? `Last published ${new Date(lastPublishedAt).toLocaleString()}` : 'Not published yet'}
-          {isDirty && <span className="ml-2 text-amber-700 font-semibold">• Unsaved changes</span>}
+          {statusLabel}
+          {lastPublishedAt && (isDirty || saving || autoSaveStatus === 'saved') && (
+            <span className="ml-2 text-secondary/70">• Last published {new Date(lastPublishedAt).toLocaleString()}</span>
+          )}
         </div>
         <div className="flex items-center gap-2">
           <button
             onClick={onSaveDraft}
-            disabled={!isDirty || isSaving}
+            disabled={!isDirty || saving}
             className="px-4 py-2 rounded-xl border border-outline-variant/40 text-sm font-medium text-on-surface hover:bg-surface-container-high transition-colors disabled:opacity-40"
           >
-            {isSaving ? 'Saving...' : 'Save Draft'}
+            {saving ? 'Saving...' : 'Save Draft'}
           </button>
           <button
-            onClick={() => setIsPreviewOpen(true)}
-            className="px-4 py-2 rounded-xl border border-outline-variant/40 text-sm font-medium text-on-surface hover:bg-surface-container-high transition-colors"
+            onClick={() => void handlePreview()}
+            disabled={isPreviewing}
+            className="px-4 py-2 rounded-xl border border-outline-variant/40 text-sm font-medium text-on-surface hover:bg-surface-container-high transition-colors disabled:opacity-50"
           >
-            Preview
+            {isPreviewing ? 'Saving...' : 'Preview'}
           </button>
           <button
             onClick={onPublish}
-            disabled={isPublishing}
+            disabled={isPublishing || saving}
             className="px-5 py-2 rounded-xl bg-primary text-on-primary text-sm font-bold hover:bg-primary-container transition-colors disabled:opacity-50"
           >
             {isPublishing ? 'Publishing...' : 'Publish Changes'}
@@ -45,7 +84,7 @@ export function PublishBar({ isDirty, isSaving, isPublishing, onSaveDraft, onPub
         </div>
       </div>
 
-      <PreviewModal isOpen={isPreviewOpen} onClose={() => setIsPreviewOpen(false)} url={previewUrl} />
+      <PreviewModal isOpen={isPreviewOpen} onClose={() => setIsPreviewOpen(false)} url={activePreviewUrl} />
     </>
   );
 }

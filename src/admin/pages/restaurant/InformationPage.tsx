@@ -1,7 +1,8 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { Store } from 'lucide-react';
 import { useBrandDraft, usePublishWebsite, useUpdateBrand, useWebsiteStatus } from '../../hooks/api/useWebsite';
 import { useAdminToast } from '../../context/AdminToastContext';
+import { useAutoSave } from '../../hooks/useAutoSave';
 import { PublishBar } from '../../components/PublishBar';
 import { PageHeader } from '../../components/PageHeader';
 import { SectionCard } from '../../components/SectionCard';
@@ -18,8 +19,20 @@ export function InformationPage() {
 
   const [draft, setDraft] = useState<BrandSettings | null>(null);
   useEffect(() => {
-    if (!isLoading) setDraft((brand ?? {}) as BrandSettings);
+    if (!isLoading) setDraft((prev) => prev ?? ((brand ?? {}) as BrandSettings));
   }, [brand, isLoading]);
+
+  const isDirty = Boolean(draft && JSON.stringify(draft) !== JSON.stringify(brand));
+  const persistDraft = useCallback(async () => {
+    if (!draft) return;
+    await updateBrand.mutateAsync(draft);
+  }, [draft, updateBrand]);
+  const { status: autoSaveStatus } = useAutoSave({
+    isDirty,
+    value: draft,
+    onSave: persistDraft,
+    enabled: Boolean(draft),
+  });
 
   const header = <PageHeader icon={Store} title="Restaurant Information" description="The story and cuisine details shown across your public website." />;
 
@@ -32,10 +45,9 @@ export function InformationPage() {
     );
   }
   if (!draft) return null;
-  const isDirty = JSON.stringify(draft) !== JSON.stringify(brand);
 
   const handleSaveDraft = async () => {
-    await updateBrand.mutateAsync(draft);
+    await persistDraft();
     showToast('Draft saved.');
   };
   const handlePublish = async () => {
@@ -53,6 +65,7 @@ export function InformationPage() {
         onSaveDraft={handleSaveDraft}
         onPublish={handlePublish}
         lastPublishedAt={website?.publishedAt}
+        autoSaveStatus={autoSaveStatus}
       />
 
       <div className="space-y-6 max-w-4xl">

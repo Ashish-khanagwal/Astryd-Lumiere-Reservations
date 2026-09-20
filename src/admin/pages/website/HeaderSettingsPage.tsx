@@ -1,7 +1,8 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { PanelTop, AlignCenter, AlignRight } from 'lucide-react';
 import { useBrandDraft, usePublishWebsite, useUpdateBrand, useWebsiteStatus } from '../../hooks/api/useWebsite';
 import { useAdminToast } from '../../context/AdminToastContext';
+import { useAutoSave } from '../../hooks/useAutoSave';
 import { PublishBar } from '../../components/PublishBar';
 import { ImagePickerField } from '../../components/forms/ImagePickerField';
 import { ColorTokenSelect } from '../../components/forms/ColorTokenSelect';
@@ -28,8 +29,20 @@ export function HeaderSettingsPage() {
 
   const [draft, setDraft] = useState<BrandSettings | null>(null);
   useEffect(() => {
-    if (brand) setDraft(brand);
+    if (brand) setDraft((prev) => prev ?? brand);
   }, [brand]);
+
+  const isDirty = Boolean(draft && JSON.stringify(draft) !== JSON.stringify(brand));
+  const persistDraft = useCallback(async () => {
+    if (!draft) return;
+    await updateBrand.mutateAsync(draft);
+  }, [draft, updateBrand]);
+  const { status: autoSaveStatus } = useAutoSave({
+    isDirty,
+    value: draft,
+    onSave: persistDraft,
+    enabled: Boolean(draft),
+  });
 
   const header = <PageHeader icon={PanelTop} title="Header" description="Logo, restaurant name, and header appearance." />;
 
@@ -42,11 +55,10 @@ export function HeaderSettingsPage() {
     );
   }
 
-  const isDirty = JSON.stringify(draft) !== JSON.stringify(brand);
   const logoUrl = media?.items.find((m) => m.id === draft.logoMediaId)?.fileUrl;
 
   const handleSaveDraft = async () => {
-    await updateBrand.mutateAsync(draft);
+    await persistDraft();
     showToast('Draft saved.');
   };
 
@@ -65,6 +77,7 @@ export function HeaderSettingsPage() {
         onSaveDraft={handleSaveDraft}
         onPublish={handlePublish}
         lastPublishedAt={website?.publishedAt}
+        autoSaveStatus={autoSaveStatus}
       />
 
       <div className="space-y-6 max-w-4xl">

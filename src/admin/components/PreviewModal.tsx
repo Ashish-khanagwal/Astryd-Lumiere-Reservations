@@ -61,7 +61,7 @@ export function PreviewModal({ isOpen, onClose, url = '/?preview=true' }: Previe
             className="mx-auto overflow-hidden rounded-lg border border-outline-variant/40 bg-white transition-all"
             style={{ width: FRAME_WIDTH[device], height: '100%', minHeight: 480 }}
           >
-            <iframe title="Site preview" src={url} className="w-full h-full" style={{ border: 'none', minHeight: 480 }} />
+            <iframe key={url} title="Site preview" src={url} className="w-full h-full" style={{ border: 'none', minHeight: 480 }} />
           </div>
         </div>
       </div>

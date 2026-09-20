@@ -1,8 +1,9 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { ArrowLeft, Rows3 } from 'lucide-react';
 import { useHomepageDraft, usePublishWebsite, useUpdateSection, useWebsiteStatus } from '../../hooks/api/useWebsite';
 import { useAdminToast } from '../../context/AdminToastContext';
+import { useAutoSave } from '../../hooks/useAutoSave';
 import { PublishBar } from '../../components/PublishBar';
 import { FormSkeleton } from '../../components/Skeleton';
 import { SECTION_LABEL, SECTION_ICON } from './sectionMeta';
@@ -32,6 +33,34 @@ export function SectionEditorPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [serverSection?.id]);
 
+  const isDirty = Boolean(
+    draft && serverSection && JSON.stringify(draft) !== JSON.stringify(serverSection.content ?? {}),
+  );
+
+  const persistDraft = useCallback(async () => {
+    if (!type || !draft) return;
+    await updateSection.mutateAsync({ type, payload: { content: draft as unknown as Record<string, unknown> } });
+  }, [draft, type, updateSection]);
+
+  const { status: autoSaveStatus } = useAutoSave({
+    isDirty,
+    value: draft,
+    onSave: persistDraft,
+    enabled: Boolean(type && draft),
+  });
+
+  const sectionSnapshotRef = useRef({ type, draft, isDirty });
+  useLayoutEffect(() => {
+    const prev = sectionSnapshotRef.current;
+    if (prev.isDirty && prev.type && prev.draft && prev.type !== type) {
+      void updateSection.mutateAsync({
+        type: prev.type,
+        payload: { content: prev.draft as unknown as Record<string, unknown> },
+      });
+    }
+    sectionSnapshotRef.current = { type, draft, isDirty };
+  });
+
   if (!type || !serverSection || !draft) {
     return (
       <div className="max-w-4xl space-y-6">
@@ -41,10 +70,8 @@ export function SectionEditorPage() {
     );
   }
 
-  const isDirty = JSON.stringify(draft) !== JSON.stringify(serverSection.content ?? {});
-
   const handleSaveDraft = async () => {
-    await updateSection.mutateAsync({ type, payload: { content: draft as unknown as Record<string, unknown> } });
+    await persistDraft();
     showToast('Draft saved.');
   };
 
@@ -88,6 +115,7 @@ export function SectionEditorPage() {
         onSaveDraft={handleSaveDraft}
         onPublish={handlePublish}
         lastPublishedAt={website?.publishedAt}
+        autoSaveStatus={autoSaveStatus}
       />
 
       <div className="lg:flex lg:items-start lg:gap-6">
