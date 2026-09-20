@@ -41,7 +41,7 @@ export function HomepageSectionsPage() {
         renderItem={(section, dragHandle) => {
           const Icon = SECTION_ICON[section.type] ?? Rows3;
           return (
-            <div className={`flex items-center gap-3 rounded-xl border border-outline-variant/20 p-4 shadow-sm transition-all hover:shadow-md ${section.visible ? 'bg-surface' : 'bg-surface-container-low/50'}`}>
+            <div className={`flex items-center gap-3 rounded-xl border border-outline-variant/20 p-4 shadow-sm transition-all hover:shadow-md cursor-grab active:cursor-grabbing ${section.visible ? 'bg-surface' : 'bg-surface-container-low/50'}`}>
               {dragHandle}
               <div className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl ${section.visible ? 'bg-primary/10 text-primary' : 'bg-surface-container-high text-secondary'}`}>
                 <Icon className="h-5 w-5" />

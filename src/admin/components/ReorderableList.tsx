@@ -29,6 +29,7 @@ function SortableRow({ id, children }: { id: string; children: (dragHandle: Reac
     transform: CSS.Transform.toString(transform),
     transition,
     opacity: isDragging ? 0.6 : 1,
+    zIndex: isDragging ? 20 : undefined,
   };
 
   const dragHandle = (
@@ -44,7 +45,7 @@ function SortableRow({ id, children }: { id: string; children: (dragHandle: Reac
   );
 
   return (
-    <div ref={setNodeRef} style={style}>
+    <div ref={setNodeRef} style={style} className="touch-none" {...attributes} {...listeners}>
       {children(dragHandle)}
     </div>
   );
@@ -52,7 +53,10 @@ function SortableRow({ id, children }: { id: string; children: (dragHandle: Reac
 
 /** Generic drag-reorder wrapper (@dnd-kit) shared by section/category/menu-item/gallery reorder screens. */
 export function ReorderableList<T extends { id: string }>({ items, onReorder, renderItem }: ReorderableListProps<T>) {
-  const sensors = useSensors(useSensor(PointerSensor), useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }));
+  const sensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 6 } }),
+    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }),
+  );
 
   const handleDragEnd = (event: DragEndEvent) => {
     const { active, over } = event;

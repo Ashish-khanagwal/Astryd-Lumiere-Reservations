@@ -2,7 +2,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useRestaurant } from '../../../context/RestaurantContext';
 import * as homepageService from '../../../services/homepage';
 import * as websiteService from '../../../services/website';
-import type { BrandSettings, HomepageSectionType } from '../../../types';
+import type { BrandSettings, Homepage, HomepageSectionType } from '../../../types';
 
 export function useHomepageDraft() {
   const { restaurantId } = useRestaurant();
@@ -15,20 +15,64 @@ export function useHomepageDraft() {
 export function useReorderSections() {
   const { restaurantId } = useRestaurant();
   const queryClient = useQueryClient();
+  const queryKey = ['admin-homepage-draft', restaurantId] as const;
   return useMutation({
     mutationFn: (order: { sectionId: string; order: number }[]) =>
       homepageService.reorderHomepageSections(restaurantId, order),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['admin-homepage-draft', restaurantId] }),
+    onMutate: async (order) => {
+      await queryClient.cancelQueries({ queryKey });
+      const previous = queryClient.getQueryData<Homepage>(queryKey);
+      if (previous) {
+        const orderById = new Map(order.map((entry) => [entry.sectionId, entry.order]));
+        queryClient.setQueryData<Homepage>(queryKey, {
+          ...previous,
+          sections: previous.sections
+            .map((section) => ({ ...section, order: orderById.get(section.id) ?? section.order }))
+            .sort((a, b) => a.order - b.order),
+        });
+      }
+      return { previous };
+    },
+    onError: (_error, _order, context) => {
+      if (context?.previous) queryClient.setQueryData(queryKey, context.previous);
+    },
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey });
+    },
   });
 }
 
 export function useUpdateSection() {
   const { restaurantId } = useRestaurant();
   const queryClient = useQueryClient();
+  const queryKey = ['admin-homepage-draft', restaurantId] as const;
   return useMutation({
     mutationFn: ({ type, payload }: { type: HomepageSectionType; payload: { visible?: boolean; content?: Record<string, unknown> } }) =>
       homepageService.updateHomepageSection(restaurantId, type, payload),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['admin-homepage-draft', restaurantId] }),
+    onMutate: async ({ type, payload }) => {
+      await queryClient.cancelQueries({ queryKey });
+      const previous = queryClient.getQueryData<Homepage>(queryKey);
+      if (previous) {
+        queryClient.setQueryData<Homepage>(queryKey, {
+          ...previous,
+          sections: previous.sections.map((section) => {
+            if (section.type !== type) return section;
+            return {
+              ...section,
+              visible: payload.visible ?? section.visible,
+              content: payload.content ? { ...section.content, ...payload.content } : section.content,
+            } as typeof section;
+          }),
+        });
+      }
+      return { previous };
+    },
+    onError: (_error, _vars, context) => {
+      if (context?.previous) queryClient.setQueryData(queryKey, context.previous);
+    },
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey });
+    },
   });
 }
 
