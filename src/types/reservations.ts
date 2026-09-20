@@ -27,11 +27,22 @@ export interface ReservationTimeSlot {
 
 export interface ReservationDayAvailability {
   day: WeekDay;
+  isClosed: boolean;
+  openTime: string;
+  closeTime: string;
+  slotDurationMins: number;
+  maxPerSlot: number;
   slots: ReservationTimeSlot[];
+}
+
+export interface ReservationBlockedDate {
+  date: string;
+  reason: string;
 }
 
 export interface ReservationAvailabilitySettings extends Tenant {
   days: ReservationDayAvailability[];
+  blockedDates: ReservationBlockedDate[];
 }
 
 /** Public booking form values. Kept separate from the admin reservation model. */

@@ -8,8 +8,9 @@ import { Modal } from '../../components/Modal';
 import { Button } from '../../components/Button';
 import { DataTable } from '../../components/DataTable';
 import { ReservationStatusBadge } from '../../components/ReservationStatusBadge';
+import { ToggleField } from '../../components/forms/ToggleField';
 import { WEEK_DAY_LABEL, WEEK_DAY_ORDER, formatTimeSlot } from './reservationMeta';
-import type { Reservation, ReservationDayAvailability, ReservationStatus } from '../../../types';
+import type { Reservation, ReservationBlockedDate, ReservationDayAvailability, ReservationStatus } from '../../../types';
 
 type Tab = 'bookings' | 'availability';
 type HistoryMode = 'all' | 'day' | 'month' | 'range';
@@ -22,6 +23,24 @@ function toMonthInputValue(d: Date) {
 }
 
 const STATUS_OPTIONS: ReservationStatus[] = ['confirmed', 'seated', 'completed', 'cancelled', 'no_show'];
+
+function generateSlots(entry: ReservationDayAvailability): ReservationDayAvailability['slots'] {
+  const [openHour, openMinute] = entry.openTime.split(':').map(Number);
+  const [closeHour, closeMinute] = entry.closeTime.split(':').map(Number);
+  if ([openHour, openMinute, closeHour, closeMinute].some(Number.isNaN) || entry.slotDurationMins <= 0) return [];
+
+  const open = openHour * 60 + openMinute;
+  let close = closeHour * 60 + closeMinute;
+  if (close <= open) close += 24 * 60;
+  const existing = new Map(entry.slots.map((slot) => [slot.time, slot.isOpen]));
+  const slots: ReservationDayAvailability['slots'] = [];
+  for (let minute = open; minute < close; minute += entry.slotDurationMins) {
+    const normalized = minute % (24 * 60);
+    const time = `${String(Math.floor(normalized / 60)).padStart(2, '0')}:${String(normalized % 60).padStart(2, '0')}`;
+    slots.push({ time, isOpen: existing.get(time) ?? true });
+  }
+  return slots;
+}
 
 export function ReservationsPage() {
   const { data: reservations, isLoading } = useReservations();
@@ -40,9 +59,15 @@ export function ReservationsPage() {
   const [historyTo, setHistoryTo] = useState(() => toDateInputValue(new Date()));
 
   const [days, setDays] = useState<ReservationDayAvailability[]>([]);
+  const [blockedDates, setBlockedDates] = useState<ReservationBlockedDate[]>([]);
+  const [newBlockedDate, setNewBlockedDate] = useState('');
+  const [newBlockedReason, setNewBlockedReason] = useState('');
 
   useEffect(() => {
-    if (availability) setDays(availability.days);
+    if (availability) {
+      setDays(availability.days);
+      setBlockedDates(availability.blockedDates);
+    }
   }, [availability]);
 
   const selectedReservation = reservations?.find((r) => r.id === selectedId) ?? null;
@@ -55,7 +80,18 @@ export function ReservationsPage() {
     return all.filter((r) => (!historyFrom || r.date >= historyFrom) && (!historyTo || r.date <= historyTo));
   }, [reservations, historyMode, historyDate, historyMonth, historyFrom, historyTo]);
 
-  const isDirty = JSON.stringify(days) !== JSON.stringify(availability?.days ?? []);
+  const isDirty = JSON.stringify({ days, blockedDates }) !== JSON.stringify({
+    days: availability?.days ?? [],
+    blockedDates: availability?.blockedDates ?? [],
+  });
+
+  const updateDay = (day: ReservationDayAvailability['day'], patch: Partial<ReservationDayAvailability>) => {
+    setDays((current) => current.map((entry) => {
+      if (entry.day !== day) return entry;
+      const updated = { ...entry, ...patch };
+      return { ...updated, slots: generateSlots(updated) };
+    }));
+  };
 
   const toggleSlot = (day: ReservationDayAvailability['day'], time: string) => {
     setDays((current) =>
@@ -68,8 +104,15 @@ export function ReservationsPage() {
   };
 
   const handleSaveAvailability = async () => {
-    await updateAvailability.mutateAsync(days);
+    await updateAvailability.mutateAsync({ days, blockedDates });
     showToast('Availability updated.');
+  };
+
+  const addBlockedDate = () => {
+    if (!newBlockedDate || blockedDates.some((entry) => entry.date === newBlockedDate)) return;
+    setBlockedDates((current) => [...current, { date: newBlockedDate, reason: newBlockedReason.trim() }].sort((a, b) => a.date.localeCompare(b.date)));
+    setNewBlockedDate('');
+    setNewBlockedReason('');
   };
 
   const header = (
@@ -215,7 +258,7 @@ export function ReservationsPage() {
         <div className="space-y-4">
           <div className="admin-card p-4 flex items-center justify-between gap-4">
             <p className="text-sm text-secondary">
-              Toggle which time slots are open for booking on each day of the week. Guests won't be able to select a closed slot.
+              Control the real booking hours, capacity, closed dates, and individual time slots shown to guests.
             </p>
             <Button variant="primary" size="sm" disabled={!isDirty} loading={updateAvailability.isPending} onClick={handleSaveAvailability}>
               Save Changes
@@ -231,26 +274,86 @@ export function ReservationsPage() {
                 if (!entry) return null;
                 return (
                   <div key={day} className="admin-card p-4">
-                    <div className="text-sm font-semibold text-on-surface mb-3">{WEEK_DAY_LABEL[day]}</div>
-                    <div className="flex flex-wrap gap-2">
-                      {entry.slots.map((slot) => (
-                        <button
-                          key={slot.time}
-                          type="button"
-                          onClick={() => toggleSlot(day, slot.time)}
-                          className={`px-3 py-1.5 rounded-full text-xs font-semibold border transition-colors ${
-                            slot.isOpen
-                              ? 'bg-primary/10 border-primary text-primary'
-                              : 'border-outline-variant/30 text-secondary/60 line-through hover:text-secondary'
-                          }`}
-                        >
-                          {formatTimeSlot(slot.time)}
-                        </button>
-                      ))}
+                    <div className="flex items-center justify-between gap-4 mb-4">
+                      <div className="text-sm font-semibold text-on-surface">{WEEK_DAY_LABEL[day]}</div>
+                      <ToggleField label="Closed" checked={entry.isClosed} onChange={(isClosed) => updateDay(day, { isClosed })} />
                     </div>
+
+                    {!entry.isClosed && (
+                      <>
+                        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4 mb-4">
+                          <label className="text-xs font-semibold text-secondary">
+                            Opens
+                            <input type="time" value={entry.openTime} onChange={(event) => updateDay(day, { openTime: event.target.value })} className="mt-1 w-full rounded-lg border border-outline-variant/30 bg-surface px-3 py-2 text-sm text-on-surface outline-none focus:border-primary" />
+                          </label>
+                          <label className="text-xs font-semibold text-secondary">
+                            Closes
+                            <input type="time" value={entry.closeTime} onChange={(event) => updateDay(day, { closeTime: event.target.value })} className="mt-1 w-full rounded-lg border border-outline-variant/30 bg-surface px-3 py-2 text-sm text-on-surface outline-none focus:border-primary" />
+                          </label>
+                          <label className="text-xs font-semibold text-secondary">
+                            Slot length
+                            <select value={entry.slotDurationMins} onChange={(event) => updateDay(day, { slotDurationMins: Number(event.target.value) })} className="mt-1 w-full rounded-lg border border-outline-variant/30 bg-surface px-3 py-2 text-sm text-on-surface outline-none focus:border-primary">
+                              {[15, 30, 45, 60, 90, 120].map((minutes) => <option key={minutes} value={minutes}>{minutes} minutes</option>)}
+                            </select>
+                          </label>
+                          <label className="text-xs font-semibold text-secondary">
+                            Max bookings per slot
+                            <input type="number" min={1} max={100} value={entry.maxPerSlot} onChange={(event) => updateDay(day, { maxPerSlot: Number(event.target.value) })} className="mt-1 w-full rounded-lg border border-outline-variant/30 bg-surface px-3 py-2 text-sm text-on-surface outline-none focus:border-primary" />
+                          </label>
+                        </div>
+
+                        <div className="flex flex-wrap gap-2">
+                          {entry.slots.map((slot) => (
+                            <button
+                              key={slot.time}
+                              type="button"
+                              onClick={() => toggleSlot(day, slot.time)}
+                              className={`px-3 py-1.5 rounded-full text-xs font-semibold border transition-colors ${
+                                slot.isOpen
+                                  ? 'bg-primary/10 border-primary text-primary'
+                                  : 'border-outline-variant/30 text-secondary/60 line-through hover:text-secondary'
+                              }`}
+                            >
+                              {formatTimeSlot(slot.time)}
+                            </button>
+                          ))}
+                        </div>
+                      </>
+                    )}
                   </div>
                 );
               })}
+
+              <div className="admin-card p-4 space-y-4">
+                <div>
+                  <div className="text-sm font-semibold text-on-surface">Blocked dates</div>
+                  <p className="text-xs text-secondary mt-1">Guests cannot make reservations on these dates.</p>
+                </div>
+                <div className="grid gap-3 sm:grid-cols-[minmax(150px,0.6fr)_minmax(220px,1fr)_auto] items-end">
+                  <label className="text-xs font-semibold text-secondary">
+                    Date
+                    <input type="date" value={newBlockedDate} onChange={(event) => setNewBlockedDate(event.target.value)} className="mt-1 w-full rounded-lg border border-outline-variant/30 bg-surface px-3 py-2 text-sm text-on-surface outline-none focus:border-primary" />
+                  </label>
+                  <label className="text-xs font-semibold text-secondary">
+                    Reason (optional)
+                    <input type="text" value={newBlockedReason} onChange={(event) => setNewBlockedReason(event.target.value)} placeholder="Private event" className="mt-1 w-full rounded-lg border border-outline-variant/30 bg-surface px-3 py-2 text-sm text-on-surface outline-none focus:border-primary" />
+                  </label>
+                  <Button variant="outline" size="sm" disabled={!newBlockedDate} onClick={addBlockedDate}>Add date</Button>
+                </div>
+                {blockedDates.length > 0 && (
+                  <div className="divide-y divide-outline-variant/10 rounded-xl border border-outline-variant/20">
+                    {blockedDates.map((blockedDate) => (
+                      <div key={blockedDate.date} className="flex items-center justify-between gap-4 px-3 py-2 text-sm">
+                        <div>
+                          <span className="font-semibold text-on-surface">{new Date(`${blockedDate.date}T12:00:00`).toLocaleDateString(undefined, { dateStyle: 'medium' })}</span>
+                          {blockedDate.reason && <span className="text-secondary ml-2">{blockedDate.reason}</span>}
+                        </div>
+                        <button type="button" onClick={() => setBlockedDates((current) => current.filter((entry) => entry.date !== blockedDate.date))} className="text-xs font-semibold text-rose-700 hover:text-rose-800">Remove</button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
             </div>
           )}
         </div>
