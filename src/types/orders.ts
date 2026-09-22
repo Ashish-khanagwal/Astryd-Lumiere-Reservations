@@ -4,11 +4,11 @@ export type OrderServiceType = 'pickup' | 'delivery';
 export type OrderPaymentMethod = 'apple' | 'google' | 'card' | 'cash';
 
 /** Lifecycle an order moves through. `cancelled` is a terminal state reachable from any active stage. */
-export const ORDER_STATUSES = ['pending', 'confirmed', 'preparing', 'ready', 'completed', 'cancelled'] as const;
+export const ORDER_STATUSES = ['payment_pending', 'payment_failed', 'paid', 'pending', 'confirmed', 'preparing', 'ready', 'completed', 'cancelled'] as const;
 export type OrderStatus = (typeof ORDER_STATUSES)[number];
 
 /** The subset of statuses shown as board columns - cancelled orders are filtered to their own view instead. */
-export const ORDER_BOARD_COLUMNS = ['pending', 'confirmed', 'preparing', 'ready', 'completed'] as const;
+export const ORDER_BOARD_COLUMNS = ['paid', 'confirmed', 'preparing', 'ready', 'completed'] as const;
 
 export interface OrderItemAddon {
   id: Id;
@@ -30,6 +30,8 @@ export interface Order extends Tenant, Timestamps {
   id: Id;
   orderNumber: string;
   status: OrderStatus;
+  paymentStatus?: string;
+  paymentId?: string;
   service: OrderServiceType;
   paymentMethod: OrderPaymentMethod;
   customerName: string;

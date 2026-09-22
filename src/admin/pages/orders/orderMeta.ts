@@ -1,6 +1,9 @@
 import type { OrderStatus } from '../../../types';
 
 export const ORDER_STATUS_LABEL: Record<OrderStatus, string> = {
+  payment_pending: 'Awaiting Payment',
+  payment_failed: 'Payment Failed',
+  paid: 'Paid · New',
   pending: 'New',
   confirmed: 'Confirmed',
   preparing: 'Preparing',
@@ -11,6 +14,9 @@ export const ORDER_STATUS_LABEL: Record<OrderStatus, string> = {
 
 /** Alpha-tinted fill + solid border/text in the same hue, per status - kept in one place so a status always reads the same everywhere. */
 export const ORDER_STATUS_COLOR: Record<OrderStatus, { fill: string; border: string; text: string; dot: string }> = {
+  payment_pending: { fill: 'bg-slate-50', border: 'border-slate-200', text: 'text-slate-700', dot: 'bg-slate-500' },
+  payment_failed: { fill: 'bg-rose-50', border: 'border-rose-200', text: 'text-rose-700', dot: 'bg-rose-500' },
+  paid: { fill: 'bg-sky-50', border: 'border-sky-200', text: 'text-sky-700', dot: 'bg-sky-500' },
   pending: { fill: 'bg-sky-50', border: 'border-sky-200', text: 'text-sky-700', dot: 'bg-sky-500' },
   confirmed: { fill: 'bg-violet-50', border: 'border-violet-200', text: 'text-violet-700', dot: 'bg-violet-500' },
   preparing: { fill: 'bg-amber-50', border: 'border-amber-200', text: 'text-amber-700', dot: 'bg-amber-500' },
@@ -20,10 +26,11 @@ export const ORDER_STATUS_COLOR: Record<OrderStatus, { fill: string; border: str
 };
 
 /** Board column order - cancelled orders live in their own filtered view instead of a permanent column. */
-export const BOARD_COLUMNS: OrderStatus[] = ['pending', 'confirmed', 'preparing', 'ready', 'completed'];
+export const BOARD_COLUMNS: OrderStatus[] = ['paid', 'confirmed', 'preparing', 'ready', 'completed'];
 
 /** What tapping the card's primary action does - mirrors a kitchen-display "advance to next stage" flow. */
 export const NEXT_STATUS: Partial<Record<OrderStatus, OrderStatus>> = {
+  paid: 'confirmed',
   pending: 'confirmed',
   confirmed: 'preparing',
   preparing: 'ready',
@@ -31,6 +38,7 @@ export const NEXT_STATUS: Partial<Record<OrderStatus, OrderStatus>> = {
 };
 
 export const NEXT_ACTION_LABEL: Partial<Record<OrderStatus, string>> = {
+  paid: 'Accept',
   pending: 'Accept',
   confirmed: 'Start Preparing',
   preparing: 'Mark Ready',

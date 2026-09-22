@@ -1,5 +1,6 @@
 import { ApiError, http } from './http';
 import type {
+  CheckoutSession,
   PublicAvailability,
   PublicReservationConfirmation,
   PublicReservationInput,
@@ -7,6 +8,7 @@ import type {
   ReservationAvailabilitySettings,
   ReservationStatus,
 } from '../types';
+import { mapCheckoutSession, paymentRequest } from './payments';
 
 const PUBLIC_API_BASE_URL = import.meta.env.VITE_API_URL ?? 'http://localhost:5000';
 
@@ -27,6 +29,17 @@ interface PublicReservationResponse {
     guest_name: string;
     guest_email: string;
   };
+}
+
+interface ReservationCheckoutResponse {
+  id: string;
+  checkout_secret: string;
+  context_type: 'reservation';
+  context_id?: string;
+  amount_cents: number;
+  currency: string;
+  status: CheckoutSession['status'];
+  fulfillment_status: CheckoutSession['fulfillmentStatus'];
 }
 
 interface PublicAvailabilityResponse {
@@ -129,6 +142,32 @@ export async function createPublicReservation(
   };
 }
 
+export async function createReservationCheckout(
+  businessId: string,
+  input: PublicReservationInput,
+): Promise<CheckoutSession> {
+  const response = await paymentRequest<ReservationCheckoutResponse>('/reservations/checkout', {
+    method: 'POST',
+    body: JSON.stringify({
+      business_id: businessId,
+      booking: {
+        date: input.date,
+        time_slot: input.timeSlot,
+        party_size: input.partySize,
+        seating_preference: input.seatingPreference,
+      },
+      guest: {
+        full_name: input.guestName,
+        email: input.guestEmail,
+        phone: input.guestPhone,
+        special_requests: input.specialRequests,
+        newsletter_opt_in: input.newsletterOptIn,
+      },
+    }),
+  });
+  return mapCheckoutSession(response);
+}
+
 interface AdminReservationResponse {
   id?: string;
   businessId?: string;
@@ -161,6 +200,11 @@ interface AdminReservationResponse {
   created_at?: string;
   updatedAt?: string;
   updated_at?: string;
+  paymentId?: string;
+  payment_id?: string;
+  depositAmountCents?: number;
+  deposit_amount_cents?: number;
+  currency?: string;
 }
 
 interface AdminReservationListResponse {
@@ -227,6 +271,9 @@ function mapAdminReservation(reservation: AdminReservationResponse): Reservation
     placedAt: createdAt,
     createdAt,
     updatedAt: reservation.updatedAt ?? reservation.updated_at ?? createdAt,
+    paymentId: reservation.paymentId ?? reservation.payment_id,
+    depositAmountCents: reservation.depositAmountCents ?? reservation.deposit_amount_cents,
+    currency: reservation.currency,
   };
 }
 

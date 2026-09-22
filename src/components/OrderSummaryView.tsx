@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { Header } from './Header';
 import { Footer } from './Footer';
 import {
@@ -7,15 +7,17 @@ import {
   getCartSubtotal,
 } from '../data/menuItems';
 import { useRestaurant } from '../context/RestaurantContext';
-import { createOrder } from '../services/orders';
-import type { OrderLineItem } from '../types';
+import { createOrderCheckout } from '../services/orders';
+import { getPayment, retryPayment, submitCard, waitForPayment } from '../services/payments';
+import type { CheckoutSession } from '../types';
+import { FinixCardForm } from './FinixCardForm';
 
 const TAX_RATE = 0.085;
 const DELIVERY_FEE = 15;
 
 type ServiceType = 'delivery' | 'pickup';
-type PaymentMethod = 'apple' | 'google' | 'card' | 'cash';
-type SubmitState = 'idle' | 'verifying' | 'success';
+type PaymentMethod = 'card';
+type SubmitState = 'idle' | 'verifying' | 'paying' | 'success';
 
 interface OrderSummaryViewProps {
   cart: CartState;
@@ -85,10 +87,7 @@ type PaymentOption = {
 };
 
 const PAYMENT_OPTIONS: PaymentOption[] = [
-  { value: 'apple', label: 'Apple Pay', mark: 'apple' },
-  { value: 'google', label: 'Google Pay', mark: 'google' },
   { value: 'card', label: 'Credit Card', icon: 'credit_card' },
-  { value: 'cash', label: 'Cash', icon: 'account_balance_wallet' },
 ];
 
 export const OrderSummaryView = ({
@@ -106,13 +105,15 @@ export const OrderSummaryView = ({
   onOpenCart,
 }: OrderSummaryViewProps) => {
   const [service, setService] = useState<ServiceType>('delivery');
-  const [payment, setPayment] = useState<PaymentMethod>('apple');
+  const [payment, setPayment] = useState<PaymentMethod>('card');
   const [fullName, setFullName] = useState('');
   const [phone, setPhone] = useState('');
   const [email, setEmail] = useState('');
   const [address, setAddress] = useState('');
   const [instructions, setInstructions] = useState('');
   const [submitState, setSubmitState] = useState<SubmitState>('idle');
+  const [checkoutSession, setCheckoutSession] = useState<CheckoutSession | null>(null);
+  const [paymentError, setPaymentError] = useState<string | null>(null);
   const { restaurantId } = useRestaurant();
 
   const lineItems = getCartLineItems(cart);
@@ -120,12 +121,48 @@ export const OrderSummaryView = ({
   const taxes = subtotal * TAX_RATE;
   const deliveryFee = service === 'delivery' ? DELIVERY_FEE : 0;
   const total = subtotal + taxes + deliveryFee;
+  const displayedSubtotal = checkoutSession?.order?.subtotal ?? subtotal;
+  const displayedTaxes = checkoutSession?.order?.taxes ?? taxes;
+  const displayedDeliveryFee = checkoutSession?.order?.deliveryFee ?? deliveryFee;
+  const displayedTotal = checkoutSession?.order?.total ?? total;
+
+  useEffect(() => {
+    setCheckoutSession(null);
+    setPaymentError(null);
+  }, [cart]);
 
   useEffect(() => {
     if (lineItems.length === 0 && submitState === 'idle') {
       onNavigateMenu();
     }
   }, [lineItems.length, onNavigateMenu, submitState]);
+
+  useEffect(() => {
+    if (!checkoutSession || !['pending', 'provider_unknown'].includes(checkoutSession.status)) return;
+    let active = true;
+    const timer = window.setInterval(async () => {
+      try {
+        const result = await getPayment(checkoutSession);
+        if (!active) return;
+        setCheckoutSession(result);
+        if (result.status === 'succeeded' && result.fulfillmentStatus === 'completed') {
+          window.clearInterval(timer);
+          onToast(`Payment successful. Order #${result.order?.orderNumber ?? ''} is awaiting restaurant acceptance.`);
+          onClearCart();
+          onNavigateMenu();
+        } else if (result.status === 'failed') {
+          window.clearInterval(timer);
+          setPaymentError(result.failure?.message ?? 'Your card was declined. You can retry with another card.');
+        }
+      } catch {
+        // Keep polling transient status failures while this checkout remains open.
+      }
+    }, 3000);
+    return () => {
+      active = false;
+      window.clearInterval(timer);
+    };
+  }, [checkoutSession, onClearCart, onNavigateMenu, onToast]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -138,46 +175,83 @@ export const OrderSummaryView = ({
 
     setSubmitState('verifying');
 
-    const orderItems: OrderLineItem[] = lineItems.map((item) => ({
-      itemId: item.itemId,
-      name: item.name,
-      quantity: item.quantity,
-      unitPrice: item.unitPrice,
-      lineTotal: item.lineTotal,
-      addons: item.addons,
-      note: item.note || undefined,
-    }));
-
     try {
-      await createOrder(restaurantId, {
-        service,
-        paymentMethod: payment,
-        customerName: fullName,
-        customerPhone: phone,
-        customerEmail: email,
-        address: service === 'delivery' ? address : undefined,
+      const session = await createOrderCheckout(restaurantId, {
+        serviceType: service,
+        customer: {
+          name: fullName,
+          phone,
+          email,
+          address: service === 'delivery' ? address : undefined,
+        },
         instructions: instructions || undefined,
-        items: orderItems,
-        subtotal,
-        taxes,
-        deliveryFee,
-        total,
+        items: lineItems.map((item) => ({
+          itemId: item.itemId,
+          quantity: item.quantity,
+          addonIds: item.addons.map((addon) => addon.id),
+          note: item.note || undefined,
+        })),
       });
-
-      setSubmitState('success');
-      window.setTimeout(() => {
-        onToast(
-          `Order confirmed! Total $${total.toFixed(2)}. ${
-            service === 'delivery' ? 'Preparing for delivery.' : 'Ready for pickup shortly.'
-          }`
-        );
-        onClearCart();
-        setSubmitState('idle');
-        onNavigateMenu();
-      }, 1200);
-    } catch {
+      setCheckoutSession(session);
+      setPaymentError(null);
       setSubmitState('idle');
-      onToast('Something went wrong placing your order. Please try again.');
+    } catch (error: unknown) {
+      setSubmitState('idle');
+      onToast(error instanceof Error ? error.message : 'Something went wrong starting checkout. Please try again.');
+    }
+  };
+
+  const handlePaymentError = useCallback((message: string) => {
+    setPaymentError(message);
+    setSubmitState('idle');
+  }, []);
+
+  const handleCardToken = useCallback(async (token: string) => {
+    if (!checkoutSession) return;
+    setSubmitState('paying');
+    setPaymentError(null);
+    try {
+      let result = await submitCard(checkoutSession, token);
+      result = await waitForPayment(result);
+      setCheckoutSession(result);
+      if (result.status === 'succeeded' && result.fulfillmentStatus === 'completed') {
+        setSubmitState('success');
+        onToast(`Payment successful. Order #${result.order?.orderNumber ?? ''} is awaiting restaurant acceptance.`);
+        window.setTimeout(() => {
+          onClearCart();
+          setSubmitState('idle');
+          onNavigateMenu();
+        }, 1200);
+      } else if (result.status === 'failed') {
+        setSubmitState('idle');
+        setPaymentError(result.failure?.message ?? 'Your card was declined. You can retry with another card.');
+      } else {
+        setSubmitState('idle');
+        setPaymentError('Your payment is still processing. Please keep this page open and check again shortly.');
+      }
+    } catch (error: unknown) {
+      setSubmitState('idle');
+      try {
+        const refreshed = await getPayment(checkoutSession);
+        setCheckoutSession(refreshed);
+      } catch {
+        // Preserve the provider error below if status refresh is unavailable.
+      }
+      setPaymentError(error instanceof Error ? error.message : 'Unable to process the card payment.');
+    }
+  }, [checkoutSession, onClearCart, onNavigateMenu, onToast]);
+
+  const handleRetry = async () => {
+    if (!checkoutSession) return;
+    setSubmitState('verifying');
+    try {
+      const replacement = await retryPayment(checkoutSession);
+      setCheckoutSession(replacement);
+      setPaymentError(null);
+    } catch (error: unknown) {
+      setPaymentError(error instanceof Error ? error.message : 'Unable to retry this payment.');
+    } finally {
+      setSubmitState('idle');
     }
   };
 
@@ -335,22 +409,22 @@ export const OrderSummaryView = ({
               <div className="bg-surface-container-low p-5 md:p-6 space-y-3">
                 <div className="flex justify-between text-secondary font-body-md text-sm md:text-base">
                   <span>Subtotal</span>
-                  <span>${subtotal.toFixed(2)}</span>
+                  <span>${displayedSubtotal.toFixed(2)}</span>
                 </div>
                 <div className="flex justify-between text-secondary font-body-md text-sm md:text-base">
                   <span>Taxes (8.5%)</span>
-                  <span>${taxes.toFixed(2)}</span>
+                  <span>${displayedTaxes.toFixed(2)}</span>
                 </div>
                 {service === 'delivery' && (
                   <div className="flex justify-between text-secondary font-body-md text-sm md:text-base">
                     <span>Delivery Fee</span>
-                    <span>${deliveryFee.toFixed(2)}</span>
+                    <span>${displayedDeliveryFee.toFixed(2)}</span>
                   </div>
                 )}
                 <div className="pt-3 border-t border-outline-variant/30 flex justify-between items-center">
                   <span className="font-serif text-lg md:text-xl text-on-surface font-semibold">Total</span>
                   <span className="font-serif text-lg md:text-xl text-primary font-bold">
-                    ${total.toFixed(2)}
+                    ${displayedTotal.toFixed(2)}
                   </span>
                 </div>
               </div>
@@ -395,6 +469,7 @@ export const OrderSummaryView = ({
                       placeholder="Julian Vane"
                       type="text"
                       value={fullName}
+                      disabled={Boolean(checkoutSession)}
                       onChange={(e) => setFullName(e.target.value)}
                       required
                     />
@@ -408,6 +483,7 @@ export const OrderSummaryView = ({
                       placeholder="+44 20 7123 4567"
                       type="tel"
                       value={phone}
+                      disabled={Boolean(checkoutSession)}
                       onChange={(e) => setPhone(e.target.value)}
                       required
                     />
@@ -421,6 +497,7 @@ export const OrderSummaryView = ({
                       placeholder="julian.v@example.com"
                       type="email"
                       value={email}
+                      disabled={Boolean(checkoutSession)}
                       onChange={(e) => setEmail(e.target.value)}
                       required
                     />
@@ -436,6 +513,7 @@ export const OrderSummaryView = ({
                     <button
                       type="button"
                       onClick={() => setService('delivery')}
+                      disabled={Boolean(checkoutSession)}
                       className={`flex-1 py-3 px-4 sm:px-6 rounded-xl font-body-md text-sm transition-all duration-300 ${
                         service === 'delivery'
                           ? 'bg-primary text-on-primary shadow-sm'
@@ -447,6 +525,7 @@ export const OrderSummaryView = ({
                     <button
                       type="button"
                       onClick={() => setService('pickup')}
+                      disabled={Boolean(checkoutSession)}
                       className={`flex-1 py-3 px-4 sm:px-6 rounded-xl font-body-md text-sm transition-all duration-300 ${
                         service === 'pickup'
                           ? 'bg-primary text-on-primary shadow-sm'
@@ -458,6 +537,33 @@ export const OrderSummaryView = ({
                   </div>
                 </div>
 
+                {checkoutSession && (
+                  <div className="space-y-4 rounded-2xl border border-outline-variant/30 bg-surface p-4">
+                    <div className="flex items-center justify-between">
+                      <span className="font-label-sm text-secondary uppercase tracking-widest">Secure card payment</span>
+                      <span className="font-serif text-lg font-bold text-primary">
+                        ${(checkoutSession.amountCents / 100).toFixed(2)}
+                      </span>
+                    </div>
+                    {checkoutSession.status === 'failed' ? (
+                      <button type="button" onClick={handleRetry} className="w-full rounded-xl bg-on-surface px-4 py-3 font-bold text-white">
+                        Retry with another card
+                      </button>
+                    ) : checkoutSession.status === 'created' ? (
+                      <FinixCardForm
+                        key={checkoutSession.id}
+                        amountCents={checkoutSession.amountCents}
+                        disabled={submitState === 'paying'}
+                        onToken={handleCardToken}
+                        onError={handlePaymentError}
+                      />
+                    ) : (
+                      <p className="text-sm text-secondary">Payment processing. This page will update when Finix confirms the result.</p>
+                    )}
+                    {paymentError && <p className="text-sm text-error" role="alert">{paymentError}</p>}
+                  </div>
+                )}
+
                 {service === 'delivery' && (
                   <div className="space-y-2 animate-fadeIn">
                     <label className="font-label-sm text-secondary uppercase tracking-widest block">
@@ -468,6 +574,7 @@ export const OrderSummaryView = ({
                       placeholder="14 Mayfair Square, London, W1J 8AJ"
                       type="text"
                       value={address}
+                      disabled={Boolean(checkoutSession)}
                       onChange={(e) => setAddress(e.target.value)}
                       required
                     />
@@ -483,6 +590,7 @@ export const OrderSummaryView = ({
                     placeholder="Dietary restrictions or delivery notes..."
                     rows={3}
                     value={instructions}
+                    disabled={Boolean(checkoutSession)}
                     onChange={(e) => setInstructions(e.target.value)}
                   />
                 </div>
@@ -525,7 +633,7 @@ export const OrderSummaryView = ({
                 </div>
 
                 <div className="pt-2 md:pt-4">
-                  <button
+                  {!checkoutSession && <button
                     className={`w-full py-4 md:py-5 rounded-2xl font-serif text-lg md:text-xl tracking-wide transition-all duration-300 transform active:scale-[0.98] shadow-lg flex items-center justify-center gap-2 ${
                       submitState === 'success'
                         ? 'bg-green-600 text-white'
@@ -566,8 +674,8 @@ export const OrderSummaryView = ({
                         <span className="material-symbols-outlined">check_circle</span>
                       </>
                     )}
-                    {submitState === 'idle' && 'Proceed to Checkout'}
-                  </button>
+                    {submitState === 'idle' && 'Proceed to Secure Checkout'}
+                  </button>}
                   <p className="text-center text-secondary text-sm mt-5 md:mt-6 flex items-center justify-center gap-2">
                     <span className="material-symbols-outlined text-sm">lock</span>
                     Your transaction is secure and encrypted.

@@ -286,7 +286,7 @@ export function OrdersPage() {
         footer={
           selectedOrder && (
             <>
-              {selectedOrder.status !== 'cancelled' && selectedOrder.status !== 'completed' && (
+              {selectedOrder.paymentStatus !== 'succeeded' && selectedOrder.status !== 'cancelled' && selectedOrder.status !== 'completed' && (
                 <Button variant="outline" onClick={() => setPendingCancel(selectedOrder)}>
                   Cancel Order
                 </Button>
