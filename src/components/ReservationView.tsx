@@ -1,11 +1,13 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { Loader2 } from "lucide-react";
 import { ApiError } from "../services/http";
-import { createPublicReservation, getPublicAvailability } from "../services/reservations";
+import { createReservationCheckout, getPublicAvailability } from "../services/reservations";
+import { getPayment, retryPayment, submitCard, waitForPayment } from "../services/payments";
 import { useRestaurant } from "../context/RestaurantContext";
 import { Header } from "./Header";
 import { Footer } from "./Footer";
-import type { PublicAvailability } from "../types";
+import { FinixCardForm } from "./FinixCardForm";
+import type { CheckoutSession, PublicAvailability } from "../types";
 
 function startOfDay(d: Date) {
   return new Date(d.getFullYear(), d.getMonth(), d.getDate());
@@ -100,6 +102,8 @@ export const ReservationView = ({
   const [termsAgreed, setTermsAgreed] = useState(true);
   const [isProcessing, setIsProcessing] = useState(false);
   const [confirmationCode, setConfirmationCode] = useState("LUM-82910");
+  const [checkoutSession, setCheckoutSession] = useState<CheckoutSession | null>(null);
+  const [paymentError, setPaymentError] = useState<string | null>(null);
   const [availability, setAvailability] = useState<PublicAvailability["slots"]>({ afternoon: [], evening: [] });
   const [availabilityLoading, setAvailabilityLoading] = useState(true);
   const [availabilityError, setAvailabilityError] = useState<string | null>(null);
@@ -141,6 +145,36 @@ export const ReservationView = ({
     return () => { active = false; };
   }, [partySize, restaurantId, selectedDateIso]);
 
+  useEffect(() => {
+    if (!checkoutSession || !["pending", "provider_unknown"].includes(checkoutSession.status)) return;
+    let active = true;
+    const timer = window.setInterval(async () => {
+      try {
+        const result = await getPayment(checkoutSession);
+        if (!active) return;
+        setCheckoutSession(result);
+        if (result.status === "succeeded" && result.fulfillmentStatus === "completed" && result.reservation) {
+          window.clearInterval(timer);
+          setConfirmationCode(result.reservation.confirmationCode);
+          setStep(5);
+          onToast(`Reservation confirmed! Code: ${result.reservation.confirmationCode}`);
+        } else if (result.fulfillmentStatus === "action_required") {
+          window.clearInterval(timer);
+          setPaymentError("Your payment succeeded, but the selected table became unavailable. Please contact the restaurant with this payment reference so staff can assist you.");
+        } else if (result.status === "failed") {
+          window.clearInterval(timer);
+          setPaymentError(result.failure?.message ?? "Your card was declined. You can retry with another card.");
+        }
+      } catch {
+        // Keep polling transient status failures while this checkout remains open.
+      }
+    }, 3000);
+    return () => {
+      active = false;
+      window.clearInterval(timer);
+    };
+  }, [checkoutSession, onToast]);
+
   const seatingOptions = [
     {
       id: "Indoor",
@@ -180,6 +214,8 @@ export const ReservationView = ({
       onToast("Please agree to the Terms of Service to continue");
       return;
     }
+    setCheckoutSession(null);
+    setPaymentError(null);
     setStep(4);
   };
 
@@ -190,7 +226,7 @@ export const ReservationView = ({
         onToast("Please select an available time before confirming your reservation.");
         return;
       }
-      const reservation = await createPublicReservation(restaurantId, {
+      const session = await createReservationCheckout(restaurantId, {
         date: selectedDateIso,
         timeSlot: selectedTimeSlot,
         partySize,
@@ -201,9 +237,8 @@ export const ReservationView = ({
         specialRequests,
         newsletterOptIn,
       });
-      setConfirmationCode(reservation.confirmationCode);
-      setStep(5);
-      onToast(`Reservation confirmed! Code: ${reservation.confirmationCode}`);
+      setCheckoutSession(session);
+      setPaymentError(null);
     } catch (error: unknown) {
       if (error instanceof ApiError && error.status === 409) {
         onToast("That time slot is no longer available. Please choose another time.");
@@ -215,6 +250,55 @@ export const ReservationView = ({
       } else {
         onToast(error instanceof Error ? error.message : "Unable to confirm your reservation. Please try again.");
       }
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+
+  const handlePaymentError = useCallback((message: string) => {
+    setPaymentError(message);
+    setIsProcessing(false);
+  }, []);
+
+  const handleCardToken = useCallback(async (token: string) => {
+    if (!checkoutSession) return;
+    setIsProcessing(true);
+    setPaymentError(null);
+    try {
+      let result = await submitCard(checkoutSession, token);
+      result = await waitForPayment(result);
+      setCheckoutSession(result);
+      if (result.status === "succeeded" && result.fulfillmentStatus === "completed" && result.reservation) {
+        setConfirmationCode(result.reservation.confirmationCode);
+        setStep(5);
+        onToast(`Reservation confirmed! Code: ${result.reservation.confirmationCode}`);
+      } else if (result.fulfillmentStatus === "action_required") {
+        setPaymentError("Your payment succeeded, but the selected table became unavailable. Please contact the restaurant with this payment reference so staff can assist you.");
+      } else if (result.status === "failed") {
+        setPaymentError(result.failure?.message ?? "Your card was declined. You can retry with another card.");
+      } else {
+        setPaymentError("Your deposit is still processing. Please keep this page open and check again shortly.");
+      }
+    } catch (error: unknown) {
+      try {
+        setCheckoutSession(await getPayment(checkoutSession));
+      } catch {
+        // Preserve the provider error below if status refresh is unavailable.
+      }
+      setPaymentError(error instanceof Error ? error.message : "Unable to process the reservation deposit.");
+    } finally {
+      setIsProcessing(false);
+    }
+  }, [checkoutSession, onToast]);
+
+  const handlePaymentRetry = async () => {
+    if (!checkoutSession) return;
+    setIsProcessing(true);
+    try {
+      setCheckoutSession(await retryPayment(checkoutSession));
+      setPaymentError(null);
+    } catch (error: unknown) {
+      setPaymentError(error instanceof Error ? error.message : "Unable to retry this payment.");
     } finally {
       setIsProcessing(false);
     }
@@ -976,11 +1060,9 @@ export const ReservationView = ({
                     </h4>
                   </div>
                   <p className="text-sm text-secondary leading-relaxed">
-                    We understand plans change. For a full refund of any
-                    deposit, please cancel at least{" "}
-                    <span className="font-bold text-on-surface">24 hours</span>{" "}
-                    prior to your reservation. Cancellations made within 24
-                    hours may incur a flat fee of $25 per guest.
+                    Reservation deposits are charged when the booking is confirmed.
+                    Automatic refunds are not available in this release; please contact
+                    the restaurant before cancelling if you need assistance.
                   </p>
                   <div className="flex items-center gap-3 text-on-tertiary-fixed-variant bg-tertiary-fixed/20 p-4 rounded-xl border border-tertiary/20">
                     <span className="material-symbols-outlined text-xl">
@@ -1006,21 +1088,21 @@ export const ReservationView = ({
                       </span>
                     </div>
                     <div className="flex justify-between text-sm">
-                      <span className="text-secondary">Security Deposit</span>
+                      <span className="text-secondary">Reservation Deposit</span>
                       <span className="text-on-surface font-semibold">
-                        None required
+                        {checkoutSession ? `$${(checkoutSession.amountCents / 100).toFixed(2)}` : "Calculated at checkout"}
                       </span>
                     </div>
                     <div className="h-px bg-outline-variant/20 my-2"></div>
                     <div className="flex justify-between text-lg font-bold">
                       <span>Total</span>
                       <span className="text-primary font-serif text-xl font-bold">
-                        Free
+                        {checkoutSession ? `$${(checkoutSession.amountCents / 100).toFixed(2)}` : "—"}
                       </span>
                     </div>
                   </div>
 
-                  <button
+                  {!checkoutSession && <button
                     disabled={isProcessing}
                     onClick={handleFinalConfirm}
                     className="w-full bg-[#1A1A1A] hover:bg-on-surface-variant text-white py-5 rounded-2xl font-sans font-bold text-base transition-all active:scale-95 shadow-lg mb-4 flex items-center justify-center gap-2 group cursor-pointer tracking-wider uppercase"
@@ -1032,16 +1114,42 @@ export const ReservationView = ({
                       </>
                     ) : (
                       <>
-                        <span>Confirm Booking</span>
+                        <span>Continue to Card Payment</span>
                         <span className="material-symbols-outlined group-hover:translate-x-1 transition-transform">
                           arrow_forward
                         </span>
                       </>
                     )}
-                  </button>
+                  </button>}
+
+                  {checkoutSession && checkoutSession.fulfillmentStatus !== "action_required" && (
+                    <div className="mb-5 space-y-3">
+                      {checkoutSession.status === "failed" ? (
+                        <button
+                          type="button"
+                          disabled={isProcessing}
+                          onClick={handlePaymentRetry}
+                          className="w-full bg-[#1A1A1A] text-white py-4 rounded-2xl font-bold"
+                        >
+                          Retry with another card
+                        </button>
+                      ) : checkoutSession.status === "created" ? (
+                        <FinixCardForm
+                          key={checkoutSession.id}
+                          amountCents={checkoutSession.amountCents}
+                          disabled={isProcessing}
+                          onToken={handleCardToken}
+                          onError={handlePaymentError}
+                        />
+                      ) : (
+                        <p className="text-sm text-secondary">Deposit processing. This page will update when Finix confirms the result.</p>
+                      )}
+                    </div>
+                  )}
+                  {paymentError && <p className="mb-5 text-sm text-error" role="alert">{paymentError}</p>}
 
                   <button
-                    onClick={() => setStep(3)}
+                    onClick={() => { setCheckoutSession(null); setPaymentError(null); setStep(3); }}
                     className="w-full bg-transparent hover:bg-surface-container border border-outline-variant/50 text-on-surface py-3.5 rounded-2xl text-sm font-semibold transition-all active:scale-95 mb-6"
                   >
                     Edit Details

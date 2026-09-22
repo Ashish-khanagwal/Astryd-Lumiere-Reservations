@@ -1,5 +1,3 @@
-import type { ApiErrorBody } from '../types';
-
 const BASE_URL = import.meta.env.VITE_ADMIN_API_URL ?? 'http://localhost:5000';
 
 export class ApiError extends Error {
@@ -33,12 +31,17 @@ async function request<T>(path: string, init: RequestInit = {}): Promise<T> {
   const res = await fetch(`${BASE_URL}/api/v1${path}`, { ...init, headers });
 
   if (!res.ok) {
-    const body = (await res.json().catch(() => null)) as ApiErrorBody | null;
+    const body = await res.json().catch(() => null);
+    const rawBody = body as unknown as {
+      error?: string | { code?: string; message?: string; fields?: Record<string, string> };
+      message?: string;
+    } | null;
+    const nestedError = rawBody?.error && typeof rawBody.error === 'object' ? rawBody.error : undefined;
     throw new ApiError(
       res.status,
-      body?.error?.code ?? 'unknown',
-      body?.error?.message ?? res.statusText,
-      body?.error?.fields,
+      typeof rawBody?.error === 'string' ? rawBody.error : nestedError?.code ?? 'unknown',
+      rawBody?.message ?? nestedError?.message ?? res.statusText,
+      nestedError?.fields,
     );
   }
 

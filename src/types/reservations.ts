@@ -18,6 +18,9 @@ export interface Reservation extends Tenant, Timestamps {
   specialRequests?: string;
   newsletterOptIn: boolean;
   placedAt: ISODateString;
+  paymentId?: string;
+  depositAmountCents?: number;
+  currency?: string;
 }
 
 export interface ReservationTimeSlot {

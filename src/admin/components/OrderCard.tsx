@@ -51,7 +51,7 @@ export function OrderCard({ order, now, isUpdating, onOpen, onAdvance, onCancel 
             {nextLabel}
           </Button>
         )}
-        {order.status !== 'completed' && order.status !== 'cancelled' && (
+        {order.paymentStatus !== 'succeeded' && order.status !== 'completed' && order.status !== 'cancelled' && (
           <button
             onClick={onCancel}
             className="p-2 rounded-lg text-secondary hover:bg-error-container/40 hover:text-error transition-colors shrink-0"

@@ -4,10 +4,15 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
-    "dev": "vite",
+    "dev": "vite --mode staging",
+    "dev:staging": "vite --mode staging",
     "build": "tsc -b && vite build",
+    "build:staging": "tsc -b && vite build --mode staging",
+    "build:production": "tsc -b && vite build --mode production",
+    "production:local": "bash scripts/run-production-local.sh",
     "lint": "oxlint",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "preview:production": "vite preview --host localhost --port 4173 --strictPort"
   },
   "dependencies": {
     "@dnd-kit/core": "^6.3.1",

@@ -428,6 +428,12 @@ function ReservationDetail({ reservation }: { reservation: Reservation }) {
         <span className="text-sm text-secondary font-normal">Guest</span>
         <span>{reservation.guestName}</span>
       </div>
+      {reservation.depositAmountCents != null && (
+        <div className="flex items-center justify-between font-semibold text-on-surface border-t border-outline-variant/10 pt-4">
+          <span className="text-sm text-secondary font-normal">Paid reservation deposit</span>
+          <span>${(reservation.depositAmountCents / 100).toFixed(2)} {reservation.currency ?? 'USD'}</span>
+        </div>
+      )}
     </div>
   );
 }
