@@ -1,4 +1,5 @@
 export * from './common';
+export * from './organization';
 export * from './auth';
 export * from './restaurant';
 export * from './homepage';

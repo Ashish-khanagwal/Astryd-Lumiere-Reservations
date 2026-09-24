@@ -8,10 +8,12 @@ export const userHandlers = [
 
   http.post('*/api/v1/restaurants/:id/users', async ({ params, request }) => {
     const restaurantId = params.id as string;
+    const organizationId = db.data.restaurants.find((r) => r.id === restaurantId)?.organizationId ?? '';
     const body = (await request.json()) as Record<string, unknown>;
     const now = nowIso();
     const user = {
       id: nextId('user'),
+      organizationId,
       email: (body.email as string) ?? '',
       name: (body.name as string) ?? 'New User',
       role: (body.role as 'owner' | 'staff') ?? 'staff',

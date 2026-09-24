@@ -7,6 +7,7 @@ import type {
   MenuItem,
   Offer,
   Order,
+  Organization,
   Reservation,
   ReservationAvailabilitySettings,
   Restaurant,
@@ -20,6 +21,7 @@ interface Versioned<T> {
 }
 
 export interface MockDbShape {
+  organizations: Organization[];
   users: User[];
   restaurants: Restaurant[];
   brand: Record<string, Versioned<BrandSettings>>;
@@ -35,10 +37,11 @@ export interface MockDbShape {
   reservationAvailability: Record<string, ReservationAvailabilitySettings>;
 }
 
-const STORAGE_KEY = 'lumiere-cms-mock-db-v1';
+const STORAGE_KEY = 'lumiere-cms-mock-db-v2';
 
 function emptyDb(): MockDbShape {
   return {
+    organizations: [],
     users: [],
     restaurants: [],
     brand: {},

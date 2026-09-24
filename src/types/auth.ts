@@ -15,10 +15,13 @@ export interface Permission {
 
 export interface User extends Timestamps {
   id: Id;
+  organizationId: Id;
   email: string;
   name: string;
   role: Role;
   restaurantId: Id | null;
+  /** Multi-Vertical Platform Plan §3.1/§5 - which Sites within the Org this user can touch; 'all' for owners/super admins. */
+  siteAccess: Id[] | 'all';
   permissions?: Partial<Permission>;
   avatarUrl?: string | null;
   isActive: boolean;
@@ -31,6 +34,7 @@ export interface Session {
 }
 
 export interface LoginRequest {
+  orgId: string;
   email: string;
   password: string;
 }

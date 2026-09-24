@@ -158,6 +158,8 @@ export interface BrandSettings extends Tenant, Timestamps {
 
 export interface Restaurant extends Timestamps {
   id: Id;
+  /** Multi-Vertical Platform Plan §3.1: this row is "Site" - `organizationId` is the new tenant boundary above it. */
+  organizationId: Id;
   slug: string;
   name: string;
   ownerUserId: Id;

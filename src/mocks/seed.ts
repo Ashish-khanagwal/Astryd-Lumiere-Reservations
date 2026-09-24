@@ -13,6 +13,7 @@ import type {
   OrderPaymentMethod,
   OrderServiceType,
   OrderStatus,
+  Organization,
   Reservation,
   ReservationAvailabilitySettings,
   ReservationStatus,
@@ -23,6 +24,9 @@ import type {
 
 export const RESTAURANT_ID = 'rest_lumiere';
 export const RESTAURANT_SLUG = 'lumiere-mayfair';
+export const ORGANIZATION_ID = 'org_lumiere';
+/** Human-typed login field (Multi-Vertical Platform Plan §4) - a placeholder format pending backend's final Org ID scheme (plan §15, open question 2). */
+export const ORGANIZATION_CODE = 'LUMIERE';
 /** Demo password accepted for every seeded account - mock auth only, never real. */
 export const DEMO_PASSWORD = 'password123';
 
@@ -100,6 +104,7 @@ function buildSeed(): MockDbShape {
 
   const restaurant: Restaurant = {
     id: RESTAURANT_ID,
+    organizationId: ORGANIZATION_ID,
     slug: RESTAURANT_SLUG,
     name: 'Lumière',
     ownerUserId: 'user_owner',
@@ -108,10 +113,14 @@ function buildSeed(): MockDbShape {
     updatedAt: now,
   };
 
+  const organizations: Organization[] = [
+    { id: ORGANIZATION_ID, code: ORGANIZATION_CODE, name: 'Lumière', createdAt: now, updatedAt: now },
+  ];
+
   const users: User[] = [
-    { id: 'user_super', email: 'admin@platform.com', name: 'Platform Admin', role: 'super_admin', restaurantId: null, isActive: true, createdAt: now, updatedAt: now },
-    { id: 'user_owner', email: 'owner@lumiere.com', name: 'Ava Whitfield', role: 'owner', restaurantId: RESTAURANT_ID, isActive: true, createdAt: now, updatedAt: now },
-    { id: 'user_staff', email: 'staff@lumiere.com', name: 'Jordan Reyes', role: 'staff', restaurantId: RESTAURANT_ID, isActive: true, createdAt: now, updatedAt: now },
+    { id: 'user_super', organizationId: ORGANIZATION_ID, email: 'admin@platform.com', name: 'Platform Admin', role: 'super_admin', restaurantId: null, isActive: true, createdAt: now, updatedAt: now },
+    { id: 'user_owner', organizationId: ORGANIZATION_ID, email: 'owner@lumiere.com', name: 'Ava Whitfield', role: 'owner', restaurantId: RESTAURANT_ID, isActive: true, createdAt: now, updatedAt: now },
+    { id: 'user_staff', organizationId: ORGANIZATION_ID, email: 'staff@lumiere.com', name: 'Jordan Reyes', role: 'staff', restaurantId: RESTAURANT_ID, isActive: true, createdAt: now, updatedAt: now },
   ];
 
   const media: MediaAsset[] = [
@@ -537,6 +546,7 @@ function buildSeed(): MockDbShape {
   const homepageDraft: Homepage = { restaurantId: RESTAURANT_ID, status: 'draft', sections: homepageSections.map((s) => ({ ...s })) };
 
   return {
+    organizations,
     users,
     restaurants: [restaurant],
     brand: { [RESTAURANT_ID]: { draft: { ...brandSettings }, published: { ...brandSettings } } },

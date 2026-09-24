@@ -19,7 +19,7 @@ interface AuthContextValue {
   isOwner: boolean;
   isStaff: boolean;
   can: (permission: keyof Permission) => boolean;
-  login: (email: string, password: string) => Promise<void>;
+  login: (orgId: string, email: string, password: string) => Promise<void>;
   logout: () => Promise<void>;
 }
 
@@ -46,8 +46,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       .finally(() => setIsLoading(false));
   }, []);
 
-  const login = async (email: string, password: string) => {
-    const session = await authService.login({ email, password });
+  const login = async (orgId: string, email: string, password: string) => {
+    const session = await authService.login({ orgId, email, password });
     localStorage.setItem(TOKEN_STORAGE_KEY, session.token);
     setAuthToken(session.token);
     setUser(session.user);
