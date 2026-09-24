@@ -11,6 +11,9 @@ export interface Permission {
   addons: boolean;
   settings: boolean;
   users: boolean;
+  /** Multi-Vertical Platform Plan §5 - added alongside the Booking/Membership modules; applies per-Site. */
+  booking: boolean;
+  membership: boolean;
 }
 
 export interface User extends Timestamps {

@@ -61,18 +61,12 @@ export function PagesPage() {
 
       <div className="space-y-3">
         {rows.map((row, index) => {
-          const isMembershipUnbuilt = row.module === 'membership';
           return (
             <div key={row.id} className="admin-card p-5">
               <div className="flex items-start justify-between gap-4 flex-wrap">
                 <div className="min-w-0">
                   <div className="flex items-center gap-2">
                     <span className="text-xs font-bold uppercase tracking-widest text-secondary">{MODULE_LABEL[row.module]}</span>
-                    {isMembershipUnbuilt && (
-                      <span className="px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wide bg-surface-container-high text-secondary">
-                        Coming soon
-                      </span>
-                    )}
                   </div>
                   <p className="text-xs text-secondary mt-1 max-w-md">{MODULE_DESCRIPTION[row.module]}</p>
                 </div>
@@ -111,7 +105,6 @@ export function PagesPage() {
                 <SelectField
                   label="Layout"
                   value={row.templateVariant}
-                  disabled={isMembershipUnbuilt}
                   onChange={(e) =>
                     updateConfig.mutate({ module: row.module, patch: { templateVariant: e.target.value as TemplateVariant } })
                   }
@@ -128,7 +121,6 @@ export function PagesPage() {
                 <ToggleField
                   label={row.enabled ? 'Shown in navigation' : 'Hidden from navigation'}
                   checked={row.enabled}
-                  disabled={isMembershipUnbuilt}
                   onChange={(enabled) => updateConfig.mutate({ module: row.module, patch: { enabled } })}
                 />
               </div>

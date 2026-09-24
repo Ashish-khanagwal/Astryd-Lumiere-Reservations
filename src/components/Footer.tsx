@@ -14,10 +14,12 @@ export const Footer: React.FC<FooterProps> = ({
   onNavigateReservations,
   onToast,
 }) => {
-  const { brand, getNavLabel, brandingBadgeEnabled } = usePublicData();
+  const { brand, getNavLabel, brandingBadgeEnabled, isModuleEnabled } = usePublicData();
   const brandName = brand?.restaurantName ?? 'Lumière';
   const catalogLabel = getNavLabel('catalog', 'Menu');
   const bookingLabel = getNavLabel('booking', 'Reservation');
+  const membershipLabel = getNavLabel('membership', 'Membership');
+  const membershipEnabled = isModuleEnabled('membership');
   const description =
     brand?.description ??
     'Experience the invisible excellence of modern French cuisine in the heart of Mayfair. Part of the Haute-Cuisine Group.';
@@ -62,6 +64,16 @@ export const Footer: React.FC<FooterProps> = ({
                   Private Dining
                 </button>
               </li>
+              {membershipEnabled && (
+                <li>
+                  <button
+                    className="hover:text-white transition-colors text-left"
+                    onClick={() => { window.location.hash = '#/membership'; }}
+                  >
+                    {membershipLabel}
+                  </button>
+                </li>
+              )}
             </ul>
           </div>
 

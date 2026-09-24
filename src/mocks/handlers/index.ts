@@ -11,6 +11,7 @@ import { orderHandlers } from './orders';
 import { reservationHandlers } from './reservations';
 import { siteHandlers } from './sites';
 import { pageConfigHandlers } from './pageConfigs';
+import { membershipHandlers } from './membership';
 
 export const handlers = [
   ...authHandlers,
@@ -26,4 +27,5 @@ export const handlers = [
   ...reservationHandlers,
   ...siteHandlers,
   ...pageConfigHandlers,
+  ...membershipHandlers,
 ];

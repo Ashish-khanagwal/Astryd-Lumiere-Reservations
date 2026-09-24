@@ -9,6 +9,7 @@ import { getOffers } from "../services/offers";
 import { getMedia } from "../services/media";
 import { getPageConfigs } from "../services/pageConfig";
 import { getSiteBrandingBadge } from "../services/sites";
+import { getMembershipPlans } from "../services/membership";
 import {
   setMenuCatalog,
   type AddonCategory,
@@ -18,6 +19,7 @@ import type {
   BrandSettings,
   HomepageSection,
   MediaAsset,
+  MembershipPlan,
   MenuCategory,
   MenuItem,
   Addon,
@@ -41,6 +43,10 @@ interface PublicDataValue {
   getNavLabel: (module: PlatformModule, fallback: string) => string;
   /** Plan §8 - which of the 3 layouts this module should render as; defaults to Variant A. */
   getTemplateVariant: (module: PlatformModule) => TemplateVariant;
+  /** Whether this Site has turned a module on at all - a disabled module's nav link/page shouldn't appear. */
+  isModuleEnabled: (module: PlatformModule) => boolean;
+  /** Plan §3.2/§8.4 - active plans only; the public Membership page reads this. */
+  membershipPlans: MembershipPlan[];
   /** Plan §5.2 - Super Admin only control; the public footer just reads this flag. */
   brandingBadgeEnabled: boolean;
 }
@@ -138,6 +144,10 @@ export function PublicDataProvider({ children }: { children: ReactNode }) {
     queryKey: ["public-branding-badge", restaurantId],
     queryFn: () => getSiteBrandingBadge(restaurantId),
   });
+  const membershipPlansQuery = useQuery({
+    queryKey: ["public-membership-plans", restaurantId],
+    queryFn: () => getMembershipPlans(restaurantId),
+  });
 
   const items = menuQuery.data?.items ?? [];
   const categories = menuQuery.data?.categories ?? [];
@@ -163,6 +173,8 @@ export function PublicDataProvider({ children }: { children: ReactNode }) {
     pageConfigs.find((p) => p.module === module)?.navLabel || fallback;
   const getTemplateVariant = (module: PlatformModule): TemplateVariant =>
     pageConfigs.find((p) => p.module === module)?.templateVariant ?? "a";
+  const isModuleEnabled = (module: PlatformModule) =>
+    pageConfigs.find((p) => p.module === module)?.enabled ?? true;
 
   const value: PublicDataValue = {
     isLoading,
@@ -176,6 +188,8 @@ export function PublicDataProvider({ children }: { children: ReactNode }) {
     pageConfigs,
     getNavLabel,
     getTemplateVariant,
+    isModuleEnabled,
+    membershipPlans: (membershipPlansQuery.data ?? []).filter((p) => p.isActive),
     brandingBadgeEnabled: brandingBadgeQuery.data?.enabled ?? true,
   };
 

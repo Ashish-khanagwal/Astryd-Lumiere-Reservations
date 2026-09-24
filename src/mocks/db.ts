@@ -3,6 +3,9 @@ import type {
   BrandSettings,
   Homepage,
   MediaAsset,
+  Member,
+  MemberCheckIn,
+  MembershipPlan,
   MenuCategory,
   MenuItem,
   Offer,
@@ -37,9 +40,12 @@ export interface MockDbShape {
   reservations: Reservation[];
   reservationAvailability: Record<string, ReservationAvailabilitySettings>;
   pageConfigs: PageConfig[];
+  membershipPlans: MembershipPlan[];
+  members: Member[];
+  memberCheckIns: MemberCheckIn[];
 }
 
-const STORAGE_KEY = 'lumiere-cms-mock-db-v3';
+const STORAGE_KEY = 'lumiere-cms-mock-db-v4';
 
 function emptyDb(): MockDbShape {
   return {
@@ -58,6 +64,9 @@ function emptyDb(): MockDbShape {
     reservations: [],
     reservationAvailability: {},
     pageConfigs: [],
+    membershipPlans: [],
+    members: [],
+    memberCheckIns: [],
   };
 }
 

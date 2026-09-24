@@ -5,6 +5,10 @@ import type {
   Homepage,
   HomepageSection,
   MediaAsset,
+  Member,
+  MemberCheckIn,
+  MembershipBillingInterval,
+  MembershipPlan,
   MenuCategory,
   MenuItem,
   Offer,
@@ -448,12 +452,12 @@ function buildSeed(): MockDbShape {
     blockedDates: [],
   };
 
-  /** Plan §6/§12 - default nav label + variant per module for a freshly seeded Site; membership stays off until Phase 3 ships a real page for it. */
-  function buildDefaultPageConfigs(siteId: string): PageConfig[] {
+  /** Plan §6/§12 - default nav label + variant per module for a freshly seeded Site; membership defaults off for a freshly created Site until its owner turns it on. */
+  function buildDefaultPageConfigs(siteId: string, membershipEnabled = false): PageConfig[] {
     const defaults: Array<{ module: PlatformModule; navLabel: string; enabled: boolean }> = [
       { module: 'catalog', navLabel: 'Menu', enabled: true },
       { module: 'booking', navLabel: 'Reservations', enabled: true },
-      { module: 'membership', navLabel: 'Membership', enabled: false },
+      { module: 'membership', navLabel: 'Membership', enabled: membershipEnabled },
     ];
     return defaults.map((d, order) => ({
       id: `pageconfig_${siteId}_${d.module}`,
@@ -467,6 +471,113 @@ function buildSeed(): MockDbShape {
       updatedAt: now,
     }));
   }
+
+  /** Plan §3.2/§8.4 - a few demo Plans + Members for the Lumière Site, whose Membership module ships enabled out of the box. */
+  const membershipPlans: MembershipPlan[] = [
+    {
+      id: 'plan_gold',
+      restaurantId: RESTAURANT_ID,
+      name: 'Gold Table Club',
+      description: 'Priority reservations, a complimentary aperitif, and a dedicated concierge line.',
+      priceCents: 4900,
+      billingInterval: 'monthly',
+      benefits: ['Priority reservations', 'Complimentary aperitif each visit', 'Dedicated concierge line'],
+      isActive: true,
+      order: 0,
+      createdAt: now,
+      updatedAt: now,
+    },
+    {
+      id: 'plan_annual',
+      restaurantId: RESTAURANT_ID,
+      name: 'Annual Connoisseur',
+      description: "A full year of Lumière's chef's table experiences, billed once.",
+      priceCents: 45000,
+      billingInterval: 'yearly',
+      benefits: ["Two chef's table seatings per quarter", '10% off private dining', 'Birthday month bottle of house Champagne'],
+      isActive: true,
+      order: 1,
+      createdAt: now,
+      updatedAt: now,
+    },
+    {
+      id: 'plan_taster',
+      restaurantId: RESTAURANT_ID,
+      name: 'Taster Pass',
+      description: 'A single-visit introduction to the Lumière tasting menu at a members-only rate.',
+      priceCents: 1500,
+      billingInterval: 'one_time',
+      benefits: ['One-time tasting menu discount'],
+      isActive: false,
+      order: 2,
+      createdAt: now,
+      updatedAt: now,
+    },
+  ];
+
+  function nextBillingDateFor(interval: MembershipBillingInterval, from: Date): string | null {
+    if (interval === 'one_time') return null;
+    const d = new Date(from);
+    if (interval === 'monthly') d.setMonth(d.getMonth() + 1);
+    if (interval === 'quarterly') d.setMonth(d.getMonth() + 3);
+    if (interval === 'yearly') d.setFullYear(d.getFullYear() + 1);
+    return d.toISOString().slice(0, 10);
+  }
+
+  const daysAgoDate = (days: number) => {
+    const d = new Date();
+    d.setDate(d.getDate() - days);
+    return d.toISOString().slice(0, 10);
+  };
+
+  const members: Member[] = [
+    {
+      id: 'member_1',
+      restaurantId: RESTAURANT_ID,
+      planId: 'plan_gold',
+      customerName: 'Eleanor Cross',
+      customerEmail: 'eleanor.c@example.com',
+      customerPhone: '+44 7700 900007',
+      status: 'active',
+      startDate: daysAgoDate(40),
+      nextBillingDate: nextBillingDateFor('monthly', new Date()),
+      createdAt: now,
+      updatedAt: now,
+    },
+    {
+      id: 'member_2',
+      restaurantId: RESTAURANT_ID,
+      planId: 'plan_annual',
+      customerName: 'James Whitmore',
+      customerEmail: 'james.w@example.com',
+      customerPhone: '+44 7700 900006',
+      status: 'active',
+      startDate: daysAgoDate(120),
+      nextBillingDate: nextBillingDateFor('yearly', new Date(Date.now() - 120 * 24 * 60 * 60 * 1000)),
+      createdAt: now,
+      updatedAt: now,
+    },
+    {
+      id: 'member_3',
+      restaurantId: RESTAURANT_ID,
+      planId: 'plan_gold',
+      customerName: 'Priya Anand',
+      customerEmail: 'priya.a@example.com',
+      customerPhone: '+44 7700 900005',
+      status: 'paused',
+      startDate: daysAgoDate(200),
+      nextBillingDate: null,
+      notes: 'Paused while traveling - resumes next month.',
+      createdAt: now,
+      updatedAt: now,
+    },
+  ];
+
+  const memberCheckIns: MemberCheckIn[] = [
+    { id: 'checkin_1', restaurantId: RESTAURANT_ID, memberId: 'member_1', checkedInAt: minutesAgo(120) },
+    { id: 'checkin_2', restaurantId: RESTAURANT_ID, memberId: 'member_1', checkedInAt: minutesAgo(60 * 24 * 12) },
+    { id: 'checkin_3', restaurantId: RESTAURANT_ID, memberId: 'member_2', checkedInAt: minutesAgo(60 * 24 * 5) },
+  ];
 
   const brandSettings: BrandSettings = {
     restaurantId: RESTAURANT_ID,
@@ -635,7 +746,10 @@ function buildSeed(): MockDbShape {
       [RESTAURANT_ID]: reservationAvailabilitySettings,
       [SECOND_SITE_ID]: { ...reservationAvailabilitySettings, restaurantId: SECOND_SITE_ID },
     },
-    pageConfigs: [...buildDefaultPageConfigs(RESTAURANT_ID), ...buildDefaultPageConfigs(SECOND_SITE_ID)],
+    pageConfigs: [...buildDefaultPageConfigs(RESTAURANT_ID, true), ...buildDefaultPageConfigs(SECOND_SITE_ID)],
+    membershipPlans,
+    members,
+    memberCheckIns,
   };
 }
 

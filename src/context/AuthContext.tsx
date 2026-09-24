@@ -6,9 +6,9 @@ import type { Permission, Role, User } from '../types';
 const TOKEN_STORAGE_KEY = 'lumiere-cms-token';
 
 const ROLE_DEFAULT_PERMISSIONS: Record<Role, Permission> = {
-  super_admin: { menu: true, branding: true, homepage: true, media: true, offers: true, addons: true, settings: true, users: true },
-  owner: { menu: true, branding: true, homepage: true, media: true, offers: true, addons: true, settings: true, users: false },
-  staff: { menu: true, branding: false, homepage: false, media: false, offers: false, addons: false, settings: false, users: false },
+  super_admin: { menu: true, branding: true, homepage: true, media: true, offers: true, addons: true, settings: true, users: true, booking: true, membership: true },
+  owner: { menu: true, branding: true, homepage: true, media: true, offers: true, addons: true, settings: true, users: false, booking: true, membership: true },
+  staff: { menu: true, branding: false, homepage: false, media: false, offers: false, addons: false, settings: false, users: false, booking: true, membership: false },
 };
 
 interface AuthContextValue {

@@ -10,3 +10,4 @@ export * from './orders';
 export * from './reservations';
 export * from './payments';
 export * from './pageConfig';
+export * from './membership';

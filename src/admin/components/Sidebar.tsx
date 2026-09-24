@@ -27,6 +27,7 @@ import {
   Check,
   LayoutList,
   Building2,
+  Crown,
   type LucideIcon,
 } from 'lucide-react';
 import { usePermissions } from '../hooks/usePermissions';
@@ -135,6 +136,8 @@ export function Sidebar() {
   const { data: pageConfigs } = usePageConfigs();
   const catalogLabel = pageConfigs?.find((p) => p.module === 'catalog')?.navLabel || 'Menu';
   const bookingLabel = pageConfigs?.find((p) => p.module === 'booking')?.navLabel || 'Reservations';
+  const membershipConfig = pageConfigs?.find((p) => p.module === 'membership');
+  const membershipLabel = membershipConfig?.navLabel || 'Membership';
 
   const groups: NavGroup[] = useMemo(
     () => [
@@ -146,6 +149,9 @@ export function Sidebar() {
           { to: '/admin', label: 'Dashboard', icon: LayoutDashboard, end: true },
           { to: '/admin/orders', label: 'Orders', icon: ShoppingBag },
           { to: '/admin/reservations', label: bookingLabel, icon: CalendarDays },
+          ...(membershipConfig?.enabled && perms.canManageMembership
+            ? [{ to: '/admin/membership', label: membershipLabel, icon: Crown }]
+            : []),
         ],
       },
       {
@@ -198,7 +204,18 @@ export function Sidebar() {
         items: [{ to: '/admin/superadmin/sites', label: 'All Sites', icon: Building2 }],
       },
     ],
-    [perms.canManageWebsite, perms.canManageMenu, perms.canManageBranding, perms.canManageUsers, perms.isSuperAdmin, catalogLabel, bookingLabel]
+    [
+      perms.canManageWebsite,
+      perms.canManageMenu,
+      perms.canManageBranding,
+      perms.canManageUsers,
+      perms.canManageMembership,
+      perms.isSuperAdmin,
+      catalogLabel,
+      bookingLabel,
+      membershipConfig?.enabled,
+      membershipLabel,
+    ]
   );
 
   const visibleGroups = useMemo(() => groups.filter((g) => g.visible), [groups]);

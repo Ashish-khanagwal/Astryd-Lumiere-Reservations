@@ -28,6 +28,7 @@ import { AccountPage } from './pages/settings/AccountPage';
 import { UsersPage } from './pages/settings/UsersPage';
 import { PagesPage } from './pages/settings/PagesPage';
 import { SuperAdminSitesPage } from './pages/superadmin/SitesPage';
+import { MembershipPage } from './pages/membership/MembershipPage';
 
 export function AdminRoutes() {
   return (
@@ -48,6 +49,7 @@ export function AdminRoutes() {
           <Route index element={<DashboardPage />} />
           <Route path="orders" element={<OrdersPage />} />
           <Route path="reservations" element={<ReservationsPage />} />
+          <Route path="membership" element={<MembershipPage />} />
 
           <Route path="website/homepage" element={<HomepageSectionsPage />} />
           <Route path="website/homepage/:type" element={<SectionEditorPage />} />
