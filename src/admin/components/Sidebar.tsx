@@ -20,7 +20,7 @@ import {
   X,
   PanelLeftClose,
   PanelLeftOpen,
-  ExternalLink,
+  Eye,
   ShoppingBag,
   CalendarDays,
   ChevronsUpDown,
@@ -35,6 +35,7 @@ import { draftPreviewUrl, useDraftSave } from '../context/DraftSaveContext';
 import { useRestaurant } from '../../context/RestaurantContext';
 import { usePageConfigs } from '../hooks/api/usePageConfigs';
 import { Tooltip } from './Tooltip';
+import { PreviewModal } from './PreviewModal';
 
 /** Multi-Vertical Platform Plan §10.2 - only appears once an Org has more than one Site; a single-Site Org sees the plain brand mark, unchanged. */
 function SiteSwitcher() {
@@ -122,10 +123,11 @@ export function Sidebar() {
   const location = useLocation();
   const { mobileOpen, closeMobile, searchQuery, setSearchQuery } = useSidebar();
   const { flushDraft } = useDraftSave();
+  const [isPreviewOpen, setIsPreviewOpen] = useState(false);
 
   const handlePreview = async () => {
     await flushDraft();
-    window.open(draftPreviewUrl(), '_blank', 'noopener,noreferrer');
+    setIsPreviewOpen(true);
   };
 
   const [isCollapsed, setIsCollapsed] = useState<boolean>(() => localStorage.getItem(COLLAPSED_STORAGE_KEY) === 'true');
@@ -344,7 +346,7 @@ export function Sidebar() {
                 className="flex w-full flex-col items-center justify-center gap-1 rounded-xl px-1 py-2 bg-primary/10 text-primary hover:bg-primary hover:text-on-primary transition-colors"
                 aria-label="Preview website"
               >
-                <ExternalLink className="h-4 w-4" />
+                <Eye className="h-4 w-4" />
                 <span className="w-full text-center text-[10px] leading-tight font-medium">Preview</span>
               </button>
               <Tooltip label="Expand sidebar">
@@ -360,15 +362,17 @@ export function Sidebar() {
               className="block w-full text-left rounded-3xl bg-gradient-to-br from-[#6d7cff] via-[#6b8bff] to-[#a78bfa] p-4 text-white shadow-lg shadow-primary/20 hover:brightness-105 transition"
             >
               <div className="text-sm font-bold leading-snug">Preview website</div>
-              <p className="text-[11px] text-white/80 mt-1">Saves your latest edits, then shows the draft site.</p>
+              <p className="text-[11px] text-white/80 mt-1">Saves your latest edits, then shows the whole site right here.</p>
               <span className="mt-3 inline-flex items-center gap-1.5 rounded-full bg-white px-3 py-1.5 text-xs font-bold text-primary">
-                Open
-                <ExternalLink className="h-3 w-3" />
+                Preview
+                <Eye className="h-3 w-3" />
               </span>
             </button>
           )}
         </div>
       </aside>
+
+      <PreviewModal isOpen={isPreviewOpen} onClose={() => setIsPreviewOpen(false)} url={draftPreviewUrl()} />
     </>
   );
 }

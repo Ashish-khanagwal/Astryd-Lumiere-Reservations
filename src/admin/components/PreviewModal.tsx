@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Monitor, Tablet, Smartphone, X } from 'lucide-react';
+import { Monitor, Tablet, Smartphone, ExternalLink, X } from 'lucide-react';
 
 type Device = 'desktop' | 'tablet' | 'mobile';
 
@@ -47,13 +47,22 @@ export function PreviewModal({ isOpen, onClose, url = '/?preview=true' }: Previe
             ))}
           </div>
 
-          <button
-            onClick={onClose}
-            className="p-1.5 rounded-lg text-secondary hover:bg-surface-container-high hover:text-on-surface transition-colors"
-            aria-label="Close preview"
-          >
-            <X className="h-5 w-5" />
-          </button>
+          <div className="flex items-center gap-1">
+            <button
+              onClick={() => window.open(url, '_blank', 'noopener,noreferrer')}
+              className="flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-medium text-secondary hover:bg-surface-container-high hover:text-on-surface transition-colors"
+            >
+              <ExternalLink className="h-3.5 w-3.5" />
+              Open in new tab
+            </button>
+            <button
+              onClick={onClose}
+              className="p-1.5 rounded-lg text-secondary hover:bg-surface-container-high hover:text-on-surface transition-colors"
+              aria-label="Close preview"
+            >
+              <X className="h-5 w-5" />
+            </button>
+          </div>
         </div>
 
         <div className="flex-1 overflow-auto flex justify-center bg-surface-container-low rounded-xl p-4">
