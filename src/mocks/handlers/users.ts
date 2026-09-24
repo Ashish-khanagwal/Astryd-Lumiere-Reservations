@@ -11,13 +11,15 @@ export const userHandlers = [
     const organizationId = db.data.restaurants.find((r) => r.id === restaurantId)?.organizationId ?? '';
     const body = (await request.json()) as Record<string, unknown>;
     const now = nowIso();
+    const role = (body.role as 'owner' | 'staff') ?? 'staff';
     const user = {
       id: nextId('user'),
       organizationId,
       email: (body.email as string) ?? '',
       name: (body.name as string) ?? 'New User',
-      role: (body.role as 'owner' | 'staff') ?? 'staff',
+      role,
       restaurantId,
+      siteAccess: role === 'owner' ? ('all' as const) : ((body.siteAccess as string[]) ?? [restaurantId]),
       isActive: true,
       createdAt: now,
       updatedAt: now,

@@ -1,8 +1,10 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Users, UserPlus, Trash2 } from 'lucide-react';
 import { useCreateUser, useDeleteUser, useUsers } from '../../hooks/api/useUsers';
+import { useSites } from '../../hooks/api/useSites';
 import { useAdminToast } from '../../context/AdminToastContext';
 import { useAuth } from '../../../context/AuthContext';
+import { useRestaurant } from '../../../context/RestaurantContext';
 import { DataTable } from '../../components/DataTable';
 import { ConfirmDialog } from '../../components/ConfirmDialog';
 import { StatusPill } from '../../components/StatusPill';
@@ -15,20 +17,34 @@ import type { Role, User } from '../../../types';
 export function UsersPage() {
   const { data: users, isLoading } = useUsers();
   const { user: currentUser } = useAuth();
+  const { organizationId, restaurantId } = useRestaurant();
+  const { data: sites } = useSites(organizationId);
   const createUser = useCreateUser();
   const deleteUser = useDeleteUser();
   const { showToast } = useAdminToast();
 
   const [isFormOpen, setIsFormOpen] = useState(false);
-  const [form, setForm] = useState({ name: '', email: '', role: 'staff' as Role });
+  const [form, setForm] = useState({ name: '', email: '', role: 'staff' as Role, siteAccess: [restaurantId] });
   const [pendingDelete, setPendingDelete] = useState<User | null>(null);
+
+  useEffect(() => {
+    if (isFormOpen) setForm((f) => ({ ...f, siteAccess: [restaurantId] }));
+  }, [isFormOpen, restaurantId]);
+
+  const toggleSiteAccess = (siteId: string) => {
+    setForm((f) => ({
+      ...f,
+      siteAccess: f.siteAccess.includes(siteId) ? f.siteAccess.filter((id) => id !== siteId) : [...f.siteAccess, siteId],
+    }));
+  };
 
   const handleCreate = async () => {
     if (!form.name.trim() || !form.email.trim()) return;
+    if (form.role === 'staff' && form.siteAccess.length === 0) return;
     await createUser.mutateAsync(form);
     showToast('User invited.');
     setIsFormOpen(false);
-    setForm({ name: '', email: '', role: 'staff' });
+    setForm({ name: '', email: '', role: 'staff', siteAccess: [restaurantId] });
   };
 
   return (
@@ -101,6 +117,28 @@ export function UsersPage() {
             <option value="staff">Staff (menu availability only)</option>
             <option value="owner">Owner (full access)</option>
           </SelectField>
+
+          {form.role === 'staff' && sites && sites.length > 1 && (
+            <div>
+              <label className="block text-sm font-semibold text-on-surface mb-1.5">Site access</label>
+              <div className="space-y-1.5">
+                {sites.map((site) => (
+                  <label key={site.id} className="flex items-center gap-2 text-sm text-on-surface">
+                    <input
+                      type="checkbox"
+                      checked={form.siteAccess.includes(site.id)}
+                      onChange={() => toggleSiteAccess(site.id)}
+                      className="rounded border-outline-variant/50"
+                    />
+                    {site.name}
+                  </label>
+                ))}
+              </div>
+              {form.siteAccess.length === 0 && (
+                <p className="text-xs text-error mt-1">Pick at least one site.</p>
+              )}
+            </div>
+          )}
         </div>
       </Modal>
 

@@ -24,6 +24,9 @@ import type {
 
 export const RESTAURANT_ID = 'rest_lumiere';
 export const RESTAURANT_SLUG = 'lumiere-mayfair';
+/** Second demo Site under the same Org, so Phase 1's Site switcher has something real to switch between (Multi-Vertical Platform Plan §14, Phase 1). Deliberately sparse - a freshly created Site looks like this until its owner fills it in. */
+export const SECOND_SITE_ID = 'rest_lumiere_nh';
+export const SECOND_SITE_SLUG = 'lumiere-notting-hill';
 export const ORGANIZATION_ID = 'org_lumiere';
 /** Human-typed login field (Multi-Vertical Platform Plan §4) - a placeholder format pending backend's final Org ID scheme (plan §15, open question 2). */
 export const ORGANIZATION_CODE = 'LUMIERE';
@@ -113,14 +116,25 @@ function buildSeed(): MockDbShape {
     updatedAt: now,
   };
 
+  const secondSite: Restaurant = {
+    id: SECOND_SITE_ID,
+    organizationId: ORGANIZATION_ID,
+    slug: SECOND_SITE_SLUG,
+    name: 'Lumière – Notting Hill',
+    ownerUserId: 'user_owner',
+    status: 'active',
+    createdAt: now,
+    updatedAt: now,
+  };
+
   const organizations: Organization[] = [
     { id: ORGANIZATION_ID, code: ORGANIZATION_CODE, name: 'Lumière', createdAt: now, updatedAt: now },
   ];
 
   const users: User[] = [
-    { id: 'user_super', organizationId: ORGANIZATION_ID, email: 'admin@platform.com', name: 'Platform Admin', role: 'super_admin', restaurantId: null, isActive: true, createdAt: now, updatedAt: now },
-    { id: 'user_owner', organizationId: ORGANIZATION_ID, email: 'owner@lumiere.com', name: 'Ava Whitfield', role: 'owner', restaurantId: RESTAURANT_ID, isActive: true, createdAt: now, updatedAt: now },
-    { id: 'user_staff', organizationId: ORGANIZATION_ID, email: 'staff@lumiere.com', name: 'Jordan Reyes', role: 'staff', restaurantId: RESTAURANT_ID, isActive: true, createdAt: now, updatedAt: now },
+    { id: 'user_super', organizationId: ORGANIZATION_ID, email: 'admin@platform.com', name: 'Platform Admin', role: 'super_admin', restaurantId: null, siteAccess: 'all', isActive: true, createdAt: now, updatedAt: now },
+    { id: 'user_owner', organizationId: ORGANIZATION_ID, email: 'owner@lumiere.com', name: 'Ava Whitfield', role: 'owner', restaurantId: RESTAURANT_ID, siteAccess: 'all', isActive: true, createdAt: now, updatedAt: now },
+    { id: 'user_staff', organizationId: ORGANIZATION_ID, email: 'staff@lumiere.com', name: 'Jordan Reyes', role: 'staff', restaurantId: RESTAURANT_ID, siteAccess: [RESTAURANT_ID], isActive: true, createdAt: now, updatedAt: now },
   ];
 
   const media: MediaAsset[] = [
@@ -545,11 +559,23 @@ function buildSeed(): MockDbShape {
   const homepagePublished: Homepage = { restaurantId: RESTAURANT_ID, status: 'published', sections: homepageSections };
   const homepageDraft: Homepage = { restaurantId: RESTAURANT_ID, status: 'draft', sections: homepageSections.map((s) => ({ ...s })) };
 
+  const secondSiteBrand: BrandSettings = {
+    ...brandSettings,
+    restaurantId: SECOND_SITE_ID,
+    restaurantName: 'Lumière – Notting Hill',
+    tagline: 'Modern French, Notting Hill',
+  };
+
+  const secondSiteHomepage: Homepage = { restaurantId: SECOND_SITE_ID, status: 'published', sections: [] };
+
   return {
     organizations,
     users,
-    restaurants: [restaurant],
-    brand: { [RESTAURANT_ID]: { draft: { ...brandSettings }, published: { ...brandSettings } } },
+    restaurants: [restaurant, secondSite],
+    brand: {
+      [RESTAURANT_ID]: { draft: { ...brandSettings }, published: { ...brandSettings } },
+      [SECOND_SITE_ID]: { draft: { ...secondSiteBrand }, published: { ...secondSiteBrand } },
+    },
     website: {
       [RESTAURANT_ID]: {
         restaurantId: RESTAURANT_ID,
@@ -560,8 +586,20 @@ function buildSeed(): MockDbShape {
         createdAt: now,
         updatedAt: now,
       },
+      [SECOND_SITE_ID]: {
+        restaurantId: SECOND_SITE_ID,
+        publishStatus: 'draft',
+        publishedAt: null,
+        seoTitle: 'Lumière – Notting Hill',
+        seoDescription: 'Modern French fine dining in Notting Hill, London.',
+        createdAt: now,
+        updatedAt: now,
+      },
     },
-    homepage: { [RESTAURANT_ID]: { draft: homepageDraft, published: homepagePublished } },
+    homepage: {
+      [RESTAURANT_ID]: { draft: homepageDraft, published: homepagePublished },
+      [SECOND_SITE_ID]: { draft: { ...secondSiteHomepage }, published: { ...secondSiteHomepage } },
+    },
     media,
     categories,
     items,
@@ -569,7 +607,10 @@ function buildSeed(): MockDbShape {
     offers,
     orders,
     reservations,
-    reservationAvailability: { [RESTAURANT_ID]: reservationAvailabilitySettings },
+    reservationAvailability: {
+      [RESTAURANT_ID]: reservationAvailabilitySettings,
+      [SECOND_SITE_ID]: { ...reservationAvailabilitySettings, restaurantId: SECOND_SITE_ID },
+    },
   };
 }
 

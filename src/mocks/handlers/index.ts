@@ -9,6 +9,7 @@ import { auditLogHandlers } from './auditLog';
 import { userHandlers } from './users';
 import { orderHandlers } from './orders';
 import { reservationHandlers } from './reservations';
+import { siteHandlers } from './sites';
 
 export const handlers = [
   ...authHandlers,
@@ -22,4 +23,5 @@ export const handlers = [
   ...userHandlers,
   ...orderHandlers,
   ...reservationHandlers,
+  ...siteHandlers,
 ];

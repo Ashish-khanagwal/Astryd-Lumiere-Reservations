@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { NavLink, useLocation } from 'react-router-dom';
 import {
   LayoutDashboard,
@@ -23,12 +23,80 @@ import {
   ExternalLink,
   ShoppingBag,
   CalendarDays,
+  ChevronsUpDown,
+  Check,
   type LucideIcon,
 } from 'lucide-react';
 import { usePermissions } from '../hooks/usePermissions';
 import { useSidebar } from '../context/SidebarContext';
 import { draftPreviewUrl, useDraftSave } from '../context/DraftSaveContext';
+import { useRestaurant } from '../../context/RestaurantContext';
 import { Tooltip } from './Tooltip';
+
+/** Multi-Vertical Platform Plan §10.2 - only appears once an Org has more than one Site; a single-Site Org sees the plain brand mark, unchanged. */
+function SiteSwitcher() {
+  const { restaurantId, sites, setActiveSiteId } = useRestaurant();
+  const [isOpen, setIsOpen] = useState(false);
+  const rootRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!isOpen) return;
+    const onClick = (e: MouseEvent) => {
+      if (rootRef.current && !rootRef.current.contains(e.target as Node)) setIsOpen(false);
+    };
+    document.addEventListener('mousedown', onClick);
+    return () => document.removeEventListener('mousedown', onClick);
+  }, [isOpen]);
+
+  if (sites.length <= 1) {
+    return (
+      <div className="flex items-center gap-2.5 min-w-0">
+        <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-primary text-on-primary shadow-md shadow-primary/20">
+          <Sparkles className="h-4 w-4" />
+        </div>
+        <span className="text-lg font-bold text-on-surface truncate tracking-tight">Lumière</span>
+      </div>
+    );
+  }
+
+  const activeSite = sites.find((s) => s.id === restaurantId) ?? sites[0];
+
+  return (
+    <div ref={rootRef} className="relative min-w-0 flex-1">
+      <button
+        type="button"
+        onClick={() => setIsOpen((o) => !o)}
+        className="flex w-full items-center gap-2.5 min-w-0 rounded-xl px-1.5 py-1 -ml-1.5 hover:bg-surface-container-low transition-colors"
+      >
+        <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-primary text-on-primary shadow-md shadow-primary/20">
+          <Sparkles className="h-4 w-4" />
+        </div>
+        <span className="text-sm font-bold text-on-surface truncate tracking-tight flex-1 text-left">{activeSite.name}</span>
+        <ChevronsUpDown className="h-3.5 w-3.5 shrink-0 text-secondary" />
+      </button>
+
+      {isOpen && (
+        <div className="absolute left-0 top-full mt-1 w-64 rounded-xl border border-outline-variant/20 bg-surface shadow-lg z-50 py-1.5">
+          <div className="px-3 pb-1.5 text-[11px] font-bold uppercase tracking-widest text-secondary">Sites</div>
+          {sites.map((site) => (
+            <button
+              key={site.id}
+              type="button"
+              onClick={() => {
+                setActiveSiteId(site.id);
+                setIsOpen(false);
+              }}
+              className="flex w-full items-center gap-2 px-3 py-2 text-sm text-left text-on-surface hover:bg-surface-container-low transition-colors"
+            >
+              <span className="flex-1 truncate">{site.name}</span>
+              {site.id === activeSite.id && <Check className="h-4 w-4 text-primary shrink-0" />}
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
 
 interface NavItem {
   to: string;
@@ -231,12 +299,7 @@ export function Sidebar() {
               </button>
             </Tooltip>
           ) : (
-            <div className="flex items-center gap-2.5 min-w-0">
-              <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-primary text-on-primary shadow-md shadow-primary/20">
-                <Sparkles className="h-4 w-4" />
-              </div>
-              <span className="text-lg font-bold text-on-surface truncate tracking-tight">Lumière</span>
-            </div>
+            <SiteSwitcher />
           )}
 
           {!effectiveCollapsed && (
