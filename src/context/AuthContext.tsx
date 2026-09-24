@@ -20,6 +20,7 @@ interface AuthContextValue {
   isStaff: boolean;
   can: (permission: keyof Permission) => boolean;
   login: (orgId: string, email: string, password: string) => Promise<void>;
+  loginSuperAdmin: (email: string, password: string) => Promise<void>;
   logout: () => Promise<void>;
 }
 
@@ -53,6 +54,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setUser(session.user);
   };
 
+  const loginSuperAdmin = async (email: string, password: string) => {
+    const session = await authService.loginSuperAdmin({ email, password });
+    localStorage.setItem(TOKEN_STORAGE_KEY, session.token);
+    setAuthToken(session.token);
+    setUser(session.user);
+  };
+
   const logout = async () => {
     try {
       await authService.logout();
@@ -78,6 +86,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     isStaff: user?.role === 'staff',
     can,
     login,
+    loginSuperAdmin,
     logout,
   };
 

@@ -26,6 +26,7 @@ import {
   ChevronsUpDown,
   Check,
   LayoutList,
+  Building2,
   type LucideIcon,
 } from 'lucide-react';
 import { usePermissions } from '../hooks/usePermissions';
@@ -188,8 +189,14 @@ export function Sidebar() {
           ...(perms.canManageUsers ? [{ to: '/admin/settings/users', label: 'Users', icon: Users }] : []),
         ],
       },
+      {
+        key: 'platform',
+        title: 'Platform',
+        visible: perms.isSuperAdmin,
+        items: [{ to: '/admin/superadmin/sites', label: 'All Sites', icon: Building2 }],
+      },
     ],
-    [perms.canManageWebsite, perms.canManageMenu, perms.canManageBranding, perms.canManageUsers, catalogLabel, bookingLabel]
+    [perms.canManageWebsite, perms.canManageMenu, perms.canManageBranding, perms.canManageUsers, perms.isSuperAdmin, catalogLabel, bookingLabel]
   );
 
   const visibleGroups = useMemo(() => groups.filter((g) => g.visible), [groups]);

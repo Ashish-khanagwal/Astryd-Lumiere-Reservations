@@ -4,6 +4,7 @@ import { AdminLayout } from './layouts/AdminLayout';
 import { RequireAuth } from './guards/RequireAuth';
 import { RequireRole } from './guards/RequireRole';
 import { LoginPage } from './pages/auth/LoginPage';
+import { SuperAdminLoginPage } from './pages/auth/SuperAdminLoginPage';
 import { ForgotPasswordPage } from './pages/auth/ForgotPasswordPage';
 import { ResetPasswordPage } from './pages/auth/ResetPasswordPage';
 import { DashboardPage } from './pages/DashboardPage';
@@ -26,6 +27,7 @@ import { SocialMediaPage } from './pages/restaurant/SocialMediaPage';
 import { AccountPage } from './pages/settings/AccountPage';
 import { UsersPage } from './pages/settings/UsersPage';
 import { PagesPage } from './pages/settings/PagesPage';
+import { SuperAdminSitesPage } from './pages/superadmin/SitesPage';
 
 export function AdminRoutes() {
   return (
@@ -35,6 +37,8 @@ export function AdminRoutes() {
         <Route path="forgot-password" element={<ForgotPasswordPage />} />
         <Route path="reset-password" element={<ResetPasswordPage />} />
       </Route>
+
+      <Route path="/admin/superadmin/login" element={<SuperAdminLoginPage />} />
 
       <Route path="/admin" element={<RequireAuth />}>
         <Route element={<AdminLayout />}>
@@ -63,6 +67,9 @@ export function AdminRoutes() {
           <Route path="settings/pages" element={<PagesPage />} />
           <Route element={<RequireRole allow={['owner', 'super_admin']} />}>
             <Route path="settings/users" element={<UsersPage />} />
+          </Route>
+          <Route element={<RequireRole allow={['super_admin']} />}>
+            <Route path="superadmin/sites" element={<SuperAdminSitesPage />} />
           </Route>
         </Route>
       </Route>

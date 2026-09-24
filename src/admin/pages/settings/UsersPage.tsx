@@ -11,8 +11,8 @@ import { StatusPill } from '../../components/StatusPill';
 import { PageHeader } from '../../components/PageHeader';
 import { Button } from '../../components/Button';
 import { Modal } from '../../components/Modal';
-import { TextField, SelectField } from '../../components/forms/Field';
-import type { Role, User } from '../../../types';
+import { TextField } from '../../components/forms/Field';
+import type { User } from '../../../types';
 
 export function UsersPage() {
   const { data: users, isLoading } = useUsers();
@@ -24,7 +24,9 @@ export function UsersPage() {
   const { showToast } = useAdminToast();
 
   const [isFormOpen, setIsFormOpen] = useState(false);
-  const [form, setForm] = useState({ name: '', email: '', role: 'staff' as Role, siteAccess: [restaurantId] });
+  // Multi-Vertical Platform Plan §5.1: this screen only ever creates Staff - Owner accounts are created
+  // exclusively by the platform team when the Organization itself is provisioned (§6B).
+  const [form, setForm] = useState({ name: '', email: '', role: 'staff' as const, siteAccess: [restaurantId] });
   const [pendingDelete, setPendingDelete] = useState<User | null>(null);
 
   useEffect(() => {
@@ -39,8 +41,7 @@ export function UsersPage() {
   };
 
   const handleCreate = async () => {
-    if (!form.name.trim() || !form.email.trim()) return;
-    if (form.role === 'staff' && form.siteAccess.length === 0) return;
+    if (!form.name.trim() || !form.email.trim() || form.siteAccess.length === 0) return;
     await createUser.mutateAsync(form);
     showToast('User invited.');
     setIsFormOpen(false);
@@ -52,7 +53,7 @@ export function UsersPage() {
       <PageHeader
         icon={Users}
         title="Users"
-        description="Restaurant staff and owner accounts with admin panel access."
+        description="Staff accounts with admin panel access. New Organizations and their Owner account are created by the platform team."
         actions={
           <Button variant="primary" icon={UserPlus} onClick={() => setIsFormOpen(true)}>
             Invite User
@@ -113,12 +114,11 @@ export function UsersPage() {
         <div className="space-y-4">
           <TextField label="Name" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} />
           <TextField label="Email" type="email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} />
-          <SelectField label="Role" value={form.role} onChange={(e) => setForm({ ...form, role: e.target.value as Role })}>
-            <option value="staff">Staff (menu availability only)</option>
-            <option value="owner">Owner (full access)</option>
-          </SelectField>
+          <div className="rounded-xl bg-surface-container-low px-3 py-2.5 text-sm text-secondary">
+            Role: <span className="font-semibold text-on-surface">Staff</span>
+          </div>
 
-          {form.role === 'staff' && sites && sites.length > 1 && (
+          {sites && sites.length > 1 && (
             <div>
               <label className="block text-sm font-semibold text-on-surface mb-1.5">Site access</label>
               <div className="space-y-1.5">

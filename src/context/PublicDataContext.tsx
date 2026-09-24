@@ -8,6 +8,7 @@ import { getAddons } from "../services/addons";
 import { getOffers } from "../services/offers";
 import { getMedia } from "../services/media";
 import { getPageConfigs } from "../services/pageConfig";
+import { getSiteBrandingBadge } from "../services/sites";
 import {
   setMenuCatalog,
   type AddonCategory,
@@ -40,6 +41,8 @@ interface PublicDataValue {
   getNavLabel: (module: PlatformModule, fallback: string) => string;
   /** Plan §8 - which of the 3 layouts this module should render as; defaults to Variant A. */
   getTemplateVariant: (module: PlatformModule) => TemplateVariant;
+  /** Plan §5.2 - Super Admin only control; the public footer just reads this flag. */
+  brandingBadgeEnabled: boolean;
 }
 
 const PublicDataContext = createContext<PublicDataValue | undefined>(undefined);
@@ -131,6 +134,10 @@ export function PublicDataProvider({ children }: { children: ReactNode }) {
     queryKey: ["public-page-configs", restaurantId],
     queryFn: () => getPageConfigs(restaurantId),
   });
+  const brandingBadgeQuery = useQuery({
+    queryKey: ["public-branding-badge", restaurantId],
+    queryFn: () => getSiteBrandingBadge(restaurantId),
+  });
 
   const items = menuQuery.data?.items ?? [];
   const categories = menuQuery.data?.categories ?? [];
@@ -169,6 +176,7 @@ export function PublicDataProvider({ children }: { children: ReactNode }) {
     pageConfigs,
     getNavLabel,
     getTemplateVariant,
+    brandingBadgeEnabled: brandingBadgeQuery.data?.enabled ?? true,
   };
 
   return (

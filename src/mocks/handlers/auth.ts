@@ -52,6 +52,24 @@ export const authHandlers = [
     });
   }),
 
+  /** Multi-Vertical Platform Plan §5.1 - Super Admin isn't scoped to an Org, so no `orgId` is required or checked here. */
+  http.post('*/api/v1/auth/super-admin-login', async ({ request }) => {
+    const body = (await request.json()) as { email: string; password: string };
+    const user = db.data.users.find((u) => u.role === 'super_admin' && u.email.toLowerCase() === body.email.toLowerCase());
+    if (!user || body.password !== DEMO_PASSWORD) {
+      return HttpResponse.json(
+        { error: { code: 'invalid_credentials', message: 'Incorrect email or password.' } },
+        { status: 401 },
+      );
+    }
+    const token = issueToken(user.id);
+    return HttpResponse.json({
+      user,
+      token,
+      expiresAt: new Date(Date.now() + 1000 * 60 * 60 * 12).toISOString(),
+    });
+  }),
+
   http.post('*/api/v1/auth/logout', () => HttpResponse.json({ message: 'Logged out.' })),
 
   http.post('*/api/v1/auth/forgot-password', () =>

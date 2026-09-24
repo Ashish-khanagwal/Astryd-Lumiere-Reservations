@@ -80,7 +80,13 @@ export function LoginPage() {
 
       <div className="pt-4 border-t border-outline-variant/20 text-xs text-secondary space-y-1">
         <p className="font-semibold">Demo Organization: LUMIERE</p>
-        <p>owner@lumiere.com (Owner) · staff@lumiere.com (Staff) · admin@platform.com (Super Admin)</p>
+        <p>owner@lumiere.com (Owner) · staff@lumiere.com (Staff)</p>
+      </div>
+
+      <div className="text-center">
+        <Link to="/admin/superadmin/login" className="text-xs text-secondary hover:text-on-surface hover:underline">
+          Platform team? Sign in here
+        </Link>
       </div>
     </form>
   );

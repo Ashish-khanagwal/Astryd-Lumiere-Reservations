@@ -14,7 +14,7 @@ export const Footer: React.FC<FooterProps> = ({
   onNavigateReservations,
   onToast,
 }) => {
-  const { brand, getNavLabel } = usePublicData();
+  const { brand, getNavLabel, brandingBadgeEnabled } = usePublicData();
   const brandName = brand?.restaurantName ?? 'Lumière';
   const catalogLabel = getNavLabel('catalog', 'Menu');
   const bookingLabel = getNavLabel('booking', 'Reservation');
@@ -91,15 +91,17 @@ export const Footer: React.FC<FooterProps> = ({
           </div>
         </div>
 
-        <div className="flex flex-col md:flex-row justify-between items-center pt-8 border-t border-[#C5A059]/20 text-[#D3C4AF] font-label-sm gap-4 text-xs">
-          <div className="flex items-center gap-2 text-[#D3C4AF] font-label-sm">
-            <span className="tracking-widest uppercase text-[11px]">POWERED BY</span>
-            <img
-              src="https://lh3.googleusercontent.com/aida-public/AB6AXuDbsZIxMTMGTD3TOfdIZm391OfjJ-oJrf2h3HKZ3BckU_Pk9Xb4te2EC5d-YrvHHrXPiHQdB2_6OjGs1OAq-biSiEhxd6BuMJe3ffJKTjgOYY1pIqwUvbEXpqnX3gPsW1OXg5_s2RkBbp2RKyY5FqSqzv_g6By6qkOFUzb9_zB3EnRZsuf8N4hEDjKMWW67H_-YOCT4OhJKBxk07UzB_cmcBbfPBTvT7TppRA0gkxSOHdV274CcTZrNaygCHjJIlLG97a0Vv8v0lQs"
-              alt="Astryd Logo"
-              className="h-6 w-auto object-contain brightness-110 contrast-125"
-            />
-          </div>
+        <div className={`flex flex-col md:flex-row items-center pt-8 border-t border-[#C5A059]/20 text-[#D3C4AF] font-label-sm gap-4 text-xs ${brandingBadgeEnabled ? 'justify-between' : 'justify-end'}`}>
+          {brandingBadgeEnabled && (
+            <div className="flex items-center gap-2 text-[#D3C4AF] font-label-sm">
+              <span className="tracking-widest uppercase text-[11px]">POWERED BY</span>
+              <img
+                src="https://lh3.googleusercontent.com/aida-public/AB6AXuDbsZIxMTMGTD3TOfdIZm391OfjJ-oJrf2h3HKZ3BckU_Pk9Xb4te2EC5d-YrvHHrXPiHQdB2_6OjGs1OAq-biSiEhxd6BuMJe3ffJKTjgOYY1pIqwUvbEXpqnX3gPsW1OXg5_s2RkBbp2RKyY5FqSqzv_g6By6qkOFUzb9_zB3EnRZsuf8N4hEDjKMWW67H_-YOCT4OhJKBxk07UzB_cmcBbfPBTvT7TppRA0gkxSOHdV274CcTZrNaygCHjJIlLG97a0Vv8v0lQs"
+                alt="Astryd Logo"
+                className="h-6 w-auto object-contain brightness-110 contrast-125"
+              />
+            </div>
+          )}
           <div className="flex space-x-6">
             <a className="hover:text-white transition-colors" href="#">Privacy Policy</a>
             <a className="hover:text-white transition-colors" href="#">Terms of Service</a>

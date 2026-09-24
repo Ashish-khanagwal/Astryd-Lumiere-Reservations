@@ -165,6 +165,8 @@ export interface Restaurant extends Timestamps {
   ownerUserId: Id;
   status: 'active' | 'suspended' | 'trial';
   domain?: string | null;
+  /** Multi-Vertical Platform Plan §5.2 - "Powered by Astryd" footer badge; Super Admin only, never editable via Org-owned brand/website settings. */
+  brandingBadgeEnabled: boolean;
 }
 
 export interface WebsiteSettings extends Tenant, Timestamps {

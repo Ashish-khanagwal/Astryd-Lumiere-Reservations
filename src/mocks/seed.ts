@@ -114,6 +114,7 @@ function buildSeed(): MockDbShape {
     name: 'Lumière',
     ownerUserId: 'user_owner',
     status: 'active',
+    brandingBadgeEnabled: true,
     createdAt: now,
     updatedAt: now,
   };
@@ -125,6 +126,7 @@ function buildSeed(): MockDbShape {
     name: 'Lumière – Notting Hill',
     ownerUserId: 'user_owner',
     status: 'active',
+    brandingBadgeEnabled: true,
     createdAt: now,
     updatedAt: now,
   };
