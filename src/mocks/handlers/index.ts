@@ -10,6 +10,7 @@ import { userHandlers } from './users';
 import { orderHandlers } from './orders';
 import { reservationHandlers } from './reservations';
 import { siteHandlers } from './sites';
+import { pageConfigHandlers } from './pageConfigs';
 
 export const handlers = [
   ...authHandlers,
@@ -24,4 +25,5 @@ export const handlers = [
   ...orderHandlers,
   ...reservationHandlers,
   ...siteHandlers,
+  ...pageConfigHandlers,
 ];

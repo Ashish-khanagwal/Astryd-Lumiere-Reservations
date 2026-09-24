@@ -1,8 +1,8 @@
 import { useState, useEffect, useCallback } from 'react';
-import { Header } from './Header';
-import { Footer } from './Footer';
-import { ItemCustomizeModal } from './ItemCustomizeModal';
-import { CartAddAnimation } from './CartAddAnimation';
+import { Header } from '../Header';
+import { Footer } from '../Footer';
+import { ItemCustomizeModal } from '../ItemCustomizeModal';
+import { CartAddAnimation } from '../CartAddAnimation';
 import {
   ALL_MENU_ITEMS,
   type CartState,
@@ -12,9 +12,9 @@ import {
   getCartUniqueCount,
   getItemQuantity,
   projectUniqueCountAfterAdd,
-} from '../data/menuItems';
+} from '../../data/menuItems';
 
-interface MenuViewProps {
+export interface CatalogViewProps {
   cart: CartState;
   onUpdateItemQty: (itemId: string, delta: number) => void;
   onAddToCart: (itemId: string, quantity: number, addonIds?: string[]) => void;
@@ -26,7 +26,8 @@ interface MenuViewProps {
   onOpenCart?: () => void;
 }
 
-export const MenuView = ({
+/** Variant A - "Menu Grid" (Multi-Vertical Platform Plan §8.2), the original design; suits a Restaurant but any Site can pick it. */
+export const CatalogVariantA = ({
   cart,
   onUpdateItemQty,
   onAddToCart,
@@ -36,7 +37,7 @@ export const MenuView = ({
   onToast,
   cartUniqueCount = 0,
   onOpenCart,
-}: MenuViewProps) => {
+}: CatalogViewProps) => {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedFilter, setSelectedFilter] = useState('Popular');
   const [isFavorite, setIsFavorite] = useState(false);

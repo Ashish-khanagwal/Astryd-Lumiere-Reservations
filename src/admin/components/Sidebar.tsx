@@ -25,12 +25,14 @@ import {
   CalendarDays,
   ChevronsUpDown,
   Check,
+  LayoutList,
   type LucideIcon,
 } from 'lucide-react';
 import { usePermissions } from '../hooks/usePermissions';
 import { useSidebar } from '../context/SidebarContext';
 import { draftPreviewUrl, useDraftSave } from '../context/DraftSaveContext';
 import { useRestaurant } from '../../context/RestaurantContext';
+import { usePageConfigs } from '../hooks/api/usePageConfigs';
 import { Tooltip } from './Tooltip';
 
 /** Multi-Vertical Platform Plan §10.2 - only appears once an Org has more than one Site; a single-Site Org sees the plain brand mark, unchanged. */
@@ -127,6 +129,10 @@ export function Sidebar() {
 
   const [isCollapsed, setIsCollapsed] = useState<boolean>(() => localStorage.getItem(COLLAPSED_STORAGE_KEY) === 'true');
 
+  const { data: pageConfigs } = usePageConfigs();
+  const catalogLabel = pageConfigs?.find((p) => p.module === 'catalog')?.navLabel || 'Menu';
+  const bookingLabel = pageConfigs?.find((p) => p.module === 'booking')?.navLabel || 'Reservations';
+
   const groups: NavGroup[] = useMemo(
     () => [
       {
@@ -136,7 +142,7 @@ export function Sidebar() {
         items: [
           { to: '/admin', label: 'Dashboard', icon: LayoutDashboard, end: true },
           { to: '/admin/orders', label: 'Orders', icon: ShoppingBag },
-          { to: '/admin/reservations', label: 'Reservations', icon: CalendarDays },
+          { to: '/admin/reservations', label: bookingLabel, icon: CalendarDays },
         ],
       },
       {
@@ -152,11 +158,11 @@ export function Sidebar() {
       },
       {
         key: 'menu',
-        title: 'Menu',
+        title: catalogLabel,
         visible: perms.canManageMenu,
         items: [
           { to: '/admin/menu/categories', label: 'Categories', icon: LayoutGrid },
-          { to: '/admin/menu/items', label: 'Menu Items', icon: UtensilsCrossed },
+          { to: '/admin/menu/items', label: `${catalogLabel} Items`, icon: UtensilsCrossed },
           { to: '/admin/menu/addons', label: 'Add-ons', icon: PlusCircle },
           { to: '/admin/menu/offers', label: 'Offers', icon: Tag },
         ],
@@ -178,11 +184,12 @@ export function Sidebar() {
         visible: true,
         items: [
           { to: '/admin/settings/account', label: 'Account', icon: User },
+          { to: '/admin/settings/pages', label: 'Pages', icon: LayoutList },
           ...(perms.canManageUsers ? [{ to: '/admin/settings/users', label: 'Users', icon: Users }] : []),
         ],
       },
     ],
-    [perms.canManageWebsite, perms.canManageMenu, perms.canManageBranding, perms.canManageUsers]
+    [perms.canManageWebsite, perms.canManageMenu, perms.canManageBranding, perms.canManageUsers, catalogLabel, bookingLabel]
   );
 
   const visibleGroups = useMemo(() => groups.filter((g) => g.visible), [groups]);

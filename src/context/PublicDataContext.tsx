@@ -7,6 +7,7 @@ import { getMenu } from "../services/menu";
 import { getAddons } from "../services/addons";
 import { getOffers } from "../services/offers";
 import { getMedia } from "../services/media";
+import { getPageConfigs } from "../services/pageConfig";
 import {
   setMenuCatalog,
   type AddonCategory,
@@ -20,6 +21,9 @@ import type {
   MenuItem,
   Addon,
   Offer,
+  PageConfig,
+  PlatformModule,
+  TemplateVariant,
 } from "../types";
 
 interface PublicDataValue {
@@ -31,6 +35,11 @@ interface PublicDataValue {
   items: MenuItem[];
   addons: Addon[];
   offers: Offer[];
+  pageConfigs: PageConfig[];
+  /** Multi-Vertical Platform Plan §7 - the renameable nav label for a module, falling back to its default English name. */
+  getNavLabel: (module: PlatformModule, fallback: string) => string;
+  /** Plan §8 - which of the 3 layouts this module should render as; defaults to Variant A. */
+  getTemplateVariant: (module: PlatformModule) => TemplateVariant;
 }
 
 const PublicDataContext = createContext<PublicDataValue | undefined>(undefined);
@@ -118,6 +127,10 @@ export function PublicDataProvider({ children }: { children: ReactNode }) {
     queryKey: ["public-media", restaurantId],
     queryFn: () => getMedia(restaurantId),
   });
+  const pageConfigsQuery = useQuery({
+    queryKey: ["public-page-configs", restaurantId],
+    queryFn: () => getPageConfigs(restaurantId),
+  });
 
   const items = menuQuery.data?.items ?? [];
   const categories = menuQuery.data?.categories ?? [];
@@ -138,6 +151,12 @@ export function PublicDataProvider({ children }: { children: ReactNode }) {
     (mediaQuery.data?.items ?? []).map((m) => [m.id, m]),
   );
 
+  const pageConfigs = pageConfigsQuery.data ?? [];
+  const getNavLabel = (module: PlatformModule, fallback: string) =>
+    pageConfigs.find((p) => p.module === module)?.navLabel || fallback;
+  const getTemplateVariant = (module: PlatformModule): TemplateVariant =>
+    pageConfigs.find((p) => p.module === module)?.templateVariant ?? "a";
+
   const value: PublicDataValue = {
     isLoading,
     brand: brandQuery.data,
@@ -147,6 +166,9 @@ export function PublicDataProvider({ children }: { children: ReactNode }) {
     items,
     addons,
     offers: offersQuery.data ?? [],
+    pageConfigs,
+    getNavLabel,
+    getTemplateVariant,
   };
 
   return (

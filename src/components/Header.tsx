@@ -20,8 +20,10 @@ export const Header: React.FC<HeaderProps> = ({
   onOpenCart,
 }) => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-  const { brand, mediaMap } = usePublicData();
+  const { brand, mediaMap, getNavLabel } = usePublicData();
   const brandName = brand?.restaurantName ?? 'Lumière';
+  const catalogLabel = getNavLabel('catalog', 'Menu');
+  const bookingLabel = getNavLabel('booking', 'Reservation');
   const logoUrl = brand?.logoMediaId ? mediaMap.get(brand.logoMediaId)?.fileUrl : undefined;
   const navPosition = brand?.navPosition ?? 'right';
 
@@ -97,7 +99,7 @@ export const Header: React.FC<HeaderProps> = ({
                   : navLinkInactiveClass
               }`}
             >
-              Menu
+              {catalogLabel}
             </button>
 
             <button
@@ -108,7 +110,7 @@ export const Header: React.FC<HeaderProps> = ({
                   : navLinkInactiveClass
               }`}
             >
-              Reservation
+              {bookingLabel}
             </button>
           </nav>
 
@@ -152,7 +154,7 @@ export const Header: React.FC<HeaderProps> = ({
               currentPage === 'menu' ? 'text-primary font-bold' : navLinkInactiveClass
             }`}
           >
-            Menu
+            {catalogLabel}
           </button>
           <button
             onClick={() => {
@@ -163,7 +165,7 @@ export const Header: React.FC<HeaderProps> = ({
               currentPage === 'reservations' ? 'text-primary font-bold' : navLinkInactiveClass
             }`}
           >
-            Reservation
+            {bookingLabel}
           </button>
         </div>
       )}

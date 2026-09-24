@@ -5,9 +5,9 @@ import { OrderOnlineModal } from './components/OrderOnlineModal';
 import { GalleryLightbox } from './components/GalleryLightbox';
 import { ChefStoryModal } from './components/ChefStoryModal';
 import { Toast } from './components/Toast';
-import { MenuView } from './components/MenuView';
+import { CatalogView } from './components/catalog';
 import { OrderSummaryView } from './components/OrderSummaryView';
-import { ReservationView } from './components/ReservationView';
+import { BookingView } from './components/booking';
 import { ScrollToTop } from './components/ScrollToTop';
 import { Header } from './components/Header';
 import { Footer } from './components/Footer';
@@ -203,7 +203,7 @@ function AppShell() {
   if (currentPage === 'reservations') {
     return (
       <>
-        <ReservationView
+        <BookingView
           onNavigateLanding={() => setCurrentPage('landing')}
           onNavigateMenu={() => setCurrentPage('menu')}
           onToast={triggerToast}
@@ -220,7 +220,7 @@ function AppShell() {
   if (currentPage === 'menu') {
     return (
       <>
-        <MenuView
+        <CatalogView
           cart={cart}
           onUpdateItemQty={handleUpdateItemQty}
           onAddToCart={handleAddToCart}

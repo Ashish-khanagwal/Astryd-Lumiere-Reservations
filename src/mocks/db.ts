@@ -8,6 +8,7 @@ import type {
   Offer,
   Order,
   Organization,
+  PageConfig,
   Reservation,
   ReservationAvailabilitySettings,
   Restaurant,
@@ -35,9 +36,10 @@ export interface MockDbShape {
   orders: Order[];
   reservations: Reservation[];
   reservationAvailability: Record<string, ReservationAvailabilitySettings>;
+  pageConfigs: PageConfig[];
 }
 
-const STORAGE_KEY = 'lumiere-cms-mock-db-v2';
+const STORAGE_KEY = 'lumiere-cms-mock-db-v3';
 
 function emptyDb(): MockDbShape {
   return {
@@ -55,6 +57,7 @@ function emptyDb(): MockDbShape {
     orders: [],
     reservations: [],
     reservationAvailability: {},
+    pageConfigs: [],
   };
 }
 

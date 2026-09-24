@@ -1,13 +1,13 @@
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { Loader2 } from "lucide-react";
-import { ApiError } from "../services/http";
-import { createReservationCheckout, getPublicAvailability } from "../services/reservations";
-import { getPayment, retryPayment, submitCard, waitForPayment } from "../services/payments";
-import { useRestaurant } from "../context/RestaurantContext";
-import { Header } from "./Header";
-import { Footer } from "./Footer";
-import { FinixCardForm } from "./FinixCardForm";
-import type { CheckoutSession, PublicAvailability } from "../types";
+import { ApiError } from "../../services/http";
+import { createReservationCheckout, getPublicAvailability } from "../../services/reservations";
+import { getPayment, retryPayment, submitCard, waitForPayment } from "../../services/payments";
+import { useRestaurant } from "../../context/RestaurantContext";
+import { Header } from "../Header";
+import { Footer } from "../Footer";
+import { FinixCardForm } from "../FinixCardForm";
+import type { CheckoutSession, PublicAvailability } from "../../types";
 
 function startOfDay(d: Date) {
   return new Date(d.getFullYear(), d.getMonth(), d.getDate());
@@ -64,7 +64,7 @@ function getCalendarCells(displayMonth: Date): CalendarCell[] {
   return cells;
 }
 
-interface ReservationViewProps {
+export interface BookingViewProps {
   onNavigateLanding: () => void;
   onNavigateMenu: () => void;
   onToast: (msg: string) => void;
@@ -72,13 +72,14 @@ interface ReservationViewProps {
   onOpenCart?: () => void;
 }
 
-export const ReservationView = ({
+/** Variant A - "Table Reservation" (Multi-Vertical Platform Plan §8.3), the original design; suits a Restaurant but any Site can pick it. */
+export const BookingVariantA = ({
   onNavigateLanding,
   onNavigateMenu,
   onToast,
   cartUniqueCount = 0,
   onOpenCart,
-}: ReservationViewProps) => {
+}: BookingViewProps) => {
   const { restaurantId } = useRestaurant();
   const [step, setStep] = useState(1);
   const [partySize, setPartySize] = useState(2);

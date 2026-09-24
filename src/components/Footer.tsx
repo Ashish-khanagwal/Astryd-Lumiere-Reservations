@@ -14,8 +14,10 @@ export const Footer: React.FC<FooterProps> = ({
   onNavigateReservations,
   onToast,
 }) => {
-  const { brand } = usePublicData();
+  const { brand, getNavLabel } = usePublicData();
   const brandName = brand?.restaurantName ?? 'Lumière';
+  const catalogLabel = getNavLabel('catalog', 'Menu');
+  const bookingLabel = getNavLabel('booking', 'Reservation');
   const description =
     brand?.description ??
     'Experience the invisible excellence of modern French cuisine in the heart of Mayfair. Part of the Haute-Cuisine Group.';
@@ -47,12 +49,12 @@ export const Footer: React.FC<FooterProps> = ({
               </li>
               <li>
                 <button className="hover:text-white transition-colors text-left" onClick={onNavigateMenu}>
-                  Menu
+                  {catalogLabel}
                 </button>
               </li>
               <li>
                 <button className="hover:text-white transition-colors text-left" onClick={onNavigateReservations}>
-                  Reservation
+                  {bookingLabel}
                 </button>
               </li>
               <li>

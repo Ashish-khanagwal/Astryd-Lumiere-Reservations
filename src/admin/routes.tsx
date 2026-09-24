@@ -25,6 +25,7 @@ import { HoursPage } from './pages/restaurant/HoursPage';
 import { SocialMediaPage } from './pages/restaurant/SocialMediaPage';
 import { AccountPage } from './pages/settings/AccountPage';
 import { UsersPage } from './pages/settings/UsersPage';
+import { PagesPage } from './pages/settings/PagesPage';
 
 export function AdminRoutes() {
   return (
@@ -59,6 +60,7 @@ export function AdminRoutes() {
           <Route path="restaurant/social" element={<SocialMediaPage />} />
 
           <Route path="settings/account" element={<AccountPage />} />
+          <Route path="settings/pages" element={<PagesPage />} />
           <Route element={<RequireRole allow={['owner', 'super_admin']} />}>
             <Route path="settings/users" element={<UsersPage />} />
           </Route>

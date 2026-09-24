@@ -14,6 +14,8 @@ import type {
   OrderServiceType,
   OrderStatus,
   Organization,
+  PageConfig,
+  PlatformModule,
   Reservation,
   ReservationAvailabilitySettings,
   ReservationStatus,
@@ -444,6 +446,26 @@ function buildSeed(): MockDbShape {
     blockedDates: [],
   };
 
+  /** Plan §6/§12 - default nav label + variant per module for a freshly seeded Site; membership stays off until Phase 3 ships a real page for it. */
+  function buildDefaultPageConfigs(siteId: string): PageConfig[] {
+    const defaults: Array<{ module: PlatformModule; navLabel: string; enabled: boolean }> = [
+      { module: 'catalog', navLabel: 'Menu', enabled: true },
+      { module: 'booking', navLabel: 'Reservations', enabled: true },
+      { module: 'membership', navLabel: 'Membership', enabled: false },
+    ];
+    return defaults.map((d, order) => ({
+      id: `pageconfig_${siteId}_${d.module}`,
+      restaurantId: siteId,
+      module: d.module,
+      enabled: d.enabled,
+      navLabel: d.navLabel,
+      order,
+      templateVariant: 'a' as const,
+      createdAt: now,
+      updatedAt: now,
+    }));
+  }
+
   const brandSettings: BrandSettings = {
     restaurantId: RESTAURANT_ID,
     restaurantName: 'Lumière',
@@ -611,6 +633,7 @@ function buildSeed(): MockDbShape {
       [RESTAURANT_ID]: reservationAvailabilitySettings,
       [SECOND_SITE_ID]: { ...reservationAvailabilitySettings, restaurantId: SECOND_SITE_ID },
     },
+    pageConfigs: [...buildDefaultPageConfigs(RESTAURANT_ID), ...buildDefaultPageConfigs(SECOND_SITE_ID)],
   };
 }
 
