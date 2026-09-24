@@ -17,7 +17,7 @@ export function ForgotPasswordPage() {
       <div className="text-center space-y-4">
         <span className="material-symbols-outlined text-4xl text-primary">mark_email_read</span>
         <p className="text-sm text-secondary">If that email exists, a reset link has been sent.</p>
-        <Link to="/admin/login" className="text-sm text-primary font-medium hover:underline">
+        <Link to="/login" className="text-sm text-primary font-medium hover:underline">
           Back to Sign In
         </Link>
       </div>
@@ -41,7 +41,7 @@ export function ForgotPasswordPage() {
         Send Reset Link
       </button>
       <div className="text-center">
-        <Link to="/admin/login" className="text-sm text-primary font-medium hover:underline">
+        <Link to="/login" className="text-sm text-primary font-medium hover:underline">
           Back to Sign In
         </Link>
       </div>

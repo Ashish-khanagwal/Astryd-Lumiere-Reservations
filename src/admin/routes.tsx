@@ -1,4 +1,4 @@
-import { Route, Routes } from 'react-router-dom';
+import { Navigate, Route, Routes } from 'react-router-dom';
 import { AuthLayout } from './layouts/AuthLayout';
 import { AdminLayout } from './layouts/AdminLayout';
 import { RequireAuth } from './guards/RequireAuth';
@@ -32,13 +32,16 @@ import { SuperAdminSitesPage } from './pages/superadmin/SitesPage';
 export function AdminRoutes() {
   return (
     <Routes>
-      <Route path="/admin" element={<AuthLayout />}>
-        <Route path="login" element={<LoginPage />} />
-        <Route path="forgot-password" element={<ForgotPasswordPage />} />
-        <Route path="reset-password" element={<ResetPasswordPage />} />
+      {/* Platform entry points live at the app root, not under /admin - opening the app should never show a client's website (Multi-Vertical Platform Plan §4/§4.1). */}
+      <Route path="/" element={<Navigate to="/login" replace />} />
+
+      <Route element={<AuthLayout />}>
+        <Route path="/login" element={<LoginPage />} />
+        <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+        <Route path="/reset-password" element={<ResetPasswordPage />} />
       </Route>
 
-      <Route path="/admin/superadmin/login" element={<SuperAdminLoginPage />} />
+      <Route path="/super-admin" element={<SuperAdminLoginPage />} />
 
       <Route path="/admin" element={<RequireAuth />}>
         <Route element={<AdminLayout />}>

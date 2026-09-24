@@ -77,7 +77,7 @@ export function SuperAdminLoginPage() {
             </div>
 
             <div className="text-center">
-              <Link to="/admin/login" className="text-xs text-secondary hover:text-on-surface hover:underline">
+              <Link to="/login" className="text-xs text-secondary hover:text-on-surface hover:underline">
                 Not platform team? Sign in to your Organization
               </Link>
             </div>

@@ -73,7 +73,7 @@ export function LoginPage() {
       </button>
 
       <div className="text-center">
-        <Link to="/admin/forgot-password" className="text-sm text-primary font-medium hover:underline">
+        <Link to="/forgot-password" className="text-sm text-primary font-medium hover:underline">
           Forgot password?
         </Link>
       </div>
@@ -84,7 +84,7 @@ export function LoginPage() {
       </div>
 
       <div className="text-center">
-        <Link to="/admin/superadmin/login" className="text-xs text-secondary hover:text-on-surface hover:underline">
+        <Link to="/super-admin" className="text-xs text-secondary hover:text-on-surface hover:underline">
           Platform team? Sign in here
         </Link>
       </div>
