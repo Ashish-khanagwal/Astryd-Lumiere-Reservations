@@ -201,4 +201,16 @@ export const checkoutContent: ContentPageDefinition = {
     decreaseAriaLabel: 'Decrease {name}',
     increaseAriaLabel: 'Increase {name}',
   },
+  verticalDefaults: {
+    gym: {
+      backToMenuLabel: 'Back to Programs',
+      addMoreItemsLabel: 'Add More Sessions',
+      paymentSuccessToast: 'Payment successful. Order #{number} has been sent to the studio.',
+    },
+    retail: {
+      backToMenuLabel: 'Back to Shop',
+      addMoreItemsLabel: 'Add More Products',
+      paymentSuccessToast: 'Payment successful. Order #{number} has been sent to the shop.',
+    },
+  },
 };

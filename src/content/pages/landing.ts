@@ -176,6 +176,8 @@ export const landingContent: ContentPageDefinition = {
       openStatus: 'Open Now',
       primaryButton: 'View Programs',
       secondaryButton: 'Book a Class',
+      featuredViewAll: 'View All Programs',
+      offerCtaFallback: 'View Programs',
       card1Icon: 'fitness_center',
       card1Title: 'Facilities',
       card1Rows: [
@@ -198,6 +200,8 @@ export const landingContent: ContentPageDefinition = {
       openStatus: 'Open Now',
       primaryButton: 'Shop Now',
       secondaryButton: 'Book a Fitting',
+      featuredViewAll: 'Shop All Products',
+      offerCtaFallback: 'Shop Now',
       card1Icon: 'local_shipping',
       card1Title: 'Shipping & Returns',
       card1Rows: [

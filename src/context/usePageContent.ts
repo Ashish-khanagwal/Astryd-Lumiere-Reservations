@@ -6,8 +6,8 @@ import type { ContentListItem, ContentPageKey } from '../types';
 type Vars = Record<string, string | number | undefined>;
 
 /**
- * Public-site accessor for Admin → Website → Page Content. Every string supports `{brand}` and `{city}`
- * (from Brand settings) plus any caller-supplied `{token}`.
+ * Public-site accessor for Admin → Website → Page Content. Every string supports `{brand}`, `{city}` and
+ * `{cuisine}` (cuisine/style, else tagline - from Brand settings) plus any caller-supplied `{token}`.
  */
 export function usePageContent(page: ContentPageKey) {
   const { pageContent, vertical, brand } = usePublicData();
@@ -15,7 +15,7 @@ export function usePageContent(page: ContentPageKey) {
   return useMemo(() => {
     const fields = resolvePageContent(vertical, page, pageContent);
     const city = (brand?.contact?.address ?? '').split(',').slice(-2, -1)[0]?.trim() ?? '';
-    const baseVars: Vars = { brand: brand?.restaurantName ?? '', city };
+    const baseVars: Vars = { brand: brand?.restaurantName ?? '', city, cuisine: brand?.cuisineType || brand?.tagline || '' };
 
     const text = (key: string, vars?: Vars): string => {
       const value = fields[key];

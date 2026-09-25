@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { Fragment, useState, useEffect, useCallback, useMemo } from 'react';
 import { Header } from '../Header';
 import { Footer } from '../Footer';
 import { ItemCustomizeModal } from '../ItemCustomizeModal';
@@ -14,6 +14,25 @@ import {
   projectUniqueCountAfterAdd,
 } from '../../data/menuItems';
 import { usePageContent } from '../../context/usePageContent';
+import { usePublicData } from '../../context/PublicDataContext';
+
+const sectionIdFor = (categoryName: string) => `cat-${categoryName.toLowerCase().replace(/[^a-z0-9]+/g, '-')}`;
+
+/** A sensible Material Symbols icon from the category's own name (any business type), with a generic fallback. */
+const CATEGORY_ICON_RULES: Array<[RegExp, string]> = [
+  [/burger/, 'lunch_dining'], [/pizza/, 'local_pizza'], [/pasta|noodle/, 'dinner_dining'], [/steak|grill|meat/, 'flatware'],
+  [/dessert|sweet|cake/, 'icecream'], [/drink|beverage|wine|bar|cocktail|coffee/, 'local_bar'], [/starter|appetizer|small plate/, 'restaurant'],
+  [/strength|lift|weight/, 'fitness_center'], [/condition|cardio|hiit/, 'directions_run'], [/mobility|core|yoga|pilates|stretch/, 'self_improvement'],
+  [/personal|coach|training/, 'sports'], [/ceramic|pottery|mug|vase/, 'emoji_food_beverage'], [/home|living|furniture/, 'chair'],
+  [/apparel|cloth|wear|fashion/, 'checkroom'], [/accessor|jewel/, 'diamond'], [/beauty|skin|care/, 'spa'],
+];
+const iconForCategory = (name: string) => CATEGORY_ICON_RULES.find(([re]) => re.test(name.toLowerCase()))?.[1] ?? 'category';
+
+/** The site uses hash routing (#/menu), so in-page anchors would navigate away - scroll instead, clearing the fixed header. */
+const scrollToSection = (id: string) => {
+  const el = document.getElementById(id);
+  if (el) window.scrollTo({ top: el.getBoundingClientRect().top + window.scrollY - 190, behavior: 'smooth' });
+};
 
 export interface CatalogViewProps {
   cart: CartState;
@@ -39,7 +58,7 @@ export const CatalogVariantA = ({
   cartUniqueCount = 0,
   onOpenCart,
 }: CatalogViewProps) => {
-  const c = usePageContent('catalog');
+  const { categories, items: rawItems } = usePublicData();
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedFilter, setSelectedFilter] = useState('Popular');
   const [isFavorite, setIsFavorite] = useState(false);
@@ -47,12 +66,39 @@ export const CatalogVariantA = ({
   const [customizeItem, setCustomizeItem] = useState<MenuItem | null>(null);
   const [cartFly, setCartFly] = useState<{ fromCount: number; toCount: number } | null>(null);
 
-  const CATEGORY_TABS = [
-    'Popular',
-    'Veg',
-    'Non-Veg',
-    ...Array.from(new Set(ALL_MENU_ITEMS.map((item) => item.category))),
-  ];
+  // Sections, side menu and filter tabs all come from this Site's own categories (Admin → Categories order),
+  // never a fixed restaurant list.
+  const categoryNames = useMemo(() => {
+    const inUse = new Set(ALL_MENU_ITEMS.map((item) => item.category));
+    const ordered = [...categories]
+      .filter((cat) => cat.isVisible && inUse.has(cat.name))
+      .sort((a, b) => a.displayOrder - b.displayOrder)
+      .map((cat) => cat.name);
+    return [...ordered, ...[...inUse].filter((name) => !ordered.includes(name))];
+    // ALL_MENU_ITEMS is swapped in by PublicDataProvider whenever `rawItems` changes.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [categories, rawItems]);
+
+  // Veg / Non-Veg only make sense for food - hide them when no item is marked either way (e.g. gym, retail).
+  const hasFoodTypes = rawItems.some((item) => item.foodType !== 'na');
+
+  const ratedItems = ALL_MENU_ITEMS.filter((item) => item.reviews > 0);
+  const reviewCount = ratedItems.reduce((sum, item) => sum + item.reviews, 0);
+  const avgRating = ratedItems.length ? (ratedItems.reduce((sum, item) => sum + item.rating, 0) / ratedItems.length).toFixed(1) : '';
+  const c = usePageContent('catalog');
+  const headerVars = {
+    avgRating,
+    reviewCount: reviewCount ? new Intl.NumberFormat('en', { notation: 'compact', maximumFractionDigits: 1 }).format(reviewCount) : '',
+  };
+  const ratingText = avgRating ? c.text('a_rating', headerVars) : '';
+  const headerDetails = [
+    { key: 'cuisine', icon: '', text: c.text('a_cuisine') },
+    { key: 'prep', icon: c.text('a_prepTimeIcon'), text: c.text('a_prepTime') },
+    { key: 'pickup', icon: c.text('a_pickupIcon'), text: c.text('a_pickup') },
+  ].filter((d) => d.text.trim());
+
+  const CATEGORY_TABS = ['Popular', ...(hasFoodTypes ? ['Veg', 'Non-Veg'] : []), ...categoryNames];
+  const sectionIds = ['popular', ...categoryNames.map(sectionIdFor)];
 
   /** Filter tabs stay keyed on stable ids; only the displayed label is editable. */
   const FILTER_LABELS: Record<string, string> = {
@@ -99,10 +145,10 @@ export const CatalogVariantA = ({
     setCartFly(null);
   }, []);
 
+  const sectionIdsKey = sectionIds.join('|');
   useEffect(() => {
     const handleScroll = () => {
-      const sections = ['popular', 'burgers', 'starters', 'pizza', 'pasta', 'steaks', 'desserts', 'beverages'];
-      for (const sectionId of sections) {
+      for (const sectionId of sectionIdsKey.split('|')) {
         const el = document.getElementById(sectionId);
         if (el) {
           const rect = el.getBoundingClientRect();
@@ -116,7 +162,7 @@ export const CatalogVariantA = ({
 
     window.addEventListener('scroll', handleScroll);
     return () => window.removeEventListener('scroll', handleScroll);
-  }, []);
+  }, [sectionIdsKey]);
 
   return (
     <div className="min-h-screen bg-background text-on-surface flex flex-col font-sans">
@@ -141,23 +187,26 @@ export const CatalogVariantA = ({
                 {c.text('a_title')}
               </h1>
               <div className="flex flex-wrap items-center gap-4 text-secondary font-sans text-sm md:text-base">
-                <div className="flex items-center gap-1.5 text-on-surface font-bold">
-                  <span className="material-symbols-outlined text-primary text-xl filled">star</span>
-                  <span>{c.text('a_rating')}</span>
-                  <span className="text-secondary font-normal">{c.text('a_reviews')}</span>
-                </div>
-                <span className="w-1.5 h-1.5 bg-outline-variant rounded-full"></span>
-                <span>{c.text('a_cuisine')}</span>
-                <span className="w-1.5 h-1.5 bg-outline-variant rounded-full"></span>
-                <div className="flex items-center gap-1">
-                  <span className="material-symbols-outlined text-primary">schedule</span>
-                  <span>{c.text('a_prepTime')}</span>
-                </div>
-                <span className="w-1.5 h-1.5 bg-outline-variant rounded-full"></span>
-                <div className="flex items-center gap-1">
-                  <span className="material-symbols-outlined text-primary">shopping_bag</span>
-                  <span>{c.text('a_pickup')}</span>
-                </div>
+                {ratingText && (
+                  <div className="flex items-center gap-1.5 text-on-surface font-bold">
+                    <span className="material-symbols-outlined text-primary text-xl filled">star</span>
+                    <span>{ratingText}</span>
+                    {headerVars.reviewCount && <span className="text-secondary font-normal">{c.text('a_reviews', headerVars)}</span>}
+                  </div>
+                )}
+                {headerDetails.map((detail, idx) => (
+                  <Fragment key={detail.key}>
+                    {(idx > 0 || ratingText) && <span className="w-1.5 h-1.5 bg-outline-variant rounded-full"></span>}
+                    {detail.icon ? (
+                      <div className="flex items-center gap-1">
+                        <span className="material-symbols-outlined text-primary">{detail.icon}</span>
+                        <span>{detail.text}</span>
+                      </div>
+                    ) : (
+                      <span>{detail.text}</span>
+                    )}
+                  </Fragment>
+                ))}
               </div>
             </div>
 
@@ -234,19 +283,20 @@ export const CatalogVariantA = ({
           <aside className="md:col-span-3 lg:col-span-2 hidden md:block">
             <div className="sticky top-44 space-y-1.5 bg-surface p-3 rounded-2xl border border-outline-variant/20 shadow-sm">
               <h3 className="font-label-sm text-secondary uppercase tracking-widest px-3 mb-2">{c.text('a_sidebarTitle')}</h3>
-              {c.list('a_sidebarCategories').map((cat) => (
-                <a
+              {[{ id: 'popular', label: c.text('a_filterPopular'), icon: 'star' }, ...categoryNames.map((name) => ({ id: sectionIdFor(name), label: name, icon: iconForCategory(name) }))].map((cat) => (
+                <button
                   key={cat.id}
-                  href={`#${cat.id}`}
-                  className={`flex items-center gap-3 px-3.5 py-2.5 rounded-xl transition-all font-body-md ${
+                  type="button"
+                  onClick={() => scrollToSection(cat.id)}
+                  className={`w-full text-left flex items-center gap-3 px-3.5 py-2.5 rounded-xl transition-all font-body-md ${
                     activeSection === cat.id
                       ? 'bg-primary/10 text-primary font-bold border-l-4 border-primary'
                       : 'text-secondary hover:bg-surface-container-high hover:text-on-surface'
                   }`}
                 >
                   <span className="material-symbols-outlined text-[20px]">{cat.icon}</span>
-                  <span>{cat.label}</span>
-                </a>
+                  <span className="leading-tight">{cat.label}</span>
+                </button>
               ))}
             </div>
           </aside>
@@ -283,70 +333,28 @@ export const CatalogVariantA = ({
                   </div>
                 </section>
 
-                <section id="burgers">
-                  <div className="flex items-center justify-between mb-6">
-                    <h2 className="font-serif text-2xl md:text-3xl font-bold text-on-surface">{c.text('a_burgersHeading')}</h2>
-                    <a href="#steaks" className="text-primary font-bold text-sm hover:underline">
-                      {c.text('a_burgersLink')}
-                    </a>
-                  </div>
-                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                    {filteredItems
-                      .filter((i) => i.category === 'Burgers' || i.category === 'Steaks')
-                      .map((item) => (
-                        <MenuItemCard
-                          key={item.id}
-                          item={item}
-                          qty={getItemQuantity(cart, item.id)}
-                          onUpdateQty={(delta) => onUpdateItemQty(item.id, delta)}
-                          onAdd={() => setCustomizeItem(item)}
-                        />
-                      ))}
-                  </div>
-                </section>
-
-                <section id="starters">
-                  <div className="flex items-center justify-between mb-6">
-                    <h2 className="font-serif text-2xl md:text-3xl font-bold text-on-surface">{c.text('a_startersHeading')}</h2>
-                  </div>
-                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                    {filteredItems
-                      .filter(
-                        (i) =>
-                          i.category === 'Starters' || i.category === 'Pizza' || i.category === 'Pasta'
-                      )
-                      .map((item) => (
-                        <MenuItemCard
-                          key={item.id}
-                          item={item}
-                          qty={getItemQuantity(cart, item.id)}
-                          onUpdateQty={(delta) => onUpdateItemQty(item.id, delta)}
-                          onAdd={() => setCustomizeItem(item)}
-                        />
-                      ))}
-                  </div>
-                </section>
-
-                <section id="desserts">
-                  <div className="flex items-center justify-between mb-6">
-                    <h2 className="font-serif text-2xl md:text-3xl font-bold text-on-surface">
-                      {c.text('a_dessertsHeading')}
-                    </h2>
-                  </div>
-                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                    {filteredItems
-                      .filter((i) => i.category === 'Desserts' || i.category === 'Beverages')
-                      .map((item) => (
-                        <MenuItemCard
-                          key={item.id}
-                          item={item}
-                          qty={getItemQuantity(cart, item.id)}
-                          onUpdateQty={(delta) => onUpdateItemQty(item.id, delta)}
-                          onAdd={() => setCustomizeItem(item)}
-                        />
-                      ))}
-                  </div>
-                </section>
+                {categoryNames.map((name) => {
+                  const inCategory = filteredItems.filter((i) => i.category === name);
+                  if (!inCategory.length) return null;
+                  return (
+                    <section key={name} id={sectionIdFor(name)}>
+                      <div className="flex items-center justify-between mb-6">
+                        <h2 className="font-serif text-2xl md:text-3xl font-bold text-on-surface">{name}</h2>
+                      </div>
+                      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                        {inCategory.map((item) => (
+                          <MenuItemCard
+                            key={item.id}
+                            item={item}
+                            qty={getItemQuantity(cart, item.id)}
+                            onUpdateQty={(delta) => onUpdateItemQty(item.id, delta)}
+                            onAdd={() => setCustomizeItem(item)}
+                          />
+                        ))}
+                      </div>
+                    </section>
+                  );
+                })}
               </>
             )}
           </div>
@@ -444,11 +452,15 @@ const MenuItemCard = ({ item, qty, onUpdateQty, onAdd }: MenuItemCardProps) => {
                 {item.rating} ({item.reviews})
               </span>
             </div>
-            <span className="w-1 h-1 bg-outline-variant rounded-full"></span>
-            <div className="flex items-center gap-1">
-              <span className="material-symbols-outlined text-sm">schedule</span>
-              <span>{item.prepTime}</span>
-            </div>
+            {item.prepTime && item.prepTime !== '—' && (
+              <>
+                <span className="w-1 h-1 bg-outline-variant rounded-full"></span>
+                <div className="flex items-center gap-1">
+                  <span className="material-symbols-outlined text-sm">schedule</span>
+                  <span>{item.prepTime}</span>
+                </div>
+              </>
+            )}
           </div>
         </div>
 

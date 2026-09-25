@@ -267,6 +267,7 @@ export const globalContent: ContentPageDefinition = {
     },
     gym: {
       footerExtraNavLabel: 'Class Schedule',
+      cartEmptyBody: 'Add a class or program to get started.',
       chefEyebrow: 'Head Coach',
       chefNameFallback: 'Our Coach',
       footerDescription:
@@ -274,6 +275,7 @@ export const globalContent: ContentPageDefinition = {
     },
     retail: {
       footerExtraNavLabel: 'Gift Cards',
+      cartEmptyBody: 'Add products from the shop to get started.',
       chefEyebrow: 'Our Founder',
       chefNameFallback: 'Our Founder',
       footerDescription: 'An independent lifestyle & home goods shop - small-batch makers, thoughtfully curated.',

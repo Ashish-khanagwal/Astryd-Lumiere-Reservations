@@ -78,4 +78,24 @@ export const itemsContent: ContentPageDefinition = {
     c_title: 'The Collection',
     c_allFilter: 'All',
   },
+  verticalDefaults: {
+    gym: {
+      a_eyebrow: 'What We Offer',
+      a_title: 'Our Programs',
+      a_introBefore: 'Explore our classes and coaching.',
+      a_introLink: 'Book online',
+      c_eyebrow: 'Explore',
+      c_title: 'Our Programs',
+    },
+    retail: {
+      a_eyebrow: 'Shop the Range',
+      a_title: 'The Collection',
+      a_introBefore: 'Browse everything we stock.',
+      a_introLink: 'Shop online',
+      b_eyebrow: 'Explore',
+      b_title: 'Our Collections',
+      b_reserveButton: 'Book an appointment',
+      b_programCount: '{count} products',
+    },
+  },
 };
