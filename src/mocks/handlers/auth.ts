@@ -28,7 +28,34 @@ function userFromAuthHeader(request: Request): User | undefined {
 export const authHandlers = [
   http.post('*/api/v1/auth/login', async ({ request }) => {
     const body = (await request.json()) as LoginRequest;
-    const user = db.data.users.find((u) => u.email.toLowerCase() === body.email.toLowerCase());
+    const org = db.data.organizations.find((o) => o.code.toLowerCase() === body.orgId?.trim().toLowerCase());
+    if (!org) {
+      return HttpResponse.json(
+        { error: { code: 'invalid_org', message: 'Unknown Organization ID.' } },
+        { status: 401 },
+      );
+    }
+    const user = db.data.users.find(
+      (u) => u.organizationId === org.id && u.email.toLowerCase() === body.email.toLowerCase(),
+    );
+    if (!user || body.password !== DEMO_PASSWORD) {
+      return HttpResponse.json(
+        { error: { code: 'invalid_credentials', message: 'Incorrect email or password.' } },
+        { status: 401 },
+      );
+    }
+    const token = issueToken(user.id);
+    return HttpResponse.json({
+      user,
+      token,
+      expiresAt: new Date(Date.now() + 1000 * 60 * 60 * 12).toISOString(),
+    });
+  }),
+
+  /** Multi-Vertical Platform Plan §5.1 - Super Admin isn't scoped to an Org, so no `orgId` is required or checked here. */
+  http.post('*/api/v1/auth/super-admin-login', async ({ request }) => {
+    const body = (await request.json()) as { email: string; password: string };
+    const user = db.data.users.find((u) => u.role === 'super_admin' && u.email.toLowerCase() === body.email.toLowerCase());
     if (!user || body.password !== DEMO_PASSWORD) {
       return HttpResponse.json(
         { error: { code: 'invalid_credentials', message: 'Incorrect email or password.' } },
@@ -56,4 +83,4 @@ export const authHandlers = [
   }),
 ];
 
-export { userFromAuthHeader };
+export { userFromAuthHeader, issueToken };

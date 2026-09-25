@@ -15,6 +15,8 @@ export function usePermissions() {
     canManageAddons: can('addons'),
     canManageSettings: can('settings'),
     canManageUsers: can('users'),
+    canManageBooking: can('booking'),
+    canManageMembership: can('membership'),
     canDeleteMenuItems: !isStaff,
   };
 }

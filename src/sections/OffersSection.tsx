@@ -1,4 +1,5 @@
 import type { OffersSectionContent } from '../types';
+import { usePageContent } from '../context/usePageContent';
 
 export interface OfferDisplayEntry {
   id: string;
@@ -16,6 +17,7 @@ interface OffersSectionProps {
 }
 
 export const OffersSection = ({ content, offers, onCtaClick }: OffersSectionProps) => {
+  const c = usePageContent('landing');
   if (offers.length === 0) return null;
 
   return (
@@ -52,7 +54,7 @@ export const OffersSection = ({ content, offers, onCtaClick }: OffersSectionProp
                   onClick={onCtaClick}
                   className="mt-4 self-start font-sans text-sm text-primary font-bold flex items-center group hover:underline tracking-wide uppercase"
                 >
-                  <span>{offer.cta || 'View Menu'}</span>
+                  <span>{offer.cta || c.text('offerCtaFallback')}</span>
                   <span className="material-symbols-outlined ml-1.5 text-lg transition-transform group-hover:translate-x-1">
                     arrow_forward
                   </span>

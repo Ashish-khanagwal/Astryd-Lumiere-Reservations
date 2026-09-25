@@ -1,10 +1,8 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { NavLink, useLocation } from 'react-router-dom';
 import {
   LayoutDashboard,
-  Home,
-  PanelTop,
-  Palette,
+  PanelsTopLeft,
   Image,
   LayoutGrid,
   UtensilsCrossed,
@@ -20,15 +18,88 @@ import {
   X,
   PanelLeftClose,
   PanelLeftOpen,
-  ExternalLink,
+  Eye,
   ShoppingBag,
   CalendarDays,
+  ChevronsUpDown,
+  Check,
+  Building2,
+  Crown,
+  Globe,
   type LucideIcon,
 } from 'lucide-react';
 import { usePermissions } from '../hooks/usePermissions';
 import { useSidebar } from '../context/SidebarContext';
 import { draftPreviewUrl, useDraftSave } from '../context/DraftSaveContext';
+import { useRestaurant } from '../../context/RestaurantContext';
+import { usePageConfigs } from '../hooks/api/usePageConfigs';
 import { Tooltip } from './Tooltip';
+import { PreviewModal } from './PreviewModal';
+
+/** Multi-Vertical Platform Plan §10.2 - only appears once an Org has more than one Site; a single-Site Org sees the plain brand mark, unchanged. */
+function SiteSwitcher() {
+  const { restaurantId, sites, setActiveSiteId } = useRestaurant();
+  const [isOpen, setIsOpen] = useState(false);
+  const rootRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!isOpen) return;
+    const onClick = (e: MouseEvent) => {
+      if (rootRef.current && !rootRef.current.contains(e.target as Node)) setIsOpen(false);
+    };
+    document.addEventListener('mousedown', onClick);
+    return () => document.removeEventListener('mousedown', onClick);
+  }, [isOpen]);
+
+  if (sites.length <= 1) {
+    return (
+      <div className="flex items-center gap-2.5 min-w-0">
+        <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-primary text-on-primary shadow-md shadow-primary/20">
+          <Sparkles className="h-4 w-4" />
+        </div>
+        <span className="text-lg font-bold text-on-surface truncate tracking-tight">{sites[0]?.name ?? ''}</span>
+      </div>
+    );
+  }
+
+  const activeSite = sites.find((s) => s.id === restaurantId) ?? sites[0];
+
+  return (
+    <div ref={rootRef} className="relative min-w-0 flex-1">
+      <button
+        type="button"
+        onClick={() => setIsOpen((o) => !o)}
+        className="flex w-full items-center gap-2.5 min-w-0 rounded-xl px-1.5 py-1 -ml-1.5 hover:bg-surface-container-low transition-colors"
+      >
+        <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-primary text-on-primary shadow-md shadow-primary/20">
+          <Sparkles className="h-4 w-4" />
+        </div>
+        <span className="text-sm font-bold text-on-surface truncate tracking-tight flex-1 text-left">{activeSite.name}</span>
+        <ChevronsUpDown className="h-3.5 w-3.5 shrink-0 text-secondary" />
+      </button>
+
+      {isOpen && (
+        <div className="absolute left-0 top-full mt-1 w-64 rounded-xl border border-outline-variant/20 bg-surface shadow-lg z-50 py-1.5">
+          <div className="px-3 pb-1.5 text-[11px] font-bold uppercase tracking-widest text-secondary">Sites</div>
+          {sites.map((site) => (
+            <button
+              key={site.id}
+              type="button"
+              onClick={() => {
+                setActiveSiteId(site.id);
+                setIsOpen(false);
+              }}
+              className="flex w-full items-center gap-2 px-3 py-2 text-sm text-left text-on-surface hover:bg-surface-container-low transition-colors"
+            >
+              <span className="flex-1 truncate">{site.name}</span>
+              {site.id === activeSite.id && <Check className="h-4 w-4 text-primary shrink-0" />}
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
 
 interface NavItem {
   to: string;
@@ -49,15 +120,23 @@ const COLLAPSED_STORAGE_KEY = 'admin_sidebar_collapsed';
 export function Sidebar() {
   const perms = usePermissions();
   const location = useLocation();
+  const { restaurantId } = useRestaurant();
   const { mobileOpen, closeMobile, searchQuery, setSearchQuery } = useSidebar();
   const { flushDraft } = useDraftSave();
+  const [isPreviewOpen, setIsPreviewOpen] = useState(false);
 
   const handlePreview = async () => {
     await flushDraft();
-    window.open(draftPreviewUrl(), '_blank', 'noopener,noreferrer');
+    setIsPreviewOpen(true);
   };
 
   const [isCollapsed, setIsCollapsed] = useState<boolean>(() => localStorage.getItem(COLLAPSED_STORAGE_KEY) === 'true');
+
+  const { data: pageConfigs } = usePageConfigs();
+  const catalogLabel = pageConfigs?.find((p) => p.module === 'catalog')?.navLabel || 'Menu';
+  const bookingLabel = pageConfigs?.find((p) => p.module === 'booking')?.navLabel || 'Reservations';
+  const membershipConfig = pageConfigs?.find((p) => p.module === 'membership');
+  const membershipLabel = membershipConfig?.navLabel || 'Membership';
 
   const groups: NavGroup[] = useMemo(
     () => [
@@ -68,7 +147,10 @@ export function Sidebar() {
         items: [
           { to: '/admin', label: 'Dashboard', icon: LayoutDashboard, end: true },
           { to: '/admin/orders', label: 'Orders', icon: ShoppingBag },
-          { to: '/admin/reservations', label: 'Reservations', icon: CalendarDays },
+          { to: '/admin/reservations', label: bookingLabel, icon: CalendarDays },
+          ...(membershipConfig?.enabled && perms.canManageMembership
+            ? [{ to: '/admin/membership', label: membershipLabel, icon: Crown }]
+            : []),
         ],
       },
       {
@@ -76,19 +158,18 @@ export function Sidebar() {
         title: 'Website',
         visible: perms.canManageWebsite,
         items: [
-          { to: '/admin/website/homepage', label: 'Homepage', icon: Home },
-          { to: '/admin/website/header', label: 'Header', icon: PanelTop },
-          { to: '/admin/website/branding', label: 'Branding', icon: Palette },
+          // Every page, its sections, text, layout and settings, plus header/footer and theme, live in the Site Editor.
+          { to: '/admin/website/pages', label: 'Site Editor', icon: PanelsTopLeft },
           { to: '/admin/website/media', label: 'Media Library', icon: Image },
         ],
       },
       {
         key: 'menu',
-        title: 'Menu',
+        title: catalogLabel,
         visible: perms.canManageMenu,
         items: [
           { to: '/admin/menu/categories', label: 'Categories', icon: LayoutGrid },
-          { to: '/admin/menu/items', label: 'Menu Items', icon: UtensilsCrossed },
+          { to: '/admin/menu/items', label: `${catalogLabel} Items`, icon: UtensilsCrossed },
           { to: '/admin/menu/addons', label: 'Add-ons', icon: PlusCircle },
           { to: '/admin/menu/offers', label: 'Offers', icon: Tag },
         ],
@@ -110,11 +191,30 @@ export function Sidebar() {
         visible: true,
         items: [
           { to: '/admin/settings/account', label: 'Account', icon: User },
+          ...(perms.canManageSettings ? [{ to: '/admin/settings/domains', label: 'Domains', icon: Globe }] : []),
           ...(perms.canManageUsers ? [{ to: '/admin/settings/users', label: 'Users', icon: Users }] : []),
         ],
       },
+      {
+        key: 'platform',
+        title: 'Platform',
+        visible: perms.isSuperAdmin,
+        items: [{ to: '/admin/superadmin/sites', label: 'All Sites', icon: Building2 }],
+      },
     ],
-    [perms.canManageWebsite, perms.canManageMenu, perms.canManageBranding, perms.canManageUsers]
+    [
+      perms.canManageWebsite,
+      perms.canManageMenu,
+      perms.canManageBranding,
+      perms.canManageUsers,
+      perms.canManageSettings,
+      perms.canManageMembership,
+      perms.isSuperAdmin,
+      catalogLabel,
+      bookingLabel,
+      membershipConfig?.enabled,
+      membershipLabel,
+    ]
   );
 
   const visibleGroups = useMemo(() => groups.filter((g) => g.visible), [groups]);
@@ -231,12 +331,7 @@ export function Sidebar() {
               </button>
             </Tooltip>
           ) : (
-            <div className="flex items-center gap-2.5 min-w-0">
-              <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-primary text-on-primary shadow-md shadow-primary/20">
-                <Sparkles className="h-4 w-4" />
-              </div>
-              <span className="text-lg font-bold text-on-surface truncate tracking-tight">Lumière</span>
-            </div>
+            <SiteSwitcher />
           )}
 
           {!effectiveCollapsed && (
@@ -267,7 +362,7 @@ export function Sidebar() {
                 className="flex w-full flex-col items-center justify-center gap-1 rounded-xl px-1 py-2 bg-primary/10 text-primary hover:bg-primary hover:text-on-primary transition-colors"
                 aria-label="Preview website"
               >
-                <ExternalLink className="h-4 w-4" />
+                <Eye className="h-4 w-4" />
                 <span className="w-full text-center text-[10px] leading-tight font-medium">Preview</span>
               </button>
               <Tooltip label="Expand sidebar">
@@ -283,15 +378,17 @@ export function Sidebar() {
               className="block w-full text-left rounded-3xl bg-gradient-to-br from-[#6d7cff] via-[#6b8bff] to-[#a78bfa] p-4 text-white shadow-lg shadow-primary/20 hover:brightness-105 transition"
             >
               <div className="text-sm font-bold leading-snug">Preview website</div>
-              <p className="text-[11px] text-white/80 mt-1">Saves your latest edits, then shows the draft site.</p>
+              <p className="text-[11px] text-white/80 mt-1">Saves your latest edits, then shows the whole site right here.</p>
               <span className="mt-3 inline-flex items-center gap-1.5 rounded-full bg-white px-3 py-1.5 text-xs font-bold text-primary">
-                Open
-                <ExternalLink className="h-3 w-3" />
+                Preview
+                <Eye className="h-3 w-3" />
               </span>
             </button>
           )}
         </div>
       </aside>
+
+      <PreviewModal isOpen={isPreviewOpen} onClose={() => setIsPreviewOpen(false)} url={draftPreviewUrl(restaurantId)} />
     </>
   );
 }

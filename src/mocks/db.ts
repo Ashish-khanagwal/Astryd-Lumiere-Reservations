@@ -1,25 +1,33 @@
 import type {
   Addon,
   BrandSettings,
+  DomainMapping,
   Homepage,
   MediaAsset,
+  Member,
+  MemberCheckIn,
+  MembershipPlan,
   MenuCategory,
   MenuItem,
   Offer,
   Order,
+  Organization,
+  PageConfig,
   Reservation,
   ReservationAvailabilitySettings,
   Restaurant,
   User,
+  PageContentMap,
   WebsiteSettings,
 } from '../types';
 
-interface Versioned<T> {
+export interface Versioned<T> {
   draft: T;
   published: T;
 }
 
 export interface MockDbShape {
+  organizations: Organization[];
   users: User[];
   restaurants: Restaurant[];
   brand: Record<string, Versioned<BrandSettings>>;
@@ -33,12 +41,19 @@ export interface MockDbShape {
   orders: Order[];
   reservations: Reservation[];
   reservationAvailability: Record<string, ReservationAvailabilitySettings>;
+  pageConfigs: PageConfig[];
+  membershipPlans: MembershipPlan[];
+  members: Member[];
+  memberCheckIns: MemberCheckIn[];
+  domainMappings: DomainMapping[];
+  pageContent: Record<string, Versioned<PageContentMap>>;
 }
 
-const STORAGE_KEY = 'lumiere-cms-mock-db-v1';
+const STORAGE_KEY = 'lumiere-cms-mock-db-v9';
 
 function emptyDb(): MockDbShape {
   return {
+    organizations: [],
     users: [],
     restaurants: [],
     brand: {},
@@ -52,6 +67,12 @@ function emptyDb(): MockDbShape {
     orders: [],
     reservations: [],
     reservationAvailability: {},
+    pageConfigs: [],
+    membershipPlans: [],
+    members: [],
+    memberCheckIns: [],
+    domainMappings: [],
+    pageContent: {},
   };
 }
 
@@ -68,6 +89,15 @@ function load(): MockDbShape {
 
 class MockDb {
   data: MockDbShape = load();
+
+  constructor() {
+    // Each document (admin tab, the Site Editor's preview iframe, other tabs) runs its own copy of this
+    // mock DB. `storage` fires in the *other* documents whenever one of them saves, so re-read to stay in
+    // sync - otherwise the live preview would keep serving the content it loaded with.
+    window.addEventListener('storage', (event) => {
+      if (event.key === STORAGE_KEY) this.data = load();
+    });
+  }
 
   save() {
     try {

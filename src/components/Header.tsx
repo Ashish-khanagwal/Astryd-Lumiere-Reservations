@@ -1,11 +1,16 @@
 import React, { useState } from 'react';
 import { usePublicData } from '../context/PublicDataContext';
+import { usePageContent } from '../context/usePageContent';
 
 interface HeaderProps {
-  currentPage: 'landing' | 'menu' | 'reservations';
+  currentPage: 'landing' | 'items' | 'menu' | 'reservations' | 'membership';
   onNavigateLanding: () => void;
   onNavigateMenu: () => void;
   onNavigateReservations: () => void;
+  /** Optional - a Header rendered inside a page that has no direct reference to App's page state falls back to a hash-based navigation, since Items is a newer, sometimes-disabled module (Multi-Vertical Platform Plan §8.5). */
+  onNavigateItems?: () => void;
+  /** Optional - a Header rendered inside a page that has no direct reference to App's page state falls back to a hash-based navigation, since Membership is a newer, sometimes-disabled module (Multi-Vertical Platform Plan §8.4). */
+  onNavigateMembership?: () => void;
   onToast?: (msg: string) => void;
   cartUniqueCount?: number;
   onOpenCart?: () => void;
@@ -16,12 +21,24 @@ export const Header: React.FC<HeaderProps> = ({
   onNavigateLanding,
   onNavigateMenu,
   onNavigateReservations,
+  onNavigateItems,
+  onNavigateMembership,
   cartUniqueCount = 0,
   onOpenCart,
 }) => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-  const { brand, mediaMap } = usePublicData();
+  const { brand, mediaMap, getNavLabel, isModuleEnabled } = usePublicData();
+  const c = usePageContent('global');
+  const homeLabel = c.text('navHomeLabel');
   const brandName = brand?.restaurantName ?? 'Lumière';
+  const itemsLabel = getNavLabel('items', 'Menu');
+  const catalogLabel = getNavLabel('catalog', 'Menu');
+  const bookingLabel = getNavLabel('booking', 'Reservation');
+  const membershipLabel = getNavLabel('membership', 'Membership');
+  const itemsEnabled = isModuleEnabled('items');
+  const membershipEnabled = isModuleEnabled('membership');
+  const goItems = onNavigateItems ?? (() => { window.location.hash = '#/items'; });
+  const goMembership = onNavigateMembership ?? (() => { window.location.hash = '#/membership'; });
   const logoUrl = brand?.logoMediaId ? mediaMap.get(brand.logoMediaId)?.fileUrl : undefined;
   const navPosition = brand?.navPosition ?? 'right';
 
@@ -38,7 +55,7 @@ export const Header: React.FC<HeaderProps> = ({
       id="header-cart-btn"
       onClick={onOpenCart}
       className="relative w-10 h-10 flex items-center justify-center text-on-surface rounded-full hover:bg-surface-container-low transition-colors"
-      aria-label={`Open cart${cartUniqueCount > 0 ? `, ${cartUniqueCount} items` : ''}`}
+      aria-label={cartUniqueCount > 0 ? c.text('cartAriaLabelWithCount', { count: cartUniqueCount }) : c.text('cartAriaLabel')}
     >
       <span className="material-symbols-outlined text-[22px]">shopping_cart</span>
       {cartUniqueCount > 0 && (
@@ -86,8 +103,21 @@ export const Header: React.FC<HeaderProps> = ({
                   : navLinkInactiveClass
               }`}
             >
-              Discover
+              {homeLabel}
             </button>
+
+            {itemsEnabled && (
+              <button
+                onClick={goItems}
+                className={`font-sans text-sm tracking-wide py-1 font-medium transition-colors relative ${
+                  currentPage === 'items'
+                    ? 'text-primary font-bold after:content-[""] after:absolute after:bottom-0 after:left-0 after:right-0 after:h-0.5 after:bg-primary after:rounded-full'
+                    : navLinkInactiveClass
+                }`}
+              >
+                {itemsLabel}
+              </button>
+            )}
 
             <button
               onClick={onNavigateMenu}
@@ -97,7 +127,7 @@ export const Header: React.FC<HeaderProps> = ({
                   : navLinkInactiveClass
               }`}
             >
-              Menu
+              {catalogLabel}
             </button>
 
             <button
@@ -108,8 +138,21 @@ export const Header: React.FC<HeaderProps> = ({
                   : navLinkInactiveClass
               }`}
             >
-              Reservation
+              {bookingLabel}
             </button>
+
+            {membershipEnabled && (
+              <button
+                onClick={goMembership}
+                className={`font-sans text-sm tracking-wide py-1 font-medium transition-colors relative ${
+                  currentPage === 'membership'
+                    ? 'text-primary font-bold after:content-[""] after:absolute after:bottom-0 after:left-0 after:right-0 after:h-0.5 after:bg-primary after:rounded-full'
+                    : navLinkInactiveClass
+                }`}
+              >
+                {membershipLabel}
+              </button>
+            )}
           </nav>
 
           {cartButton}
@@ -120,7 +163,7 @@ export const Header: React.FC<HeaderProps> = ({
           <button
             onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
             className="w-10 h-10 flex items-center justify-center text-on-surface rounded-full hover:bg-surface-container-low transition-colors"
-            aria-label="Toggle navigation menu"
+            aria-label={c.text('mobileMenuAriaLabel')}
           >
             <span className="material-symbols-outlined">{isMobileMenuOpen ? 'close' : 'menu'}</span>
           </button>
@@ -141,8 +184,21 @@ export const Header: React.FC<HeaderProps> = ({
               currentPage === 'landing' ? 'text-primary font-bold' : navLinkInactiveClass
             }`}
           >
-            Discover
+            {homeLabel}
           </button>
+          {itemsEnabled && (
+            <button
+              onClick={() => {
+                goItems();
+                setIsMobileMenuOpen(false);
+              }}
+              className={`block w-full text-left font-sans text-base py-2.5 font-medium transition-colors ${
+                currentPage === 'items' ? 'text-primary font-bold' : navLinkInactiveClass
+              }`}
+            >
+              {itemsLabel}
+            </button>
+          )}
           <button
             onClick={() => {
               onNavigateMenu();
@@ -152,7 +208,7 @@ export const Header: React.FC<HeaderProps> = ({
               currentPage === 'menu' ? 'text-primary font-bold' : navLinkInactiveClass
             }`}
           >
-            Menu
+            {catalogLabel}
           </button>
           <button
             onClick={() => {
@@ -163,8 +219,21 @@ export const Header: React.FC<HeaderProps> = ({
               currentPage === 'reservations' ? 'text-primary font-bold' : navLinkInactiveClass
             }`}
           >
-            Reservation
+            {bookingLabel}
           </button>
+          {membershipEnabled && (
+            <button
+              onClick={() => {
+                goMembership();
+                setIsMobileMenuOpen(false);
+              }}
+              className={`block w-full text-left font-sans text-base py-2.5 font-medium transition-colors ${
+                currentPage === 'membership' ? 'text-primary font-bold' : navLinkInactiveClass
+              }`}
+            >
+              {membershipLabel}
+            </button>
+          )}
         </div>
       )}
     </header>

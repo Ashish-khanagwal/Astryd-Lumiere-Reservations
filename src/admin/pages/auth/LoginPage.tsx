@@ -6,6 +6,7 @@ export function LoginPage() {
   const { login } = useAuth();
   const navigate = useNavigate();
   const location = useLocation() as { state?: { from?: string } };
+  const [orgId, setOrgId] = useState('LUMIERE');
   const [email, setEmail] = useState('owner@lumiere.com');
   const [password, setPassword] = useState('');
   const [error, setError] = useState<string | null>(null);
@@ -16,10 +17,10 @@ export function LoginPage() {
     setError(null);
     setIsSubmitting(true);
     try {
-      await login(email, password);
+      await login(orgId, email, password);
       navigate(location.state?.from ?? '/admin', { replace: true });
     } catch {
-      setError('Incorrect email or password.');
+      setError('Incorrect Organization ID, email, or password.');
     } finally {
       setIsSubmitting(false);
     }
@@ -27,6 +28,17 @@ export function LoginPage() {
 
   return (
     <form onSubmit={handleSubmit} className="space-y-5">
+      <div>
+        <label className="block text-sm font-semibold text-on-surface mb-1.5">Organization ID</label>
+        <input
+          type="text"
+          value={orgId}
+          onChange={(e) => setOrgId(e.target.value)}
+          required
+          autoCapitalize="characters"
+          className="w-full px-3 py-2.5 text-sm rounded-xl border border-outline-variant/40 bg-surface-container-low focus:border-primary outline-none uppercase"
+        />
+      </div>
       <div>
         <label className="block text-sm font-semibold text-on-surface mb-1.5">Email</label>
         <input
@@ -61,14 +73,36 @@ export function LoginPage() {
       </button>
 
       <div className="text-center">
-        <Link to="/admin/forgot-password" className="text-sm text-primary font-medium hover:underline">
+        <Link to="/forgot-password" className="text-sm text-primary font-medium hover:underline">
           Forgot password?
         </Link>
       </div>
 
-      <div className="pt-4 border-t border-outline-variant/20 text-xs text-secondary space-y-1">
-        <p className="font-semibold">Demo accounts:</p>
-        <p>owner@lumiere.com (Owner) · staff@lumiere.com (Staff) · admin@platform.com (Super Admin)</p>
+      <div className="pt-4 border-t border-outline-variant/20 text-xs text-secondary space-y-2">
+        <div>
+          <p className="font-semibold">LUMIERE (Restaurant)</p>
+          <p>owner@lumiere.com (Owner) · staff@lumiere.com (Staff)</p>
+        </div>
+        <div>
+          <p className="font-semibold">PULSEFIT (Gym)</p>
+          <p>owner@pulsefit.com (Owner)</p>
+        </div>
+        <div>
+          <p className="font-semibold">NOVAGOODS (Retail)</p>
+          <p>owner@novagoods.com (Owner)</p>
+        </div>
+      </div>
+
+      <div className="text-center">
+        <Link to="/signup" className="text-sm text-primary font-medium hover:underline">
+          New here? Create your site
+        </Link>
+      </div>
+
+      <div className="text-center">
+        <Link to="/super-admin" className="text-xs text-secondary hover:text-on-surface hover:underline">
+          Platform team? Sign in here
+        </Link>
       </div>
     </form>
   );

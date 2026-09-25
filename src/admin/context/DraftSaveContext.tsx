@@ -9,8 +9,9 @@ interface DraftSaveContextValue {
 
 const DraftSaveContext = createContext<DraftSaveContextValue | undefined>(undefined);
 
-export function draftPreviewUrl() {
-  return `/?preview=true&t=${Date.now()}`;
+/** `siteId` is required so Preview actually shows the Site you're editing, not always the platform default (Multi-Vertical Platform Plan §9.2 - real Host-header resolution isn't built yet, so preview needs an explicit site). */
+export function draftPreviewUrl(siteId: string) {
+  return `/?preview=true&site=${siteId}&t=${Date.now()}`;
 }
 
 export function DraftSaveProvider({ children }: { children: ReactNode }) {

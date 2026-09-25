@@ -1,34 +1,51 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Users, UserPlus, Trash2 } from 'lucide-react';
 import { useCreateUser, useDeleteUser, useUsers } from '../../hooks/api/useUsers';
+import { useSites } from '../../hooks/api/useSites';
 import { useAdminToast } from '../../context/AdminToastContext';
 import { useAuth } from '../../../context/AuthContext';
+import { useRestaurant } from '../../../context/RestaurantContext';
 import { DataTable } from '../../components/DataTable';
 import { ConfirmDialog } from '../../components/ConfirmDialog';
 import { StatusPill } from '../../components/StatusPill';
 import { PageHeader } from '../../components/PageHeader';
 import { Button } from '../../components/Button';
 import { Modal } from '../../components/Modal';
-import { TextField, SelectField } from '../../components/forms/Field';
-import type { Role, User } from '../../../types';
+import { TextField } from '../../components/forms/Field';
+import type { User } from '../../../types';
 
 export function UsersPage() {
   const { data: users, isLoading } = useUsers();
   const { user: currentUser } = useAuth();
+  const { organizationId, restaurantId } = useRestaurant();
+  const { data: sites } = useSites(organizationId);
   const createUser = useCreateUser();
   const deleteUser = useDeleteUser();
   const { showToast } = useAdminToast();
 
   const [isFormOpen, setIsFormOpen] = useState(false);
-  const [form, setForm] = useState({ name: '', email: '', role: 'staff' as Role });
+  // Multi-Vertical Platform Plan §5.1: this screen only ever creates Staff - Owner accounts are created
+  // exclusively by the platform team when the Organization itself is provisioned (§6B).
+  const [form, setForm] = useState({ name: '', email: '', role: 'staff' as const, siteAccess: [restaurantId] });
   const [pendingDelete, setPendingDelete] = useState<User | null>(null);
 
+  useEffect(() => {
+    if (isFormOpen) setForm((f) => ({ ...f, siteAccess: [restaurantId] }));
+  }, [isFormOpen, restaurantId]);
+
+  const toggleSiteAccess = (siteId: string) => {
+    setForm((f) => ({
+      ...f,
+      siteAccess: f.siteAccess.includes(siteId) ? f.siteAccess.filter((id) => id !== siteId) : [...f.siteAccess, siteId],
+    }));
+  };
+
   const handleCreate = async () => {
-    if (!form.name.trim() || !form.email.trim()) return;
+    if (!form.name.trim() || !form.email.trim() || form.siteAccess.length === 0) return;
     await createUser.mutateAsync(form);
     showToast('User invited.');
     setIsFormOpen(false);
-    setForm({ name: '', email: '', role: 'staff' });
+    setForm({ name: '', email: '', role: 'staff', siteAccess: [restaurantId] });
   };
 
   return (
@@ -36,7 +53,7 @@ export function UsersPage() {
       <PageHeader
         icon={Users}
         title="Users"
-        description="Restaurant staff and owner accounts with admin panel access."
+        description="Staff accounts with admin panel access. New Organizations and their Owner account are created by the platform team."
         actions={
           <Button variant="primary" icon={UserPlus} onClick={() => setIsFormOpen(true)}>
             Invite User
@@ -97,10 +114,31 @@ export function UsersPage() {
         <div className="space-y-4">
           <TextField label="Name" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} />
           <TextField label="Email" type="email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} />
-          <SelectField label="Role" value={form.role} onChange={(e) => setForm({ ...form, role: e.target.value as Role })}>
-            <option value="staff">Staff (menu availability only)</option>
-            <option value="owner">Owner (full access)</option>
-          </SelectField>
+          <div className="rounded-xl bg-surface-container-low px-3 py-2.5 text-sm text-secondary">
+            Role: <span className="font-semibold text-on-surface">Staff</span>
+          </div>
+
+          {sites && sites.length > 1 && (
+            <div>
+              <label className="block text-sm font-semibold text-on-surface mb-1.5">Site access</label>
+              <div className="space-y-1.5">
+                {sites.map((site) => (
+                  <label key={site.id} className="flex items-center gap-2 text-sm text-on-surface">
+                    <input
+                      type="checkbox"
+                      checked={form.siteAccess.includes(site.id)}
+                      onChange={() => toggleSiteAccess(site.id)}
+                      className="rounded border-outline-variant/50"
+                    />
+                    {site.name}
+                  </label>
+                ))}
+              </div>
+              {form.siteAccess.length === 0 && (
+                <p className="text-xs text-error mt-1">Pick at least one site.</p>
+              )}
+            </div>
+          )}
         </div>
       </Modal>
 

@@ -1,6 +1,7 @@
-import { useState } from 'react';
+import { useLayoutEffect, useRef, useState } from 'react';
 import { PreviewModal } from './PreviewModal';
 import { useDraftSave, draftPreviewUrl } from '../context/DraftSaveContext';
+import { useRestaurant } from '../../context/RestaurantContext';
 import type { AutoSaveStatus } from '../hooks/useAutoSave';
 
 interface PublishBarProps {
@@ -24,10 +25,27 @@ export function PublishBar({
   previewUrl,
   autoSaveStatus = 'idle',
 }: PublishBarProps) {
+  const { restaurantId } = useRestaurant();
   const [isPreviewOpen, setIsPreviewOpen] = useState(false);
-  const [activePreviewUrl, setActivePreviewUrl] = useState(previewUrl ?? draftPreviewUrl());
+  const [activePreviewUrl, setActivePreviewUrl] = useState(previewUrl ?? draftPreviewUrl(restaurantId));
   const [isPreviewing, setIsPreviewing] = useState(false);
   const { flushDraft } = useDraftSave();
+  const barRef = useRef<HTMLDivElement>(null);
+
+  // Tell the page's sticky title block (StickyHeader) to pin just below this bar rather than under it.
+  useLayoutEffect(() => {
+    const bar = barRef.current;
+    const page = bar?.parentElement;
+    if (!bar || !page) return;
+    const publish = () => page.style.setProperty('--sticky-offset', `${bar.offsetHeight}px`);
+    publish();
+    const observer = new ResizeObserver(publish);
+    observer.observe(bar);
+    return () => {
+      observer.disconnect();
+      page.style.removeProperty('--sticky-offset');
+    };
+  }, []);
 
   const saving = isSaving || autoSaveStatus === 'saving' || isPreviewing;
 
@@ -43,7 +61,7 @@ export function PublishBar({
     setIsPreviewing(true);
     try {
       await flushDraft();
-      setActivePreviewUrl(previewUrl ?? draftPreviewUrl());
+      setActivePreviewUrl(previewUrl ?? draftPreviewUrl(restaurantId));
       setIsPreviewOpen(true);
     } finally {
       setIsPreviewing(false);
@@ -52,7 +70,7 @@ export function PublishBar({
 
   return (
     <>
-      <div className="sticky top-0 z-30 flex flex-wrap items-center justify-between gap-3 bg-surface/95 backdrop-blur-md border-b border-outline-variant/20 px-4 sm:px-6 lg:px-8 py-3 -mx-4 sm:-mx-6 lg:-mx-8 mb-6">
+      <div ref={barRef} className="sticky top-0 z-30 flex flex-wrap items-center justify-between gap-3 bg-surface border-b border-slate-200 px-4 sm:px-6 lg:px-8 py-3 -mx-4 sm:-mx-6 lg:-mx-8 mb-6">
         <div className="text-xs text-secondary">
           {statusLabel}
           {lastPublishedAt && (isDirty || saving || autoSaveStatus === 'saved') && (

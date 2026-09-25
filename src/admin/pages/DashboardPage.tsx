@@ -19,6 +19,7 @@ import { useAddons } from '../hooks/api/useAddons';
 import { useBrandDraft, useWebsiteStatus } from '../hooks/api/useWebsite';
 import { MetricCard } from '../components/MetricCard';
 import { Skeleton } from '../components/Skeleton';
+import { StickyHeader } from '../components/PageHeader';
 
 function formatRelative(iso?: string) {
   if (!iso) return 'Just now';
@@ -155,16 +156,16 @@ export function DashboardPage() {
   const quickActions = [
     { label: 'Add Menu Item', description: 'Create a new dish or drink', icon: PlusCircle, to: '/admin/menu/items/new' },
     { label: 'Manage Menu', description: 'Organize items and categories', icon: UtensilsCrossed, to: '/admin/menu/items' },
-    { label: 'Edit Website', description: 'Update homepage sections', icon: Globe, to: '/admin/website/homepage' },
+    { label: 'Edit Website', description: 'Pages, sections, text & layout', icon: Globe, to: '/admin/website/pages' },
   ];
 
   if (menuLoading) {
     return (
       <div className="space-y-5">
-        <div>
+        <StickyHeader>
           <p className="text-sm text-secondary">Hi {firstName},</p>
           <h1 className="text-2xl sm:text-3xl font-bold text-on-surface tracking-tight">Welcome back</h1>
-        </div>
+        </StickyHeader>
         <div className="grid grid-cols-12 gap-4 lg:gap-5 items-start">
           <Skeleton className="col-span-12 lg:col-span-6 h-36 rounded-3xl" />
           <Skeleton className="col-span-12 lg:col-span-6 h-44 rounded-3xl" />
@@ -180,12 +181,14 @@ export function DashboardPage() {
 
   return (
     <div className="space-y-5">
-      <div className="flex flex-wrap items-end justify-between gap-3 min-w-0">
-        <div className="min-w-0">
-          <p className="text-sm text-secondary">Hi {firstName},</p>
-          <h1 className="text-2xl sm:text-3xl font-bold text-on-surface tracking-tight">Welcome back</h1>
+      <StickyHeader>
+        <div className="flex flex-wrap items-end justify-between gap-3 min-w-0">
+          <div className="min-w-0">
+            <p className="text-sm text-secondary">Hi {firstName},</p>
+            <h1 className="text-2xl sm:text-3xl font-bold text-on-surface tracking-tight">Welcome back</h1>
+          </div>
         </div>
-      </div>
+      </StickyHeader>
 
       <div className="grid grid-cols-12 gap-4 lg:gap-5">
         <div className="col-span-12 lg:col-span-6 flex flex-col sm:flex-row gap-4 min-w-0">
@@ -248,7 +251,7 @@ export function DashboardPage() {
                 : 'Use the website builder to finish homepage sections, then publish so guests can find you.'}
             </p>
             <button
-              onClick={() => navigate('/admin/website/homepage')}
+              onClick={() => navigate('/admin/website/pages/home')}
               className="mt-5 inline-flex items-center gap-2 rounded-full bg-primary px-5 py-2.5 text-sm font-bold text-on-primary shadow-md shadow-primary/20 hover:bg-primary-container transition-colors self-start"
             >
               {isPublished ? 'Edit website' : 'Set up website'}

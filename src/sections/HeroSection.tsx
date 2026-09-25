@@ -1,5 +1,5 @@
 import type { HeroSectionContent } from '../types';
-import defaultHeroImage from '../assets/hero.png';
+import { usePageContent } from '../context/usePageContent';
 
 interface HeroSectionProps {
   content?: Partial<HeroSectionContent> | null;
@@ -8,14 +8,15 @@ interface HeroSectionProps {
 }
 
 export const HeroSection = ({ content, backgroundImageUrl, onNavigate }: HeroSectionProps) => {
-  const heading = content?.heading?.trim() || 'Lumière';
-  const description = content?.description?.trim() || 'Experience invisible excellence at our flagship dining room in Mayfair.';
-  const buttonText = content?.buttonText?.trim() || 'Reserve a Table';
+  const c = usePageContent('landing');
+  const heading = content?.heading?.trim() || c.text('heroHeading');
+  const description = content?.description?.trim() || c.text('heroDescription');
+  const buttonText = content?.buttonText?.trim() || c.text('heroButtonText');
   const buttonLink = content?.buttonLink || '/reservations';
-  const eyebrow = content?.eyebrow?.trim() || 'Mayfair, London';
+  const eyebrow = content?.eyebrow?.trim() || c.text('heroEyebrow');
   const configuredOverlayOpacity = content?.overlayOpacity;
   const overlayOpacity = typeof configuredOverlayOpacity === 'number' ? configuredOverlayOpacity : 50;
-  const heroImageUrl = backgroundImageUrl || defaultHeroImage;
+  const heroImageUrl = backgroundImageUrl || c.image('heroFallbackImage');
   const secondaryButtonText = content?.secondaryButtonText;
   const secondaryButtonLink = content?.secondaryButtonLink;
 

@@ -1,13 +1,14 @@
-import React, { useCallback, useEffect, useMemo, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Loader2 } from "lucide-react";
-import { ApiError } from "../services/http";
-import { createReservationCheckout, getPublicAvailability } from "../services/reservations";
-import { getPayment, retryPayment, submitCard, waitForPayment } from "../services/payments";
-import { useRestaurant } from "../context/RestaurantContext";
-import { Header } from "./Header";
-import { Footer } from "./Footer";
-import { FinixCardForm } from "./FinixCardForm";
-import type { CheckoutSession, PublicAvailability } from "../types";
+import { ApiError } from "../../services/http";
+import { createReservationCheckout, getPublicAvailability } from "../../services/reservations";
+import { getPayment, retryPayment, submitCard, waitForPayment } from "../../services/payments";
+import { useRestaurant } from "../../context/RestaurantContext";
+import { usePageContent } from "../../context/usePageContent";
+import { Header } from "../Header";
+import { Footer } from "../Footer";
+import { FinixCardForm } from "../FinixCardForm";
+import type { CheckoutSession, PublicAvailability } from "../../types";
 
 function startOfDay(d: Date) {
   return new Date(d.getFullYear(), d.getMonth(), d.getDate());
@@ -64,7 +65,7 @@ function getCalendarCells(displayMonth: Date): CalendarCell[] {
   return cells;
 }
 
-interface ReservationViewProps {
+export interface BookingViewProps {
   onNavigateLanding: () => void;
   onNavigateMenu: () => void;
   onToast: (msg: string) => void;
@@ -72,14 +73,21 @@ interface ReservationViewProps {
   onOpenCart?: () => void;
 }
 
-export const ReservationView = ({
+/** Variant A - "Table Reservation" (Multi-Vertical Platform Plan §8.3), the original design; suits a Restaurant but any Site can pick it. */
+export const BookingVariantA = ({
   onNavigateLanding,
   onNavigateMenu,
   onToast,
   cartUniqueCount = 0,
   onOpenCart,
-}: ReservationViewProps) => {
+}: BookingViewProps) => {
   const { restaurantId } = useRestaurant();
+  const c = usePageContent("booking");
+  // Effects/callbacks read copy through a ref so editing content never re-triggers fetches or payment polling.
+  const cRef = useRef(c);
+  useEffect(() => {
+    cRef.current = c;
+  }, [c]);
   const [step, setStep] = useState(1);
   const [partySize, setPartySize] = useState(2);
   const today = useMemo(() => startOfDay(new Date()), []);
@@ -92,16 +100,14 @@ export const ReservationView = ({
   const [isMapVisible, setIsMapVisible] = useState(false);
 
   // Step 3 Guest Details States
-  const [fullName, setFullName] = useState("Julianne Smith");
-  const [phone, setPhone] = useState("+1 (555) 000-0000");
-  const [email, setEmail] = useState("julianne.s@example.com");
-  const [specialRequests, setSpecialRequests] = useState(
-    "Gluten-free tasting menu preference for 1 guest.",
-  );
+  const [fullName, setFullName] = useState("");
+  const [phone, setPhone] = useState("");
+  const [email, setEmail] = useState("");
+  const [specialRequests, setSpecialRequests] = useState("");
   const [newsletterOptIn, setNewsletterOptIn] = useState(false);
   const [termsAgreed, setTermsAgreed] = useState(true);
   const [isProcessing, setIsProcessing] = useState(false);
-  const [confirmationCode, setConfirmationCode] = useState("LUM-82910");
+  const [confirmationCode, setConfirmationCode] = useState("");
   const [checkoutSession, setCheckoutSession] = useState<CheckoutSession | null>(null);
   const [paymentError, setPaymentError] = useState<string | null>(null);
   const [availability, setAvailability] = useState<PublicAvailability["slots"]>({ afternoon: [], evening: [] });
@@ -119,8 +125,8 @@ export const ReservationView = ({
 
   const selectedDateIso = toIsoDate(selectedDate);
   const selectedTimeDisplay = useMemo(
-    () => [...availability.afternoon, ...availability.evening].find((slot) => slot.time24 === selectedTimeSlot)?.time ?? "Select a time",
-    [availability, selectedTimeSlot],
+    () => [...availability.afternoon, ...availability.evening].find((slot) => slot.time24 === selectedTimeSlot)?.time ?? c.text("a_time_placeholder"),
+    [availability, selectedTimeSlot, c],
   );
 
   useEffect(() => {
@@ -132,12 +138,12 @@ export const ReservationView = ({
       .then((result) => {
         if (!active) return;
         setAvailability(result.slots);
-        if (!result.available) setAvailabilityError("No tables are available for this date and party size.");
+        if (!result.available) setAvailabilityError(cRef.current.text("a_no_tables"));
       })
       .catch((error: unknown) => {
         if (!active) return;
         setAvailability({ afternoon: [], evening: [] });
-        setAvailabilityError(error instanceof Error ? error.message : "Unable to load available times. Please try again.");
+        setAvailabilityError(error instanceof Error ? error.message : cRef.current.text("a_availability_error"));
       })
       .finally(() => {
         if (active) setAvailabilityLoading(false);
@@ -157,13 +163,13 @@ export const ReservationView = ({
           window.clearInterval(timer);
           setConfirmationCode(result.reservation.confirmationCode);
           setStep(5);
-          onToast(`Reservation confirmed! Code: ${result.reservation.confirmationCode}`);
+          onToast(cRef.current.text("a_toast_confirmed", { code: result.reservation.confirmationCode }));
         } else if (result.fulfillmentStatus === "action_required") {
           window.clearInterval(timer);
-          setPaymentError("Your payment succeeded, but the selected table became unavailable. Please contact the restaurant with this payment reference so staff can assist you.");
+          setPaymentError(cRef.current.text("a_pay_table_unavailable"));
         } else if (result.status === "failed") {
           window.clearInterval(timer);
-          setPaymentError(result.failure?.message ?? "Your card was declined. You can retry with another card.");
+          setPaymentError(result.failure?.message ?? cRef.current.text("a_pay_declined"));
         }
       } catch {
         // Keep polling transient status failures while this checkout remains open.
@@ -175,43 +181,16 @@ export const ReservationView = ({
     };
   }, [checkoutSession, onToast]);
 
-  const seatingOptions = [
-    {
-      id: "Indoor",
-      title: "Indoor",
-      badge: "POPULAR",
-      desc: "The elegant main hall with curated art and soft acoustics.",
-      image:
-        "https://lh3.googleusercontent.com/aida-public/AB6AXuD-UtwQJzT2m9uIFRyQs3WVXgUnEUfRAaUPE1joG1_4fIa3GmQ45nvKDnH6AEhYwiiPXimScn_LpMiiCQSoUmH-vXeRPYpfYGgSYByL4wEpYfSyFDPFlm01yQoHGrOpe4mNKh9JtIiD4dbfa-DYBeJknXksldv_P96lo8oJw309boOHcPQg3y5RYyQ1l8TGvC0H4Lbf7gdrKqz10zlv1gkWmbvCalPrm_I97_3ajnbKCrJLFB1PR6_1QPnTWKCOsbEmKfKI8xbp6LY",
-    },
-    {
-      id: "Outdoor",
-      title: "Outdoor",
-      desc: "Breezy terrace dining with panoramic garden views.",
-      image:
-        "https://lh3.googleusercontent.com/aida-public/AB6AXuCDelKvhuDf1eaIuh3VbrI0KaZd6jshkXloQKMXsmus1_gfLrRIc0OrFYVrYvrozrLer8ilYRogaCOWGgaiNm3ftqydqKlm5cA_ltLUC4rfmA9UUoj6xNaFgsbZW14nZT4ApEa0hlY8bAAVeb2LKGs9V8UfqJRhtTl7AyLSHeD1KJdyuZokmf7TLLyAW0VWCIXNDE5SB3Scnav9NLXZ8dr--sAFRHuvTFJ9HorS6LVOvvv3HsD5L4zPsunEFtceG-edIccFBDUAKaA",
-    },
-    {
-      id: "The Bar",
-      title: "The Bar",
-      desc: "High-energy seating near our award-winning mixologists.",
-      image:
-        "https://lh3.googleusercontent.com/aida-public/AB6AXuBHdjyD19lZysABSE7lqFFDnO89QTMq_5hBf4rmivW3z5CMYVLyO1toJwkUr4vBFrRkecWjBu7DUThm49PEU2LMLDUf2GNo5NFklrVZAxQ8FlozJCFGhVpN6xqsaUGbteiFSWEGj-v-VO7VkZgSbphYeH81npt-T89RDlNR2CX5lNTg2i5xq2q-Z4-Sc-nj1YFn9EK3inb3Tfb3Gfwo3px_GbdENWqGzk_30RhjXqAzqq7lXPadJZjMKdw5_QLTticy8dfguoFjmkg",
-    },
-    {
-      id: "Private",
-      title: "Private",
-      badge: "VIP",
-      desc: "Intimate booths or rooms for focused conversation.",
-      image:
-        "https://lh3.googleusercontent.com/aida-public/AB6AXuA2pkAsFWKQ41_OMA1ddTgYpa-OaWPSfzKjAc3Riu9meylPu7PiRJpRKfIlxI9cPvho5o2PlQ3mK_s81adzM0XUIPUOrfVBR2RM5BmckG2qHqXQs-_sbaPumWslCXmUBNVwG7bLJfq0dQARIoZ23LIi5P-xbnR_61udb1tcdhXdxqlM499-QD35d4i3mf8mhB5QKaaYqfwiMs87ncXVAhgEfGuRWV4y33tUjUVFwJFY8zYnTSOZAIbn1gB9K9d7HxFK0-0eOHZRjS8",
-    },
-  ];
+  const seatingOptions = c.list("a_seating_options");
+  const selectedSeatingTitle = selectedSeating
+    ? seatingOptions.find((opt) => opt.id === selectedSeating)?.title || selectedSeating
+    : null;
+  const peopleLabel = (count: number) => c.text(count === 1 ? "a_people_one" : "a_people_many", { count });
 
   const handleGuestSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!termsAgreed) {
-      onToast("Please agree to the Terms of Service to continue");
+      onToast(c.text("a_toast_terms"));
       return;
     }
     setCheckoutSession(null);
@@ -223,7 +202,7 @@ export const ReservationView = ({
     setIsProcessing(true);
     try {
       if (!selectedTimeSlot) {
-        onToast("Please select an available time before confirming your reservation.");
+        onToast(c.text("a_toast_select_time"));
         return;
       }
       const session = await createReservationCheckout(restaurantId, {
@@ -241,14 +220,14 @@ export const ReservationView = ({
       setPaymentError(null);
     } catch (error: unknown) {
       if (error instanceof ApiError && error.status === 409) {
-        onToast("That time slot is no longer available. Please choose another time.");
+        onToast(c.text("a_toast_slot_taken"));
         setStep(1);
       } else if (error instanceof ApiError && error.status === 400) {
-        onToast(error.message || "Please check your reservation details and try again.");
+        onToast(error.message || c.text("a_toast_invalid"));
       } else if (error instanceof ApiError && error.status >= 500) {
-        onToast("The reservation service is temporarily unavailable. Please try again shortly.");
+        onToast(c.text("a_toast_unavailable"));
       } else {
-        onToast(error instanceof Error ? error.message : "Unable to confirm your reservation. Please try again.");
+        onToast(error instanceof Error ? error.message : c.text("a_toast_confirm_failed"));
       }
     } finally {
       setIsProcessing(false);
@@ -271,13 +250,13 @@ export const ReservationView = ({
       if (result.status === "succeeded" && result.fulfillmentStatus === "completed" && result.reservation) {
         setConfirmationCode(result.reservation.confirmationCode);
         setStep(5);
-        onToast(`Reservation confirmed! Code: ${result.reservation.confirmationCode}`);
+        onToast(cRef.current.text("a_toast_confirmed", { code: result.reservation.confirmationCode }));
       } else if (result.fulfillmentStatus === "action_required") {
-        setPaymentError("Your payment succeeded, but the selected table became unavailable. Please contact the restaurant with this payment reference so staff can assist you.");
+        setPaymentError(cRef.current.text("a_pay_table_unavailable"));
       } else if (result.status === "failed") {
-        setPaymentError(result.failure?.message ?? "Your card was declined. You can retry with another card.");
+        setPaymentError(result.failure?.message ?? cRef.current.text("a_pay_declined"));
       } else {
-        setPaymentError("Your deposit is still processing. Please keep this page open and check again shortly.");
+        setPaymentError(cRef.current.text("a_pay_still_processing"));
       }
     } catch (error: unknown) {
       try {
@@ -285,7 +264,7 @@ export const ReservationView = ({
       } catch {
         // Preserve the provider error below if status refresh is unavailable.
       }
-      setPaymentError(error instanceof Error ? error.message : "Unable to process the reservation deposit.");
+      setPaymentError(error instanceof Error ? error.message : cRef.current.text("a_pay_failed"));
     } finally {
       setIsProcessing(false);
     }
@@ -298,7 +277,7 @@ export const ReservationView = ({
       setCheckoutSession(await retryPayment(checkoutSession));
       setPaymentError(null);
     } catch (error: unknown) {
-      setPaymentError(error instanceof Error ? error.message : "Unable to retry this payment.");
+      setPaymentError(error instanceof Error ? error.message : c.text("a_pay_retry_failed"));
     } finally {
       setIsProcessing(false);
     }
@@ -322,13 +301,13 @@ export const ReservationView = ({
           <div className="w-full max-w-2xl mb-10 fade-in">
             <div className="flex justify-between items-center mb-3">
               <span className="font-label-sm text-xs font-bold text-primary uppercase tracking-[0.2em]">
-                Step {step} of 4
+                {c.text("a_step_counter", { step, total: 4 })}
               </span>
               <span className="font-label-sm text-xs text-on-surface/70 uppercase font-semibold">
-                {step === 1 && "SELECT DETAILS"}
-                {step === 2 && "SEATING PREFERENCE"}
-                {step === 3 && "GUEST INFORMATION"}
-                {step === 4 && "FINAL REVIEW"}
+                {step === 1 && c.text("a_step1_name")}
+                {step === 2 && c.text("a_step2_name")}
+                {step === 3 && c.text("a_step3_name")}
+                {step === 4 && c.text("a_step4_name")}
               </span>
             </div>
             <div className="h-1.5 w-full bg-surface-container rounded-full overflow-hidden">
@@ -350,7 +329,7 @@ export const ReservationView = ({
                   <span className="material-symbols-outlined text-primary text-2.5xl">
                     groups
                   </span>
-                  <span>Party Size</span>
+                  <span>{c.text("a_party_heading")}</span>
                 </h3>
                 <div className="flex flex-wrap gap-3 font-sans">
                   {[1, 2, 3, 4, 5, 6, 7, 8].map((num) => (
@@ -363,7 +342,7 @@ export const ReservationView = ({
                           : "border border-outline-variant/40 text-on-surface hover:border-primary hover:text-primary bg-surface-container-low"
                       }`}
                     >
-                      {num} {num === 1 ? "Guest" : "Guests"}
+                      {c.text(num === 1 ? "a_party_one" : "a_party_many", { count: num })}
                     </button>
                   ))}
                   <button
@@ -374,7 +353,7 @@ export const ReservationView = ({
                         : "border border-outline-variant/40 text-on-surface hover:border-primary hover:text-primary bg-surface-container-low"
                     }`}
                   >
-                    Large Group (8+)
+                    {c.text("a_large_group")}
                   </button>
                 </div>
               </section>
@@ -388,14 +367,14 @@ export const ReservationView = ({
                       <span className="material-symbols-outlined text-primary text-2.5xl">
                         calendar_month
                       </span>
-                      <span>Date</span>
+                      <span>{c.text("a_date_heading")}</span>
                     </h3>
                     <div className="flex gap-1">
                       <button
                         type="button"
                         onClick={goToPrevMonth}
                         disabled={isPrevMonthDisabled}
-                        aria-label="Previous month"
+                        aria-label={c.text("a_prev_month_aria")}
                         className="p-2 hover:bg-surface-container rounded-full text-secondary disabled:opacity-30 disabled:hover:bg-transparent disabled:cursor-not-allowed"
                       >
                         <span className="material-symbols-outlined text-sm">
@@ -405,7 +384,7 @@ export const ReservationView = ({
                       <button
                         type="button"
                         onClick={goToNextMonth}
-                        aria-label="Next month"
+                        aria-label={c.text("a_next_month_aria")}
                         className="p-2 hover:bg-surface-container rounded-full text-secondary"
                       >
                         <span className="material-symbols-outlined text-sm">
@@ -418,13 +397,13 @@ export const ReservationView = ({
                     {displayMonth.toLocaleDateString("en-US", { month: "long", year: "numeric" })}
                   </div>
                   <div className="grid grid-cols-7 gap-y-2 text-center text-xs font-bold text-secondary uppercase tracking-wider mb-3">
-                    <div>Mo</div>
-                    <div>Tu</div>
-                    <div>We</div>
-                    <div>Th</div>
-                    <div>Fr</div>
-                    <div>Sa</div>
-                    <div>Su</div>
+                    <div>{c.text("a_weekday_mo")}</div>
+                    <div>{c.text("a_weekday_tu")}</div>
+                    <div>{c.text("a_weekday_we")}</div>
+                    <div>{c.text("a_weekday_th")}</div>
+                    <div>{c.text("a_weekday_fr")}</div>
+                    <div>{c.text("a_weekday_sa")}</div>
+                    <div>{c.text("a_weekday_su")}</div>
                   </div>
                   <div className="grid grid-cols-7 gap-1.5 font-sans">
                     {calendarCells.map((cell, idx) => {
@@ -465,12 +444,12 @@ export const ReservationView = ({
                     <span className="material-symbols-outlined text-primary text-2.5xl">
                       schedule
                     </span>
-                    <span>Available Time</span>
+                    <span>{c.text("a_time_heading")}</span>
                   </h3>
                   <div className="space-y-6 max-h-[380px] overflow-y-auto pr-1 font-sans">
                     {availabilityLoading && (
                       <div className="flex items-center gap-2 text-sm text-secondary py-4">
-                        <Loader2 className="h-4 w-4 animate-spin" /> Loading available times…
+                        <Loader2 className="h-4 w-4 animate-spin" /> {c.text("a_loading_times")}
                       </div>
                     )}
                     {availabilityError && !availabilityLoading && (
@@ -478,7 +457,7 @@ export const ReservationView = ({
                     )}
                     <div>
                       <h4 className="text-xs font-bold text-secondary uppercase tracking-widest mb-3">
-                        Afternoon
+                        {c.text("a_afternoon_label")}
                       </h4>
                       <div className="grid grid-cols-2 gap-3">
                         {availability.afternoon.map((t) => (
@@ -501,7 +480,7 @@ export const ReservationView = ({
                     </div>
                     <div>
                       <h4 className="text-xs font-bold text-secondary uppercase tracking-widest mb-3">
-                        Evening
+                        {c.text("a_evening_label")}
                       </h4>
                       <div className="grid grid-cols-2 gap-3">
                         {availability.evening.map((t) => (
@@ -534,12 +513,12 @@ export const ReservationView = ({
                   <div className="h-48 relative">
                     <img
                       className="w-full h-full object-cover"
-                      src="https://lh3.googleusercontent.com/aida-public/AB6AXuBn-BCmPvdhaCtvMMugttVWdxIHPK-InLbetXVO24a9ybBlFtbKKa88kuMtsDyNShg-kVTh4ydJJxzjuHH4VJ6Bc08HCUkDKHq9akRSY7XYOEcf_aX2mu1_UOWQT0nopHkjLgHxHpDtNfnxXPKBbHfIZdrLq9jigV-IO7k9lvk8qlXg1dvRDnVNfqIJRXav_hMjCJC52DiBQYXpa_sdLR26lzwHnupS1lFtR2IrbyqFKAOHPQ0tEnS7Osy7Dq8PLpVnHWz-noH3Oyg"
-                      alt="Lumière Fine Dining Plating"
+                      src={c.image("a_sidebar_image")}
+                      alt={c.text("a_sidebar_image_alt")}
                     />
                     <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent flex items-end p-6">
                       <h2 className="text-white font-serif text-2xl font-bold">
-                        Lumière Mayfair
+                        {c.text("a_sidebar_title")}
                       </h2>
                     </div>
                   </div>
@@ -547,19 +526,19 @@ export const ReservationView = ({
                   <div className="p-6 space-y-6 font-sans">
                     <div className="space-y-4">
                       <div className="flex justify-between items-center text-sm">
-                        <span className="text-secondary">Guests</span>
+                        <span className="text-secondary">{c.text("a_sidebar_guests_label")}</span>
                         <span className="font-bold text-on-surface">
-                          {partySize} {partySize === 1 ? "Person" : "People"}
+                          {peopleLabel(partySize)}
                         </span>
                       </div>
                       <div className="flex justify-between items-center text-sm">
-                        <span className="text-secondary">Date</span>
+                        <span className="text-secondary">{c.text("a_sidebar_date_label")}</span>
                         <span className="font-bold text-on-surface">
                           {formatReservationDate(selectedDate)}
                         </span>
                       </div>
                       <div className="flex justify-between items-center text-sm">
-                        <span className="text-secondary">Time</span>
+                        <span className="text-secondary">{c.text("a_sidebar_time_label")}</span>
                         <span className="font-bold text-on-surface">
                           {selectedTimeDisplay}
                         </span>
@@ -574,11 +553,10 @@ export const ReservationView = ({
                       </span>
                       <div>
                         <p className="text-xs font-bold text-tertiary uppercase tracking-wider mb-0.5">
-                          RARE FIND
+                          {c.text("a_rare_badge")}
                         </p>
                         <p className="text-xs text-on-tertiary-fixed-variant leading-relaxed">
-                          This time slot is in high demand. We recommend booking
-                          soon to secure your experience.
+                          {c.text("a_rare_text")}
                         </p>
                       </div>
                     </div>
@@ -588,7 +566,7 @@ export const ReservationView = ({
                       onClick={() => setStep(2)}
                       className="w-full py-4 bg-on-surface text-surface rounded-xl font-bold text-sm tracking-wide uppercase hover:bg-on-surface/90 transition-all duration-300 shadow-xl active:scale-[0.98] flex items-center justify-center gap-2 group disabled:opacity-50 disabled:cursor-not-allowed"
                     >
-                      <span>Continue to Seating</span>
+                      <span>{c.text("a_continue_seating")}</span>
                       <span className="material-symbols-outlined transition-transform group-hover:translate-x-1">
                         arrow_forward
                       </span>
@@ -605,11 +583,10 @@ export const ReservationView = ({
           <div className="w-full max-w-6xl space-y-12 animate-fadeIn">
             <div className="text-center mb-10">
               <h2 className="font-serif text-4xl md:text-5xl font-semibold text-on-surface mb-3">
-                Where would you like to sit?
+                {c.text("a_seating_heading")}
               </h2>
               <p className="text-secondary font-sans text-base md:text-lg max-w-xl mx-auto">
-                Select your preferred environment for an unforgettable culinary
-                experience tailored to your mood.
+                {c.text("a_seating_subheading")}
               </p>
             </div>
 
@@ -643,7 +620,7 @@ export const ReservationView = ({
                     {opt.title}
                   </h3>
                   <p className="text-secondary text-sm font-sans leading-relaxed">
-                    {opt.desc}
+                    {opt.description}
                   </p>
                 </div>
               ))}
@@ -656,14 +633,14 @@ export const ReservationView = ({
                     map
                   </span>
                   <h4 className="font-serif text-xl font-semibold text-on-surface">
-                    Floor Map Visualization
+                    {c.text("a_map_heading")}
                   </h4>
                 </div>
                 <button
                   onClick={() => setIsMapVisible(!isMapVisible)}
                   className="flex items-center gap-2 px-4 py-2 rounded-full border border-outline-variant/40 hover:bg-surface-container-low transition-colors text-xs font-bold uppercase tracking-wider"
                 >
-                  <span>{isMapVisible ? "HIDE MAP" : "VIEW MAP"}</span>
+                  <span>{isMapVisible ? c.text("a_map_hide") : c.text("a_map_show")}</span>
                   <span
                     className={`material-symbols-outlined text-base transition-transform ${isMapVisible ? "rotate-180" : ""}`}
                   >
@@ -679,7 +656,7 @@ export const ReservationView = ({
                       <div
                         className={`w-36 h-28 border-2 border-dashed rounded-xl flex items-center justify-center font-bold text-xs ${selectedSeating === "Outdoor" ? "border-primary bg-primary/10 text-primary" : "border-outline-variant text-secondary"}`}
                       >
-                        OUTDOOR
+                        {c.text("a_map_outdoor")}
                       </div>
                       <div
                         className={`w-48 h-28 rounded-xl border-2 flex flex-col items-center justify-center gap-2 font-bold text-xs ${selectedSeating === "Indoor" ? "border-primary bg-primary/10 text-primary" : "border-outline-variant text-secondary"}`}
@@ -687,7 +664,7 @@ export const ReservationView = ({
                         <span className="material-symbols-outlined text-lg">
                           restaurant
                         </span>
-                        <span>INDOOR HALL</span>
+                        <span>{c.text("a_map_indoor")}</span>
                       </div>
                     </div>
 
@@ -695,12 +672,12 @@ export const ReservationView = ({
                       <div
                         className={`w-48 h-16 rounded-full border-2 flex items-center justify-center font-bold text-xs ${selectedSeating === "The Bar" ? "border-primary bg-primary/10 text-primary" : "border-outline-variant text-secondary"}`}
                       >
-                        THE BAR
+                        {c.text("a_map_bar")}
                       </div>
                       <div
                         className={`w-36 h-16 rounded-xl border-2 flex items-center justify-center font-bold text-xs ${selectedSeating === "Private" ? "border-primary bg-primary/10 text-primary" : "border-outline-variant text-secondary"}`}
                       >
-                        PRIVATE
+                        {c.text("a_map_private")}
                       </div>
                     </div>
                   </div>
@@ -717,16 +694,16 @@ export const ReservationView = ({
                   <span className="material-symbols-outlined text-base">
                     arrow_back
                   </span>
-                  <span>BACK</span>
+                  <span>{c.text("a_back_bar")}</span>
                 </button>
 
                 <div className="flex items-center gap-8">
                   <div className="hidden md:flex flex-col items-end">
                     <span className="text-secondary text-[11px] font-bold uppercase tracking-widest">
-                      PREFERENCE
+                      {c.text("a_preference_label")}
                     </span>
                     <span className="text-primary font-bold text-sm">
-                      {selectedSeating || "Please select an option"}
+                      {selectedSeatingTitle || c.text("a_preference_empty")}
                     </span>
                   </div>
 
@@ -739,7 +716,7 @@ export const ReservationView = ({
                         : "bg-secondary text-white/50 cursor-not-allowed"
                     }`}
                   >
-                    Continue to Information
+                    {c.text("a_continue_info")}
                   </button>
                 </div>
               </div>
@@ -754,11 +731,10 @@ export const ReservationView = ({
               <div className="bg-surface-container-lowest rounded-2xl shadow-sm border border-outline-variant/20 p-6 md:p-10 space-y-8 font-sans">
                 <div>
                   <h2 className="font-serif text-3xl font-bold text-on-surface mb-2">
-                    Secure Your Table
+                    {c.text("a_form_heading")}
                   </h2>
                   <p className="text-secondary text-sm">
-                    Please provide your details to finalize the reservation.
-                    We'll send a confirmation to your email.
+                    {c.text("a_form_subheading")}
                   </p>
                 </div>
 
@@ -766,13 +742,13 @@ export const ReservationView = ({
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div className="space-y-2">
                       <label className="block font-label-sm text-xs text-on-surface-variant font-bold uppercase tracking-wider">
-                        FULL NAME
+                        {c.text("a_label_name")}
                       </label>
                       <input
                         type="text"
                         value={fullName}
                         onChange={(e) => setFullName(e.target.value)}
-                        placeholder="Julianne Smith"
+                        placeholder={c.text("a_placeholder_name")}
                         className="w-full bg-surface p-4 rounded-xl border border-outline-variant/50 text-sm focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/10 transition-all"
                         required
                       />
@@ -780,13 +756,13 @@ export const ReservationView = ({
 
                     <div className="space-y-2">
                       <label className="block font-label-sm text-xs text-on-surface-variant font-bold uppercase tracking-wider">
-                        PHONE NUMBER
+                        {c.text("a_label_phone")}
                       </label>
                       <input
                         type="tel"
                         value={phone}
                         onChange={(e) => setPhone(e.target.value)}
-                        placeholder="+44 20 7123 4567"
+                        placeholder={c.text("a_placeholder_phone")}
                         className="w-full bg-surface p-4 rounded-xl border border-outline-variant/50 text-sm focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/10 transition-all"
                         required
                       />
@@ -795,13 +771,13 @@ export const ReservationView = ({
 
                   <div className="space-y-2">
                     <label className="block font-label-sm text-xs text-on-surface-variant font-bold uppercase tracking-wider">
-                      EMAIL ADDRESS
+                      {c.text("a_label_email")}
                     </label>
                     <input
                       type="email"
                       value={email}
                       onChange={(e) => setEmail(e.target.value)}
-                      placeholder="julianne.s@example.com"
+                      placeholder={c.text("a_placeholder_email")}
                       className="w-full bg-surface p-4 rounded-xl border border-outline-variant/50 text-sm focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/10 transition-all"
                       required
                     />
@@ -809,13 +785,13 @@ export const ReservationView = ({
 
                   <div className="space-y-2">
                     <label className="block font-label-sm text-xs text-on-surface-variant font-bold uppercase tracking-wider">
-                      SPECIAL REQUESTS (ANNIVERSARY, ALLERGIES, ETC.)
+                      {c.text("a_label_requests")}
                     </label>
                     <textarea
                       rows={4}
                       value={specialRequests}
                       onChange={(e) => setSpecialRequests(e.target.value)}
-                      placeholder="Is there anything we should know about your visit?"
+                      placeholder={c.text("a_placeholder_requests")}
                       className="w-full bg-surface p-4 rounded-xl border border-outline-variant/50 text-sm focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/10 transition-all resize-none"
                     />
                   </div>
@@ -829,8 +805,7 @@ export const ReservationView = ({
                         className="h-5 w-5 rounded border-outline-variant text-primary focus:ring-primary/20 transition-all cursor-pointer mt-0.5"
                       />
                       <span className="text-secondary text-sm group-hover:text-on-surface transition-colors">
-                        Send me occasional updates, seasonal menu previews, and
-                        exclusive offers (Newsletter).
+                        {c.text("a_newsletter")}
                       </span>
                     </label>
 
@@ -843,21 +818,21 @@ export const ReservationView = ({
                         required
                       />
                       <span className="text-secondary text-sm group-hover:text-on-surface transition-colors">
-                        I agree to the{" "}
+                        {c.text("a_terms_before")}{" "}
                         <a
                           href="#"
                           className="text-primary font-bold underline"
                         >
-                          Terms of Service
+                          {c.text("a_terms_link")}
                         </a>{" "}
-                        and{" "}
+                        {c.text("a_terms_middle")}{" "}
                         <a
                           href="#"
                           className="text-primary font-bold underline"
                         >
-                          Cancellation Policy
+                          {c.text("a_policy_link")}
                         </a>
-                        .
+                        {c.text("a_terms_after")}
                       </span>
                     </label>
                   </div>
@@ -868,13 +843,13 @@ export const ReservationView = ({
                       onClick={() => setStep(2)}
                       className="px-6 py-3 rounded-xl border border-outline text-on-surface text-sm font-semibold hover:bg-surface-container-low transition-colors"
                     >
-                      Back
+                      {c.text("a_back")}
                     </button>
                     <button
                       type="submit"
                       className="px-10 py-4 bg-on-surface text-on-primary rounded-xl font-bold text-sm tracking-wide uppercase hover:bg-on-surface-variant shadow-lg active:scale-[0.98] transition-all"
                     >
-                      Review Reservation
+                      {c.text("a_review_button")}
                     </button>
                   </div>
                 </form>
@@ -887,13 +862,13 @@ export const ReservationView = ({
                   <div className="h-36 w-full overflow-hidden">
                     <img
                       className="w-full h-full object-cover"
-                      src="https://lh3.googleusercontent.com/aida-public/AB6AXuDV5mDLxr2c-NtUDInr3uY8C-1KSK6gkvKT0rDyLyaSxCPb0s1jpJ56QEvz_ZyItQFLHQinnwFHRuusak70kT9l9TvZijJirbJXt4Alm4vkjx_-uOAj27MnkbpSxELFwZXeSnd2Cczuc-sUz78m0yLQ_iHV9NacXPQs7sNLDolPn_aVQvwv012LeCqGAZW7-hL5zmNVB9fjDU8TgL7rwx1g67SxI31wmm7bT9EOeTyhSjNDTp_o9XtM9wcNv7aIcnQtbuYt9QOvjgY"
-                      alt="Scallop Gourmet Dish"
+                      src={c.image("a_summary_image")}
+                      alt={c.text("a_summary_image_alt")}
                     />
                   </div>
                   <div className="p-6">
                     <h3 className="font-serif text-xl font-bold text-on-surface mb-4">
-                      Reservation Summary
+                      {c.text("a_summary_heading")}
                     </h3>
                     <div className="space-y-4">
                       <div className="flex items-center gap-3">
@@ -902,7 +877,7 @@ export const ReservationView = ({
                         </span>
                         <div>
                           <p className="font-label-sm text-[10px] text-secondary uppercase font-bold tracking-wider">
-                            DATE & TIME
+                            {c.text("a_summary_datetime_label")}
                           </p>
                           <p className="text-on-surface font-semibold text-sm">
                             {formatReservationDate(selectedDate)} • {selectedTimeDisplay}
@@ -916,10 +891,10 @@ export const ReservationView = ({
                         </span>
                         <div>
                           <p className="font-label-sm text-[10px] text-secondary uppercase font-bold tracking-wider">
-                            GUESTS
+                            {c.text("a_summary_guests_label")}
                           </p>
                           <p className="text-on-surface font-semibold text-sm">
-                            {partySize} People
+                            {peopleLabel(partySize)}
                           </p>
                         </div>
                       </div>
@@ -930,10 +905,10 @@ export const ReservationView = ({
                         </span>
                         <div>
                           <p className="font-label-sm text-[10px] text-secondary uppercase font-bold tracking-wider">
-                            TABLE TYPE
+                            {c.text("a_summary_table_label")}
                           </p>
                           <p className="text-on-surface font-semibold text-sm">
-                            {selectedSeating || "Main Dining Area"}
+                            {selectedSeatingTitle || c.text("a_table_default")}
                           </p>
                         </div>
                       </div>
@@ -947,12 +922,11 @@ export const ReservationView = ({
                       verified
                     </span>
                     <h4 className="font-label-sm text-xs text-primary-fixed-dim font-bold uppercase tracking-wider">
-                      Instant Confirmation
+                      {c.text("a_instant_heading")}
                     </h4>
                   </div>
                   <p className="text-xs text-on-primary-fixed-variant leading-relaxed">
-                    Lumière guarantees your table immediately upon booking. No
-                    waiting lists or secondary approvals required.
+                    {c.text("a_instant_text")}
                   </p>
                 </div>
               </div>
@@ -965,10 +939,10 @@ export const ReservationView = ({
           <div className="w-full max-w-4xl space-y-10 animate-fadeIn">
             <div className="text-center mb-8">
               <h2 className="font-serif text-4xl md:text-5xl font-semibold text-on-surface mb-2">
-                Almost there.
+                {c.text("a_review_heading")}
               </h2>
               <p className="font-sans text-base md:text-lg text-secondary">
-                Please review your reservation details before confirming.
+                {c.text("a_review_subheading")}
               </p>
             </div>
 
@@ -978,15 +952,15 @@ export const ReservationView = ({
                   <div className="relative h-48 w-full">
                     <img
                       className="w-full h-full object-cover"
-                      src="https://lh3.googleusercontent.com/aida-public/AB6AXuBE69CdsxHdMIExbg_I9FWi7Nd48vW4C66in2TTpwKWt4hF_f4Ay18ishqdDIPFD_K_AjWjwaqOVZdkcVlHH_RdigKi-88AuK5JFHEJdIY6jT0c69hn4ysCCHCRkPwtdZhNoNX3oh5L5ZUDz0W7J__FX-Au-pMgzv0u3piZICkSbFYiZ_2osxUT1wW747c4djhVT1DIVVg9ROFQTGPEw2q0fzWS0wR2I-r2a7Srup3NSQ4pkek8Vrd-8-INdq7QfD-GXY-RHYMB7bk"
-                      alt="Lumière Interior Dining Room"
+                      src={c.image("a_review_image")}
+                      alt={c.text("a_review_image_alt")}
                     />
                     <div className="absolute inset-0 bg-gradient-to-t from-on-surface/75 via-on-surface/20 to-transparent"></div>
                     <div className="absolute bottom-6 left-6 text-white">
                       <span className="font-label-sm text-xs font-bold tracking-widest text-primary-fixed bg-on-surface/40 backdrop-blur-md px-3 py-1 rounded-full mb-2 inline-block">
-                        CONFIRMED RESTAURANT
+                        {c.text("a_review_badge")}
                       </span>
-                      <h3 className="font-serif text-3xl font-bold">Lumière</h3>
+                      <h3 className="font-serif text-3xl font-bold">{c.text("a_review_title")}</h3>
                     </div>
                   </div>
 
@@ -1000,13 +974,13 @@ export const ReservationView = ({
                         </div>
                         <div>
                           <p className="font-label-sm text-xs text-secondary uppercase font-bold tracking-wider mb-1">
-                            Date & Time
+                            {c.text("a_review_datetime_label")}
                           </p>
                           <p className="font-serif text-xl font-bold text-on-surface">
                             {formatReservationDate(selectedDate)}
                           </p>
                           <p className="text-sm text-on-surface/70">
-                            at {selectedTimeDisplay}
+                            {c.text("a_review_time", { time: selectedTimeDisplay })}
                           </p>
                         </div>
                       </div>
@@ -1019,13 +993,13 @@ export const ReservationView = ({
                         </div>
                         <div>
                           <p className="font-label-sm text-xs text-secondary uppercase font-bold tracking-wider mb-1">
-                            Party Size
+                            {c.text("a_review_party_label")}
                           </p>
                           <p className="font-serif text-xl font-bold text-on-surface">
-                            {partySize} People
+                            {peopleLabel(partySize)}
                           </p>
                           <p className="text-sm text-on-surface/70">
-                            {selectedSeating || "Main Dining Area"}
+                            {selectedSeatingTitle || c.text("a_table_default")}
                           </p>
                         </div>
                       </div>
@@ -1037,14 +1011,14 @@ export const ReservationView = ({
                           verified
                         </span>
                         <span className="text-sm font-semibold text-on-surface">
-                          Seating Guaranteed
+                          {c.text("a_review_guaranteed")}
                         </span>
                       </div>
                       <button
                         onClick={() => setStep(1)}
                         className="text-primary hover:underline font-label-sm text-xs font-bold uppercase tracking-widest transition-all"
                       >
-                        Edit Details
+                        {c.text("a_edit_details")}
                       </button>
                     </div>
                   </div>
@@ -1056,20 +1030,18 @@ export const ReservationView = ({
                       info
                     </span>
                     <h4 className="font-serif text-xl font-semibold text-on-surface">
-                      Cancellation Policy
+                      {c.text("a_policy_heading")}
                     </h4>
                   </div>
                   <p className="text-sm text-secondary leading-relaxed">
-                    Reservation deposits are charged when the booking is confirmed.
-                    Automatic refunds are not available in this release; please contact
-                    the restaurant before cancelling if you need assistance.
+                    {c.text("a_policy_text")}
                   </p>
                   <div className="flex items-center gap-3 text-on-tertiary-fixed-variant bg-tertiary-fixed/20 p-4 rounded-xl border border-tertiary/20">
                     <span className="material-symbols-outlined text-xl">
                       notifications_active
                     </span>
                     <p className="font-label-sm text-xs">
-                      We'll send you a reminder 48 hours before your booking.
+                      {c.text("a_reminder_text")}
                     </p>
                   </div>
                 </div>
@@ -1078,26 +1050,26 @@ export const ReservationView = ({
               <div className="lg:col-span-4 flex flex-col gap-6 font-sans">
                 <div className="sticky top-28 bg-surface-container-lowest border border-outline-variant/30 rounded-3xl p-8 shadow-xl">
                   <h4 className="font-serif text-2xl font-bold text-on-surface mb-6">
-                    Reservation Summary
+                    {c.text("a_totals_heading")}
                   </h4>
                   <div className="space-y-4 mb-8">
                     <div className="flex justify-between text-sm">
-                      <span className="text-secondary">Booking Fee</span>
+                      <span className="text-secondary">{c.text("a_booking_fee_label")}</span>
                       <span className="text-on-surface font-semibold">
-                        $0.00
+                        {c.text("a_booking_fee_value")}
                       </span>
                     </div>
                     <div className="flex justify-between text-sm">
-                      <span className="text-secondary">Reservation Deposit</span>
+                      <span className="text-secondary">{c.text("a_deposit_label")}</span>
                       <span className="text-on-surface font-semibold">
-                        {checkoutSession ? `$${(checkoutSession.amountCents / 100).toFixed(2)}` : "Calculated at checkout"}
+                        {checkoutSession ? `$${(checkoutSession.amountCents / 100).toFixed(2)}` : c.text("a_deposit_pending")}
                       </span>
                     </div>
                     <div className="h-px bg-outline-variant/20 my-2"></div>
                     <div className="flex justify-between text-lg font-bold">
-                      <span>Total</span>
+                      <span>{c.text("a_total_label")}</span>
                       <span className="text-primary font-serif text-xl font-bold">
-                        {checkoutSession ? `$${(checkoutSession.amountCents / 100).toFixed(2)}` : "—"}
+                        {checkoutSession ? `$${(checkoutSession.amountCents / 100).toFixed(2)}` : c.text("a_total_pending")}
                       </span>
                     </div>
                   </div>
@@ -1110,11 +1082,11 @@ export const ReservationView = ({
                     {isProcessing ? (
                       <>
                         <Loader2 className="h-5 w-5 animate-spin" />
-                        <span>Processing...</span>
+                        <span>{c.text("a_processing")}</span>
                       </>
                     ) : (
                       <>
-                        <span>Continue to Card Payment</span>
+                        <span>{c.text("a_pay_button")}</span>
                         <span className="material-symbols-outlined group-hover:translate-x-1 transition-transform">
                           arrow_forward
                         </span>
@@ -1131,7 +1103,7 @@ export const ReservationView = ({
                           onClick={handlePaymentRetry}
                           className="w-full bg-[#1A1A1A] text-white py-4 rounded-2xl font-bold"
                         >
-                          Retry with another card
+                          {c.text("a_retry_button")}
                         </button>
                       ) : checkoutSession.status === "created" ? (
                         <FinixCardForm
@@ -1142,7 +1114,7 @@ export const ReservationView = ({
                           onError={handlePaymentError}
                         />
                       ) : (
-                        <p className="text-sm text-secondary">Deposit processing. This page will update when Finix confirms the result.</p>
+                        <p className="text-sm text-secondary">{c.text("a_deposit_processing")}</p>
                       )}
                     </div>
                   )}
@@ -1152,15 +1124,15 @@ export const ReservationView = ({
                     onClick={() => { setCheckoutSession(null); setPaymentError(null); setStep(3); }}
                     className="w-full bg-transparent hover:bg-surface-container border border-outline-variant/50 text-on-surface py-3.5 rounded-2xl text-sm font-semibold transition-all active:scale-95 mb-6"
                   >
-                    Edit Details
+                    {c.text("a_edit_details")}
                   </button>
 
                   <p className="text-center font-label-sm text-xs text-secondary/70">
-                    By clicking confirm, you agree to our{" "}
+                    {c.text("a_confirm_terms_before")}{" "}
                     <a className="underline hover:text-primary" href="#">
-                      Terms of Service
+                      {c.text("a_confirm_terms_link")}
                     </a>
-                    .
+                    {c.text("a_confirm_terms_after")}
                   </p>
                 </div>
 
@@ -1172,10 +1144,10 @@ export const ReservationView = ({
                   </div>
                   <div>
                     <p className="font-label-sm text-xs font-bold text-on-surface mb-0.5">
-                      VIP ACCESSIBILITY
+                      {c.text("a_vip_heading")}
                     </p>
                     <p className="text-xs text-secondary">
-                      Member rewards apply at check-in.
+                      {c.text("a_vip_text")}
                     </p>
                   </div>
                 </div>
@@ -1192,7 +1164,7 @@ export const ReservationView = ({
               <div
                 className="w-full h-full bg-cover bg-center blur-3xl opacity-20"
                 style={{
-                  backgroundImage: `url("https://lh3.googleusercontent.com/aida-public/AB6AXuAWpuEh0jxR4sRh2rCDg2H11WiznFzA9IKShr1YUxW3qUCwnBAsQ-Ac-wQGiM5A2EUSVoYJ9yvxUf4bA8cIUBrnYC6pILTHKGV0M1mCDckMTIOh_pHmB3d1gYPXAq0Cn3qpKrdVedhsOcnCqPGsEuK_f9jI93VGUcTBARa4J14lXUx1VkSBk2i6hSZm61CWDElhGNm6st8nDL3LCzQXrxzGWNFTrS6LLdT_PeV01_iC34nvpCVE5w-Iu7kuhFgv3c_tItttapDYy-U")`,
+                  backgroundImage: `url("${c.image("a_success_image")}")`,
                 }}
               ></div>
             </div>
@@ -1210,21 +1182,21 @@ export const ReservationView = ({
             {/* Header Content */}
             <div className="z-10 space-y-3 mb-10">
               <h2 className="font-serif text-4xl md:text-5xl font-semibold text-on-surface">
-                Your table is reserved!
+                {c.text("a_success_heading")}
               </h2>
               <div className="inline-block bg-surface-container-low px-4 py-1.5 rounded-full border border-outline-variant/20 shadow-sm font-sans">
                 <span className="font-label-sm text-xs uppercase text-secondary tracking-widest font-medium">
-                  Confirmation ID:{" "}
+                  {c.text("a_success_code_label")}{" "}
                   <span className="text-on-surface font-bold">
                     #{confirmationCode}
                   </span>
                 </span>
               </div>
               <p className="font-sans text-base md:text-lg text-secondary max-w-lg mx-auto leading-relaxed pt-2">
-                A confirmation has been sent to{" "}
+                {c.text("a_success_sent_before")}{" "}
                 <span className="text-on-surface font-semibold">{email}</span>{" "}
-                and{" "}
-                <span className="text-on-surface font-semibold">{phone}</span>.
+                {c.text("a_success_sent_and")}{" "}
+                <span className="text-on-surface font-semibold">{phone}</span>{c.text("a_success_sent_after")}
               </p>
             </div>
 
@@ -1234,39 +1206,39 @@ export const ReservationView = ({
               <div className="col-span-1 md:col-span-2 bg-surface-container-lowest p-8 rounded-3xl border border-outline-variant/30 shadow-md flex flex-col md:flex-row items-center justify-between text-left group hover:-translate-y-1 transition-all duration-300">
                 <div className="mb-6 md:mb-0">
                   <h3 className="font-serif text-xl font-bold text-on-surface mb-1">
-                    Add to Calendar
+                    {c.text("a_calendar_heading")}
                   </h3>
                   <p className="font-sans text-sm text-secondary">
-                    Ensure you don't miss the moment.
+                    {c.text("a_calendar_text")}
                   </p>
                 </div>
                 <div className="flex flex-wrap gap-3 justify-center md:justify-end font-sans">
                   <button
-                    onClick={() => onToast("Added to Apple Calendar")}
+                    onClick={() => onToast(c.text("a_toast_apple"))}
                     className="px-5 py-2.5 rounded-xl border border-outline-variant bg-surface hover:bg-surface-container-high transition-colors flex items-center gap-2 text-sm font-semibold text-on-surface"
                   >
                     <span className="material-symbols-outlined text-lg">
                       event
                     </span>{" "}
-                    Apple
+                    {c.text("a_calendar_apple")}
                   </button>
                   <button
-                    onClick={() => onToast("Added to Google Calendar")}
+                    onClick={() => onToast(c.text("a_toast_google"))}
                     className="px-5 py-2.5 rounded-xl border border-outline-variant bg-surface hover:bg-surface-container-high transition-colors flex items-center gap-2 text-sm font-semibold text-on-surface"
                   >
                     <span className="material-symbols-outlined text-lg">
                       event_available
                     </span>{" "}
-                    Google
+                    {c.text("a_calendar_google")}
                   </button>
                   <button
-                    onClick={() => onToast("Added to Outlook Calendar")}
+                    onClick={() => onToast(c.text("a_toast_outlook"))}
                     className="px-5 py-2.5 rounded-xl border border-outline-variant bg-surface hover:bg-surface-container-high transition-colors flex items-center gap-2 text-sm font-semibold text-on-surface"
                   >
                     <span className="material-symbols-outlined text-lg">
                       calendar_today
                     </span>{" "}
-                    Outlook
+                    {c.text("a_calendar_outlook")}
                   </button>
                 </div>
               </div>
@@ -1284,10 +1256,10 @@ export const ReservationView = ({
                   </div>
                   <div>
                     <span className="block font-sans text-base font-bold text-on-surface">
-                      Modify Reservation
+                      {c.text("a_modify_title")}
                     </span>
                     <span className="block font-label-sm text-xs text-secondary">
-                      Change time or party size
+                      {c.text("a_modify_text")}
                     </span>
                   </div>
                 </div>
@@ -1300,11 +1272,9 @@ export const ReservationView = ({
               <button
                 onClick={() => {
                   if (
-                    window.confirm(
-                      "Are you sure you wish to cancel this reservation?",
-                    )
+                    window.confirm(c.text("a_cancel_confirm"))
                   ) {
-                    onToast("Reservation cancelled");
+                    onToast(c.text("a_toast_cancelled"));
                     onNavigateLanding();
                   }
                 }}
@@ -1318,10 +1288,10 @@ export const ReservationView = ({
                   </div>
                   <div>
                     <span className="block font-sans text-base font-bold text-on-surface">
-                      Cancel Reservation
+                      {c.text("a_cancel_title")}
                     </span>
                     <span className="block font-label-sm text-xs text-secondary">
-                      No longer able to attend?
+                      {c.text("a_cancel_text")}
                     </span>
                   </div>
                 </div>
@@ -1336,7 +1306,7 @@ export const ReservationView = ({
               onClick={onNavigateLanding}
               className="inline-flex items-center gap-2 px-10 py-4 bg-primary text-on-primary rounded-full font-sans font-semibold text-sm tracking-wide uppercase shadow-lg hover:shadow-xl hover:-translate-y-0.5 active:scale-95 transition-all z-10 cursor-pointer"
             >
-              <span>Back to Website</span>
+              <span>{c.text("a_back_website")}</span>
               <span className="material-symbols-outlined">arrow_forward</span>
             </button>
           </div>

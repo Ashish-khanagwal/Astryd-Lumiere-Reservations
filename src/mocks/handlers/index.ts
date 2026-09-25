@@ -9,6 +9,12 @@ import { auditLogHandlers } from './auditLog';
 import { userHandlers } from './users';
 import { orderHandlers } from './orders';
 import { reservationHandlers } from './reservations';
+import { siteHandlers } from './sites';
+import { pageConfigHandlers } from './pageConfigs';
+import { membershipHandlers } from './membership';
+import { domainHandlers } from './domains';
+import { signupHandlers } from './signup';
+import { pageContentHandlers } from './pageContent';
 
 export const handlers = [
   ...authHandlers,
@@ -22,4 +28,10 @@ export const handlers = [
   ...userHandlers,
   ...orderHandlers,
   ...reservationHandlers,
+  ...siteHandlers,
+  ...pageConfigHandlers,
+  ...membershipHandlers,
+  ...domainHandlers,
+  ...signupHandlers,
+  ...pageContentHandlers,
 ];

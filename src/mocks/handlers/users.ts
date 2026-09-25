@@ -6,16 +6,25 @@ export const userHandlers = [
     HttpResponse.json(db.data.users.filter((u) => u.restaurantId === params.id)),
   ),
 
+  /**
+   * Multi-Vertical Platform Plan §5.1 - this is the per-Org "invite user" endpoint, which only ever
+   * creates Staff, regardless of what the client sends. Owner accounts are only ever created alongside
+   * a new Organization by the platform team (§6B) - there is no endpoint an Org Owner can call to mint
+   * another Owner.
+   */
   http.post('*/api/v1/restaurants/:id/users', async ({ params, request }) => {
     const restaurantId = params.id as string;
+    const organizationId = db.data.restaurants.find((r) => r.id === restaurantId)?.organizationId ?? '';
     const body = (await request.json()) as Record<string, unknown>;
     const now = nowIso();
     const user = {
       id: nextId('user'),
+      organizationId,
       email: (body.email as string) ?? '',
       name: (body.name as string) ?? 'New User',
-      role: (body.role as 'owner' | 'staff') ?? 'staff',
+      role: 'staff' as const,
       restaurantId,
+      siteAccess: (body.siteAccess as string[]) ?? [restaurantId],
       isActive: true,
       createdAt: now,
       updatedAt: now,

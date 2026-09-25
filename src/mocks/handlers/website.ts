@@ -49,6 +49,8 @@ export const websiteHandlers = [
     const now = nowIso();
     if (brand) brand.published = { ...brand.draft };
     if (homepage) homepage.published = { ...homepage.draft, status: 'published' };
+    const pageContent = db.data.pageContent[restaurantId];
+    if (pageContent) pageContent.published = structuredClone(pageContent.draft);
     const website = db.data.website[restaurantId];
     if (website) {
       website.publishStatus = 'published';

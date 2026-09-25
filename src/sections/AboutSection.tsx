@@ -1,4 +1,5 @@
 import type { AboutSectionContent } from '../types';
+import { usePageContent } from '../context/usePageContent';
 
 interface AboutSectionProps {
   content?: Partial<AboutSectionContent> | null;
@@ -7,9 +8,10 @@ interface AboutSectionProps {
 }
 
 export const AboutSection = ({ content, imageUrl, onImageClick }: AboutSectionProps) => {
-  const heading = content?.heading?.trim() || 'A sanctuary of light and culinary precision.';
-  const description = content?.description?.trim() || 'At Lumière, we believe the finest dining experiences are those where the service is felt but not seen.';
-  const eyebrow = content?.eyebrow?.trim() || 'The Philosophy';
+  const c = usePageContent('landing');
+  const heading = content?.heading?.trim() || c.text('aboutHeading');
+  const description = content?.description?.trim() || c.text('aboutDescription');
+  const eyebrow = content?.eyebrow?.trim() || c.text('aboutEyebrow');
 
   return (
     <section className="py-section-gap bg-[#FBF9F9] w-full border-b border-outline-variant/15">
@@ -51,7 +53,7 @@ export const AboutSection = ({ content, imageUrl, onImageClick }: AboutSectionPr
                   <div className="absolute bottom-4 left-4 right-4 bg-black/60 backdrop-blur-md p-4 rounded-xl text-white flex justify-between items-center border border-white/10">
                     <div>
                       <div className="font-serif text-lg font-bold">{content?.chefName}</div>
-                      <div className="text-xs text-white/70 font-sans">Read the full story</div>
+                      <div className="text-xs text-white/70 font-sans">{c.text('aboutStoryLink')}</div>
                     </div>
                     <span className="material-symbols-outlined">zoom_in</span>
                   </div>

@@ -2,6 +2,10 @@ import type { Id, ISODateString, Tenant, Timestamps, PublishStatus } from './com
 
 export type WeekDay = 'mon' | 'tue' | 'wed' | 'thu' | 'fri' | 'sat' | 'sun';
 
+/** Multi-Vertical Platform Plan §2/§3.1/§6 - seeds sensible defaults at onboarding only, never gates functionality. */
+export const VERTICALS = ['restaurant', 'gym', 'retail'] as const;
+export type Vertical = (typeof VERTICALS)[number];
+
 export interface BusinessHoursEntry {
   day: WeekDay;
   isClosed: boolean;
@@ -158,11 +162,17 @@ export interface BrandSettings extends Tenant, Timestamps {
 
 export interface Restaurant extends Timestamps {
   id: Id;
+  /** Multi-Vertical Platform Plan §3.1: this row is "Site" - `organizationId` is the new tenant boundary above it. */
+  organizationId: Id;
   slug: string;
   name: string;
   ownerUserId: Id;
   status: 'active' | 'suspended' | 'trial';
+  /** Plan §2/§6 - defaults-only, set once at onboarding; never used to gate features. */
+  vertical: Vertical;
   domain?: string | null;
+  /** Multi-Vertical Platform Plan §5.2 - "Powered by Astryd" footer badge; Super Admin only, never editable via Org-owned brand/website settings. */
+  brandingBadgeEnabled: boolean;
 }
 
 export interface WebsiteSettings extends Tenant, Timestamps {

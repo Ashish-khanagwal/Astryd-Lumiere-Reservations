@@ -1,10 +1,17 @@
 import { db, nowIso, type MockDbShape } from './db';
+import { VERTICAL_MODULE_DEFAULTS, VERTICAL_TEMPLATE_VARIANT } from '../data/onboardingDefaults';
+import { buildGymSeed, buildRetailSeed } from './seedVerticals';
 import type {
   Addon,
   BrandSettings,
+  DomainMapping,
   Homepage,
   HomepageSection,
   MediaAsset,
+  Member,
+  MemberCheckIn,
+  MembershipBillingInterval,
+  MembershipPlan,
   MenuCategory,
   MenuItem,
   Offer,
@@ -13,6 +20,9 @@ import type {
   OrderPaymentMethod,
   OrderServiceType,
   OrderStatus,
+  Organization,
+  PageConfig,
+  PlatformModule,
   Reservation,
   ReservationAvailabilitySettings,
   ReservationStatus,
@@ -23,6 +33,24 @@ import type {
 
 export const RESTAURANT_ID = 'rest_lumiere';
 export const RESTAURANT_SLUG = 'lumiere-mayfair';
+/** Second demo Site under the same Org, so Phase 1's Site switcher has something real to switch between (Multi-Vertical Platform Plan §14, Phase 1). Deliberately sparse - a freshly created Site looks like this until its owner fills it in. */
+export const SECOND_SITE_ID = 'rest_lumiere_nh';
+export const SECOND_SITE_SLUG = 'lumiere-notting-hill';
+export const ORGANIZATION_ID = 'org_lumiere';
+/** Human-typed login field (Multi-Vertical Platform Plan §4) - a placeholder format pending backend's final Org ID scheme (plan §15, open question 2). */
+export const ORGANIZATION_CODE = 'LUMIERE';
+
+/** Plan §2/§6 - a Gym demo Org/Site (own login), so the platform's multi-vertical claim has a second real tenant to point at beyond Lumière's Restaurant. */
+export const GYM_SITE_ID = 'site_pulsefit';
+export const GYM_SITE_SLUG = 'pulsefit-downtown';
+export const GYM_ORGANIZATION_ID = 'org_pulsefit';
+export const GYM_ORGANIZATION_CODE = 'PULSEFIT';
+
+/** Plan §2/§6 - a Retail demo Org/Site (own login), the third vertical. */
+export const RETAIL_SITE_ID = 'site_novagoods';
+export const RETAIL_SITE_SLUG = 'nova-goods';
+export const RETAIL_ORGANIZATION_ID = 'org_novagoods';
+export const RETAIL_ORGANIZATION_CODE = 'NOVAGOODS';
 /** Demo password accepted for every seeded account - mock auth only, never real. */
 export const DEMO_PASSWORD = 'password123';
 
@@ -95,23 +123,83 @@ const RAW_ADDONS = [
 
 const CATEGORY_NAMES = ['Burgers', 'Pizza', 'Starters', 'Pasta', 'Steaks', 'Desserts', 'Beverages'];
 
+export interface StarterSectionCopy {
+  heroHeading: string;
+  heroDescription: string;
+  aboutEyebrow: string;
+  aboutHeading: string;
+  aboutDescription: string;
+  featuredHeading: string;
+  galleryHeading: string;
+  offersHeading: string;
+  testimonialsHeading: string;
+  testimonials: Array<[string, string]>;
+}
+
+/**
+ * Every Site gets all 7 homepage section types so each is editable from Website → Homepage (the section
+ * update endpoint 404s on a type the draft doesn't have). Sections with no data yet - featured items,
+ * gallery, offers - start hidden so nothing empty shows on the public page until the owner fills them in.
+ */
+export function buildStarterSections(siteId: string, now: string, hero: HomepageSection | null, copy: StarterSectionCopy): HomepageSection[] {
+  const base = { restaurantId: siteId, updatedAt: now };
+  return [
+    hero ?? {
+      ...base, id: `section_${siteId}_hero`, type: 'hero', order: 1, visible: true,
+      content: { heading: copy.heroHeading, description: copy.heroDescription, buttonText: 'Reserve a Table', buttonLink: '/reservations', secondaryButtonText: 'View Menu', secondaryButtonLink: '/menu', backgroundMediaId: null, overlayOpacity: 50 },
+    },
+    { ...base, id: `section_${siteId}_about`, type: 'about', order: 2, visible: true, content: { eyebrow: copy.aboutEyebrow, heading: copy.aboutHeading, description: copy.aboutDescription, imageMediaId: null } },
+    { ...base, id: `section_${siteId}_featured_menu`, type: 'featured_menu', order: 3, visible: false, content: { heading: copy.featuredHeading, selectedItemIds: [] } },
+    { ...base, id: `section_${siteId}_gallery`, type: 'gallery', order: 4, visible: false, content: { heading: copy.galleryHeading, images: [] } },
+    { ...base, id: `section_${siteId}_offers`, type: 'offers', order: 5, visible: false, content: { heading: copy.offersHeading, selectedOfferIds: [] } },
+    {
+      ...base, id: `section_${siteId}_testimonials`, type: 'testimonials', order: 6, visible: copy.testimonials.length > 0,
+      content: {
+        heading: copy.testimonialsHeading,
+        testimonials: copy.testimonials.map(([customerName, quote], order) => ({ id: `testimonial_${siteId}_${order}`, customerName, quote, rating: 5, order })),
+      },
+    },
+    { ...base, id: `section_${siteId}_location`, type: 'location', order: 7, visible: true, content: { heading: 'Find Us', showHoursTable: true } },
+  ];
+}
+
 function buildSeed(): MockDbShape {
   const now = nowIso();
 
   const restaurant: Restaurant = {
     id: RESTAURANT_ID,
+    organizationId: ORGANIZATION_ID,
     slug: RESTAURANT_SLUG,
     name: 'Lumière',
     ownerUserId: 'user_owner',
     status: 'active',
+    vertical: 'restaurant',
+    brandingBadgeEnabled: true,
     createdAt: now,
     updatedAt: now,
   };
 
+  const secondSite: Restaurant = {
+    id: SECOND_SITE_ID,
+    organizationId: ORGANIZATION_ID,
+    slug: SECOND_SITE_SLUG,
+    name: 'Lumière – Notting Hill',
+    ownerUserId: 'user_owner',
+    status: 'active',
+    vertical: 'restaurant',
+    brandingBadgeEnabled: true,
+    createdAt: now,
+    updatedAt: now,
+  };
+
+  const organizations: Organization[] = [
+    { id: ORGANIZATION_ID, code: ORGANIZATION_CODE, name: 'Lumière', createdAt: now, updatedAt: now },
+  ];
+
   const users: User[] = [
-    { id: 'user_super', email: 'admin@platform.com', name: 'Platform Admin', role: 'super_admin', restaurantId: null, isActive: true, createdAt: now, updatedAt: now },
-    { id: 'user_owner', email: 'owner@lumiere.com', name: 'Ava Whitfield', role: 'owner', restaurantId: RESTAURANT_ID, isActive: true, createdAt: now, updatedAt: now },
-    { id: 'user_staff', email: 'staff@lumiere.com', name: 'Jordan Reyes', role: 'staff', restaurantId: RESTAURANT_ID, isActive: true, createdAt: now, updatedAt: now },
+    { id: 'user_super', organizationId: ORGANIZATION_ID, email: 'admin@platform.com', name: 'Platform Admin', role: 'super_admin', restaurantId: null, siteAccess: 'all', isActive: true, createdAt: now, updatedAt: now },
+    { id: 'user_owner', organizationId: ORGANIZATION_ID, email: 'owner@lumiere.com', name: 'Ava Whitfield', role: 'owner', restaurantId: RESTAURANT_ID, siteAccess: 'all', isActive: true, createdAt: now, updatedAt: now },
+    { id: 'user_staff', organizationId: ORGANIZATION_ID, email: 'staff@lumiere.com', name: 'Jordan Reyes', role: 'staff', restaurantId: RESTAURANT_ID, siteAccess: [RESTAURANT_ID], isActive: true, createdAt: now, updatedAt: now },
   ];
 
   const media: MediaAsset[] = [
@@ -421,6 +509,168 @@ function buildSeed(): MockDbShape {
     blockedDates: [],
   };
 
+  /** Plan §6/§12 - default nav label + variant per module for a freshly seeded Site; membership defaults off for a freshly created Site until its owner turns it on. */
+  function buildDefaultPageConfigs(siteId: string, membershipEnabled = false): PageConfig[] {
+    const defaults: Array<{ module: PlatformModule; navLabel: string; enabled: boolean }> = [
+      { module: 'items', navLabel: 'Menu', enabled: true },
+      { module: 'catalog', navLabel: 'Online Order', enabled: true },
+      { module: 'booking', navLabel: 'Reservations', enabled: true },
+      { module: 'membership', navLabel: 'Membership', enabled: membershipEnabled },
+    ];
+    return defaults.map((d, order) => ({
+      id: `pageconfig_${siteId}_${d.module}`,
+      restaurantId: siteId,
+      module: d.module,
+      enabled: d.enabled,
+      navLabel: d.navLabel,
+      order,
+      templateVariant: 'a' as const,
+      createdAt: now,
+      updatedAt: now,
+    }));
+  }
+
+  /** Plan §9/§12 - every Site gets one always-present, non-removable platform_subdomain row, already verified/issued (no DNS to wait on for a subdomain we control). */
+  function buildDefaultDomainMappings(siteId: string, slug: string): DomainMapping[] {
+    return [
+      {
+        id: `domain_${siteId}_platform`,
+        restaurantId: siteId,
+        type: 'platform_subdomain',
+        hostname: `${slug}.ourplatform.com`,
+        recordType: 'CNAME',
+        recordName: '@',
+        recordValue: `${slug}.ourplatform.com`,
+        verificationStatus: 'verified',
+        sslStatus: 'issued',
+        createdAt: now,
+        updatedAt: now,
+      },
+    ];
+  }
+
+  /** Plan §6 step 3 - a brand-new demo Org/Site takes its module defaults straight from the same table the onboarding wizard uses (Phase 6). */
+  function buildPageConfigsForVertical(siteId: string, vertical: 'gym' | 'retail'): PageConfig[] {
+    return VERTICAL_MODULE_DEFAULTS[vertical].map((d, order) => ({
+      id: `pageconfig_${siteId}_${d.module}`,
+      restaurantId: siteId,
+      module: d.module,
+      enabled: d.enabled,
+      navLabel: d.navLabel,
+      order,
+      templateVariant: VERTICAL_TEMPLATE_VARIANT[vertical],
+      createdAt: now,
+      updatedAt: now,
+    }));
+  }
+
+  /** Plan §3.2/§8.4 - a few demo Plans + Members for the Lumière Site, whose Membership module ships enabled out of the box. */
+  const membershipPlans: MembershipPlan[] = [
+    {
+      id: 'plan_gold',
+      restaurantId: RESTAURANT_ID,
+      name: 'Gold Table Club',
+      description: 'Priority reservations, a complimentary aperitif, and a dedicated concierge line.',
+      priceCents: 4900,
+      billingInterval: 'monthly',
+      benefits: ['Priority reservations', 'Complimentary aperitif each visit', 'Dedicated concierge line'],
+      isActive: true,
+      order: 0,
+      createdAt: now,
+      updatedAt: now,
+    },
+    {
+      id: 'plan_annual',
+      restaurantId: RESTAURANT_ID,
+      name: 'Annual Connoisseur',
+      description: "A full year of Lumière's chef's table experiences, billed once.",
+      priceCents: 45000,
+      billingInterval: 'yearly',
+      benefits: ["Two chef's table seatings per quarter", '10% off private dining', 'Birthday month bottle of house Champagne'],
+      isActive: true,
+      order: 1,
+      createdAt: now,
+      updatedAt: now,
+    },
+    {
+      id: 'plan_taster',
+      restaurantId: RESTAURANT_ID,
+      name: 'Taster Pass',
+      description: 'A single-visit introduction to the Lumière tasting menu at a members-only rate.',
+      priceCents: 1500,
+      billingInterval: 'one_time',
+      benefits: ['One-time tasting menu discount'],
+      isActive: false,
+      order: 2,
+      createdAt: now,
+      updatedAt: now,
+    },
+  ];
+
+  function nextBillingDateFor(interval: MembershipBillingInterval, from: Date): string | null {
+    if (interval === 'one_time') return null;
+    const d = new Date(from);
+    if (interval === 'monthly') d.setMonth(d.getMonth() + 1);
+    if (interval === 'quarterly') d.setMonth(d.getMonth() + 3);
+    if (interval === 'yearly') d.setFullYear(d.getFullYear() + 1);
+    return d.toISOString().slice(0, 10);
+  }
+
+  const daysAgoDate = (days: number) => {
+    const d = new Date();
+    d.setDate(d.getDate() - days);
+    return d.toISOString().slice(0, 10);
+  };
+
+  const members: Member[] = [
+    {
+      id: 'member_1',
+      restaurantId: RESTAURANT_ID,
+      planId: 'plan_gold',
+      customerName: 'Eleanor Cross',
+      customerEmail: 'eleanor.c@example.com',
+      customerPhone: '+44 7700 900007',
+      status: 'active',
+      startDate: daysAgoDate(40),
+      nextBillingDate: nextBillingDateFor('monthly', new Date()),
+      createdAt: now,
+      updatedAt: now,
+    },
+    {
+      id: 'member_2',
+      restaurantId: RESTAURANT_ID,
+      planId: 'plan_annual',
+      customerName: 'James Whitmore',
+      customerEmail: 'james.w@example.com',
+      customerPhone: '+44 7700 900006',
+      status: 'active',
+      startDate: daysAgoDate(120),
+      nextBillingDate: nextBillingDateFor('yearly', new Date(Date.now() - 120 * 24 * 60 * 60 * 1000)),
+      createdAt: now,
+      updatedAt: now,
+    },
+    {
+      id: 'member_3',
+      restaurantId: RESTAURANT_ID,
+      planId: 'plan_gold',
+      customerName: 'Priya Anand',
+      customerEmail: 'priya.a@example.com',
+      customerPhone: '+44 7700 900005',
+      status: 'paused',
+      startDate: daysAgoDate(200),
+      nextBillingDate: null,
+      notes: 'Paused while traveling - resumes next month.',
+      createdAt: now,
+      updatedAt: now,
+    },
+  ];
+
+  const memberCheckIns: MemberCheckIn[] = [
+    { id: 'checkin_1', restaurantId: RESTAURANT_ID, memberId: 'member_1', checkedInAt: minutesAgo(120) },
+    { id: 'checkin_2', restaurantId: RESTAURANT_ID, memberId: 'member_1', checkedInAt: minutesAgo(60 * 24 * 12) },
+    { id: 'checkin_3', restaurantId: RESTAURANT_ID, memberId: 'member_2', checkedInAt: minutesAgo(60 * 24 * 5) },
+  ];
+
   const brandSettings: BrandSettings = {
     restaurantId: RESTAURANT_ID,
     restaurantName: 'Lumière',
@@ -536,10 +786,171 @@ function buildSeed(): MockDbShape {
   const homepagePublished: Homepage = { restaurantId: RESTAURANT_ID, status: 'published', sections: homepageSections };
   const homepageDraft: Homepage = { restaurantId: RESTAURANT_ID, status: 'draft', sections: homepageSections.map((s) => ({ ...s })) };
 
+  const secondSiteBrand: BrandSettings = {
+    ...brandSettings,
+    restaurantId: SECOND_SITE_ID,
+    restaurantName: 'Lumière – Notting Hill',
+    tagline: 'Modern French, Notting Hill',
+  };
+
+  const secondSiteHomepage: Homepage = {
+    restaurantId: SECOND_SITE_ID,
+    status: 'published',
+    sections: buildStarterSections(SECOND_SITE_ID, now, null, {
+      heroHeading: 'Lumière – Notting Hill',
+      heroDescription: 'Modern French dining, now in Notting Hill.',
+      aboutEyebrow: 'Our Story',
+      aboutHeading: 'The Lumière table, in West London.',
+      aboutDescription: 'The same seasonal cooking and quiet hospitality as our Mayfair flagship, in a relaxed neighbourhood dining room.',
+      featuredHeading: 'Featured Dishes',
+      galleryHeading: 'Gallery',
+      offersHeading: 'Special Offers',
+      testimonialsHeading: 'What Our Guests Say',
+      testimonials: [['Hannah Lee', 'A neighbourhood gem with flagship-level cooking.'], ['Tom Ashby', 'Warm service and a beautiful tasting menu.']],
+    }),
+  };
+
+  // --- Gym demo tenant (own Org/login) - Plan §2/§6, a second Vertical alongside Lumière's Restaurant. ---
+  const gymOrganization: Organization = { id: GYM_ORGANIZATION_ID, code: GYM_ORGANIZATION_CODE, name: 'PulseFit Studios', createdAt: now, updatedAt: now };
+  const gymOwner: User = {
+    id: 'user_pulsefit_owner', organizationId: GYM_ORGANIZATION_ID, email: 'owner@pulsefit.com', name: 'Marcus Bell',
+    role: 'owner', restaurantId: GYM_SITE_ID, siteAccess: 'all', isActive: true, createdAt: now, updatedAt: now,
+  };
+  const gymSite: Restaurant = {
+    id: GYM_SITE_ID, organizationId: GYM_ORGANIZATION_ID, slug: GYM_SITE_SLUG, name: 'PulseFit Studios',
+    ownerUserId: gymOwner.id, status: 'active', vertical: 'gym', brandingBadgeEnabled: true, createdAt: now, updatedAt: now,
+  };
+  const gymBrand: BrandSettings = {
+    restaurantId: GYM_SITE_ID,
+    restaurantName: 'PulseFit Studios',
+    tagline: 'Train harder, together.',
+    logoMediaId: null,
+    faviconMediaId: null,
+    themePresetId: 'emerald',
+    primaryFont: 'Inter',
+    headingFont: 'Poppins',
+    fontWeight: 'semibold',
+    buttonStyle: 'pill',
+    borderRadius: 'full',
+    navPosition: 'right',
+    socialLinks: { instagram: '', facebook: '' },
+    contact: { phone: '+1 (312) 555-0142', email: 'hello@pulsefitstudios.com', address: '480 Wells Street, Chicago, IL' },
+    description: 'PulseFit Studios is a community-driven strength & conditioning gym - small-group programming, real coaching, no ego.',
+    cuisineType: '',
+    businessHours: [
+      { day: 'mon', isClosed: false, openTime: '06:00', closeTime: '22:00' },
+      { day: 'tue', isClosed: false, openTime: '06:00', closeTime: '22:00' },
+      { day: 'wed', isClosed: false, openTime: '06:00', closeTime: '22:00' },
+      { day: 'thu', isClosed: false, openTime: '06:00', closeTime: '22:00' },
+      { day: 'fri', isClosed: false, openTime: '06:00', closeTime: '21:00' },
+      { day: 'sat', isClosed: false, openTime: '08:00', closeTime: '18:00' },
+      { day: 'sun', isClosed: false, openTime: '08:00', closeTime: '16:00' },
+    ],
+    createdAt: now,
+    updatedAt: now,
+  };
+  const gymHeroSection: HomepageSection = {
+    id: 'section_pulsefit_hero', restaurantId: GYM_SITE_ID, type: 'hero', order: 1, visible: true, updatedAt: now,
+    content: {
+      eyebrow: 'Chicago, IL',
+      heading: 'PulseFit Studios',
+      description: 'Small-group strength & conditioning - real coaching, real community.',
+      buttonText: 'Book a Class',
+      buttonLink: '#/reservations',
+      secondaryButtonText: 'View Programs',
+      secondaryButtonLink: '#/items',
+      backgroundMediaId: null,
+      overlayOpacity: 45,
+    },
+  };
+  const gymSeed = buildGymSeed(GYM_SITE_ID, now, gymHeroSection);
+  const gymHomepage: Homepage = { restaurantId: GYM_SITE_ID, status: 'published', sections: gymSeed.sections };
+  const gymMembershipPlans: MembershipPlan[] = [
+    { id: 'plan_pulsefit_monthly', restaurantId: GYM_SITE_ID, name: 'Monthly Unlimited', description: 'Unlimited classes, every month.', priceCents: 8900, billingInterval: 'monthly', benefits: ['Unlimited classes', 'Guest passes (2/mo)', 'App booking'], isActive: true, order: 0, createdAt: now, updatedAt: now },
+    { id: 'plan_pulsefit_annual', restaurantId: GYM_SITE_ID, name: 'Annual', description: 'Best value - one payment, all year.', priceCents: 85000, billingInterval: 'yearly', benefits: ['Everything in Monthly', '2 months free', 'Priority booking'], isActive: true, order: 1, createdAt: now, updatedAt: now },
+    { id: 'plan_pulsefit_classpack', restaurantId: GYM_SITE_ID, name: '10-Class Pack', description: 'Pay as you train.', priceCents: 15000, billingInterval: 'one_time', benefits: ['10 class credits', 'No expiry'], isActive: true, order: 2, createdAt: now, updatedAt: now },
+  ];
+  const gymAvailability: ReservationAvailabilitySettings = {
+    restaurantId: GYM_SITE_ID,
+    days: WEEK_DAYS.map((day) => ({ day, isClosed: false, openTime: '06:00', closeTime: '21:00', slotDurationMins: 60, maxPerSlot: 12, slots: [] })),
+    blockedDates: [],
+  };
+
+  // --- Retail demo tenant (own Org/login) - Plan §2/§6, the third Vertical. ---
+  const retailOrganization: Organization = { id: RETAIL_ORGANIZATION_ID, code: RETAIL_ORGANIZATION_CODE, name: 'Nova Goods', createdAt: now, updatedAt: now };
+  const retailOwner: User = {
+    id: 'user_novagoods_owner', organizationId: RETAIL_ORGANIZATION_ID, email: 'owner@novagoods.com', name: 'Priya Nair',
+    role: 'owner', restaurantId: RETAIL_SITE_ID, siteAccess: 'all', isActive: true, createdAt: now, updatedAt: now,
+  };
+  const retailSite: Restaurant = {
+    id: RETAIL_SITE_ID, organizationId: RETAIL_ORGANIZATION_ID, slug: RETAIL_SITE_SLUG, name: 'Nova Goods',
+    ownerUserId: retailOwner.id, status: 'active', vertical: 'retail', brandingBadgeEnabled: true, createdAt: now, updatedAt: now,
+  };
+  const retailBrand: BrandSettings = {
+    restaurantId: RETAIL_SITE_ID,
+    restaurantName: 'Nova Goods',
+    tagline: 'Thoughtfully made, delivered.',
+    logoMediaId: null,
+    faviconMediaId: null,
+    themePresetId: 'sapphire',
+    primaryFont: 'DM Sans',
+    headingFont: 'Montserrat',
+    fontWeight: 'medium',
+    buttonStyle: 'square',
+    borderRadius: 'sm',
+    navPosition: 'center',
+    socialLinks: { instagram: '' },
+    contact: { phone: '+1 (415) 555-0198', email: 'hello@novagoods.shop', address: '221 Valencia Street, San Francisco, CA' },
+    description: 'Nova Goods is an independent lifestyle & home goods shop - small-batch makers, thoughtfully curated.',
+    cuisineType: '',
+    businessHours: [
+      { day: 'mon', isClosed: false, openTime: '10:00', closeTime: '19:00' },
+      { day: 'tue', isClosed: false, openTime: '10:00', closeTime: '19:00' },
+      { day: 'wed', isClosed: false, openTime: '10:00', closeTime: '19:00' },
+      { day: 'thu', isClosed: false, openTime: '10:00', closeTime: '19:00' },
+      { day: 'fri', isClosed: false, openTime: '10:00', closeTime: '19:00' },
+      { day: 'sat', isClosed: false, openTime: '10:00', closeTime: '18:00' },
+      { day: 'sun', isClosed: true, openTime: null, closeTime: null },
+    ],
+    createdAt: now,
+    updatedAt: now,
+  };
+  const retailHeroSection: HomepageSection = {
+    id: 'section_novagoods_hero', restaurantId: RETAIL_SITE_ID, type: 'hero', order: 1, visible: true, updatedAt: now,
+    content: {
+      eyebrow: 'San Francisco, CA',
+      heading: 'Nova Goods',
+      description: 'Independent lifestyle & home goods - small-batch makers, thoughtfully curated.',
+      buttonText: 'Shop Now',
+      buttonLink: '#/menu',
+      secondaryButtonText: 'View Collection',
+      secondaryButtonLink: '#/items',
+      backgroundMediaId: null,
+      overlayOpacity: 35,
+    },
+  };
+  const retailSeed = buildRetailSeed(RETAIL_SITE_ID, now, retailHeroSection);
+  const retailHomepage: Homepage = { restaurantId: RETAIL_SITE_ID, status: 'published', sections: retailSeed.sections };
+  const retailMembershipPlans: MembershipPlan[] = [
+    { id: 'plan_novagoods_free', restaurantId: RETAIL_SITE_ID, name: 'Loyalty', description: 'Free to join - earn points on every order.', priceCents: 0, billingInterval: 'one_time', benefits: ['Points on every order', 'Birthday reward'], isActive: true, order: 0, createdAt: now, updatedAt: now },
+    { id: 'plan_novagoods_vip', restaurantId: RETAIL_SITE_ID, name: 'VIP', description: 'For our most loyal shoppers.', priceCents: 4000, billingInterval: 'yearly', benefits: ['Free shipping', 'Early access to drops', 'Exclusive discounts'], isActive: true, order: 1, createdAt: now, updatedAt: now },
+  ];
+  const retailAvailability: ReservationAvailabilitySettings = {
+    restaurantId: RETAIL_SITE_ID,
+    days: WEEK_DAYS.map((day) => ({ day, isClosed: day === 'sun', openTime: '10:00', closeTime: '19:00', slotDurationMins: 30, maxPerSlot: 1, slots: [] })),
+    blockedDates: [],
+  };
+
   return {
-    users,
-    restaurants: [restaurant],
-    brand: { [RESTAURANT_ID]: { draft: { ...brandSettings }, published: { ...brandSettings } } },
+    organizations: [...organizations, gymOrganization, retailOrganization],
+    users: [...users, gymOwner, retailOwner],
+    restaurants: [restaurant, secondSite, gymSite, retailSite],
+    brand: {
+      [RESTAURANT_ID]: { draft: { ...brandSettings }, published: { ...brandSettings } },
+      [SECOND_SITE_ID]: { draft: { ...secondSiteBrand }, published: { ...secondSiteBrand } },
+      [GYM_SITE_ID]: { draft: { ...gymBrand }, published: { ...gymBrand } },
+      [RETAIL_SITE_ID]: { draft: { ...retailBrand }, published: { ...retailBrand } },
+    },
     website: {
       [RESTAURANT_ID]: {
         restaurantId: RESTAURANT_ID,
@@ -550,16 +961,72 @@ function buildSeed(): MockDbShape {
         createdAt: now,
         updatedAt: now,
       },
+      [SECOND_SITE_ID]: {
+        restaurantId: SECOND_SITE_ID,
+        publishStatus: 'draft',
+        publishedAt: null,
+        seoTitle: 'Lumière – Notting Hill',
+        seoDescription: 'Modern French fine dining in Notting Hill, London.',
+        createdAt: now,
+        updatedAt: now,
+      },
+      [GYM_SITE_ID]: {
+        restaurantId: GYM_SITE_ID,
+        publishStatus: 'published',
+        publishedAt: now,
+        seoTitle: 'PulseFit Studios | Strength & Conditioning',
+        seoDescription: 'Small-group strength & conditioning gym in Chicago, IL.',
+        createdAt: now,
+        updatedAt: now,
+      },
+      [RETAIL_SITE_ID]: {
+        restaurantId: RETAIL_SITE_ID,
+        publishStatus: 'published',
+        publishedAt: now,
+        seoTitle: 'Nova Goods | Lifestyle & Home Goods',
+        seoDescription: 'Independent lifestyle & home goods shop in San Francisco, CA.',
+        createdAt: now,
+        updatedAt: now,
+      },
     },
-    homepage: { [RESTAURANT_ID]: { draft: homepageDraft, published: homepagePublished } },
-    media,
-    categories,
-    items,
+    homepage: {
+      [RESTAURANT_ID]: { draft: homepageDraft, published: homepagePublished },
+      [SECOND_SITE_ID]: { draft: { ...secondSiteHomepage }, published: { ...secondSiteHomepage } },
+      [GYM_SITE_ID]: { draft: { ...gymHomepage }, published: { ...gymHomepage } },
+      [RETAIL_SITE_ID]: { draft: { ...retailHomepage }, published: { ...retailHomepage } },
+    },
+    media: [...media, ...gymSeed.media, ...retailSeed.media],
+    categories: [...categories, ...gymSeed.categories, ...retailSeed.categories],
+    items: [...items, ...gymSeed.items, ...retailSeed.items],
     addons,
-    offers,
+    offers: [...offers, ...gymSeed.offers, ...retailSeed.offers],
     orders,
     reservations,
-    reservationAvailability: { [RESTAURANT_ID]: reservationAvailabilitySettings },
+    reservationAvailability: {
+      [RESTAURANT_ID]: reservationAvailabilitySettings,
+      [SECOND_SITE_ID]: { ...reservationAvailabilitySettings, restaurantId: SECOND_SITE_ID },
+      [GYM_SITE_ID]: gymAvailability,
+      [RETAIL_SITE_ID]: retailAvailability,
+    },
+    pageConfigs: [
+      ...buildDefaultPageConfigs(RESTAURANT_ID, true),
+      ...buildDefaultPageConfigs(SECOND_SITE_ID),
+      ...buildPageConfigsForVertical(GYM_SITE_ID, 'gym'),
+      ...buildPageConfigsForVertical(RETAIL_SITE_ID, 'retail'),
+    ],
+    membershipPlans: [...membershipPlans, ...gymMembershipPlans, ...retailMembershipPlans],
+    members,
+    memberCheckIns,
+    domainMappings: [
+      ...buildDefaultDomainMappings(RESTAURANT_ID, RESTAURANT_SLUG),
+      ...buildDefaultDomainMappings(SECOND_SITE_ID, SECOND_SITE_SLUG),
+      ...buildDefaultDomainMappings(GYM_SITE_ID, GYM_SITE_SLUG),
+      ...buildDefaultDomainMappings(RETAIL_SITE_ID, RETAIL_SITE_SLUG),
+    ],
+    // Every Site starts on the code defaults for its Vertical; owners only store what they change.
+    pageContent: Object.fromEntries(
+      [RESTAURANT_ID, SECOND_SITE_ID, GYM_SITE_ID, RETAIL_SITE_ID].map((id) => [id, { draft: {}, published: {} }]),
+    ),
   };
 }
 

@@ -11,6 +11,7 @@ import { TagInput } from '../../components/forms/TagInput';
 import { AddonAssignmentField } from '../../components/AddonAssignmentField';
 import { SectionCard } from '../../components/SectionCard';
 import { Button } from '../../components/Button';
+import { StickyHeader } from '../../components/PageHeader';
 import { TextField, TextareaField, SelectField } from '../../components/forms/Field';
 import type { FoodType, MenuItem, MenuItemVariant } from '../../../types';
 import { tempId } from '../../utils/tempId';
@@ -67,14 +68,14 @@ export function MenuItemFormPage() {
 
   return (
     <div className="max-w-4xl space-y-6 pb-24">
-      <div>
+      <StickyHeader>
         <button onClick={() => navigate('/admin/menu/items')} className="inline-flex items-center gap-1.5 text-sm text-secondary hover:text-on-surface transition-colors mb-3">
           <ArrowLeft className="h-4 w-4" />
           Back to Menu Items
         </button>
         <h1 className="text-2xl sm:text-3xl font-bold text-on-surface tracking-tight">{isNew ? 'Add Menu Item' : 'Edit Menu Item'}</h1>
         <p className="text-secondary text-sm mt-1">{isNew ? 'Create a new dish or drink for your menu.' : 'Update details, pricing, and availability for this item.'}</p>
-      </div>
+      </StickyHeader>
 
       <SectionCard title="Basic Information" description="What guests will see on the menu." icon={Info}>
         <div className="space-y-4">

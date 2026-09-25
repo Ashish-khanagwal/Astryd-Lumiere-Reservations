@@ -4,6 +4,7 @@ import {
   ALL_ADDON_OPTIONS,
   type MenuItem,
 } from '../data/menuItems';
+import { usePageContent } from '../context/usePageContent';
 
 interface ItemCustomizeModalProps {
   item: MenuItem;
@@ -12,6 +13,7 @@ interface ItemCustomizeModalProps {
 }
 
 export const ItemCustomizeModal = ({ item, onClose, onConfirm }: ItemCustomizeModalProps) => {
+  const c = usePageContent('global');
   const [quantity, setQuantity] = useState(1);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
 
@@ -49,7 +51,7 @@ export const ItemCustomizeModal = ({ item, onClose, onConfirm }: ItemCustomizeMo
     <div className="fixed inset-0 z-[70] flex items-end sm:items-center justify-center p-0 sm:p-4">
       <button
         type="button"
-        aria-label="Close customize modal"
+        aria-label={c.text('optionsBackdropAriaLabel')}
         className="absolute inset-0 bg-black/55 backdrop-blur-sm"
         onClick={onClose}
       />
@@ -66,7 +68,7 @@ export const ItemCustomizeModal = ({ item, onClose, onConfirm }: ItemCustomizeMo
             type="button"
             onClick={onClose}
             className="absolute top-3 right-3 w-9 h-9 rounded-full bg-black/40 text-white flex items-center justify-center backdrop-blur-sm hover:bg-black/55 transition-colors"
-            aria-label="Close"
+            aria-label={c.text('optionsCloseAriaLabel')}
           >
             <span className="material-symbols-outlined text-xl">close</span>
           </button>
@@ -85,7 +87,7 @@ export const ItemCustomizeModal = ({ item, onClose, onConfirm }: ItemCustomizeMo
                 <div className="flex items-baseline justify-between gap-2">
                   <h3 className="font-serif text-lg font-semibold text-on-surface">{category.name}</h3>
                   <span className="font-label-sm text-[10px] uppercase tracking-widest text-secondary">
-                    {category.selection === 'single' ? 'Choose one' : 'Optional'}
+                    {category.selection === 'single' ? c.text('optionsChooseOne') : c.text('optionsOptional')}
                   </span>
                 </div>
                 {category.subtitle && (
@@ -140,7 +142,7 @@ export const ItemCustomizeModal = ({ item, onClose, onConfirm }: ItemCustomizeMo
                 type="button"
                 onClick={() => setQuantity((q) => Math.max(1, q - 1))}
                 className="p-2.5 hover:bg-outline-variant/20 transition-colors"
-                aria-label="Decrease quantity"
+                aria-label={c.text('optionsDecreaseAriaLabel')}
               >
                 <span className="material-symbols-outlined text-sm">remove</span>
               </button>
@@ -149,13 +151,13 @@ export const ItemCustomizeModal = ({ item, onClose, onConfirm }: ItemCustomizeMo
                 type="button"
                 onClick={() => setQuantity((q) => q + 1)}
                 className="p-2.5 hover:bg-outline-variant/20 transition-colors"
-                aria-label="Increase quantity"
+                aria-label={c.text('optionsIncreaseAriaLabel')}
               >
                 <span className="material-symbols-outlined text-sm">add</span>
               </button>
             </div>
             <div className="text-right">
-              <div className="font-label-sm text-[10px] uppercase tracking-widest text-secondary">Total</div>
+              <div className="font-label-sm text-[10px] uppercase tracking-widest text-secondary">{c.text('optionsTotalLabel')}</div>
               <div className="font-serif text-xl font-bold text-primary">${grandTotal.toFixed(2)}</div>
             </div>
           </div>
@@ -165,7 +167,7 @@ export const ItemCustomizeModal = ({ item, onClose, onConfirm }: ItemCustomizeMo
             onClick={() => onConfirm({ quantity, addonIds: Array.from(selectedIds) })}
             className="w-full py-3.5 rounded-xl bg-primary text-on-primary font-sans text-sm font-bold tracking-wide hover:bg-primary-container transition-all active:scale-[0.98] shadow-md flex items-center justify-center gap-2"
           >
-            <span>Add to Cart</span>
+            <span>{c.text('optionsAddButton')}</span>
             <span className="opacity-80">·</span>
             <span>${grandTotal.toFixed(2)}</span>
           </button>

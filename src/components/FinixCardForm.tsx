@@ -1,4 +1,5 @@
 import { useEffect, useId, useRef, useState } from 'react';
+import { usePageContent } from '../context/usePageContent';
 
 interface FinixTokenResponse {
   data?: { id?: string };
@@ -58,6 +59,10 @@ export function FinixCardForm({ amountCents, disabled, onToken, onError }: Finix
   const elementId = `finix-card-${reactId.replace(/:/g, '')}`;
   const formRef = useRef<FinixFormInstance | null>(null);
   const [loading, setLoading] = useState(true);
+  const content = usePageContent('global');
+  // Read through a ref so editing copy never re-initialises the hosted card form.
+  const contentRef = useRef(content);
+  contentRef.current = content;
   const applicationId = import.meta.env.VITE_FINIX_APPLICATION_ID as string | undefined;
   const environment = (import.meta.env.VITE_FINIX_ENVIRONMENT ?? 'sandbox') as 'sandbox' | 'prod';
 
@@ -65,7 +70,7 @@ export function FinixCardForm({ amountCents, disabled, onToken, onError }: Finix
     let active = true;
     if (!applicationId) {
       setLoading(false);
-      onError('Finix card payments are not configured.');
+      onError(contentRef.current.text('cardNotConfigured'));
       return;
     }
     loadFinixScript()
@@ -75,26 +80,26 @@ export function FinixCardForm({ amountCents, disabled, onToken, onError }: Finix
           paymentMethods: ['card'],
           showAddress: false,
           theme: 'finix',
-          submitLabel: `Pay $${(amountCents / 100).toFixed(2)}`,
+          submitLabel: contentRef.current.text('cardPayButton', { amount: (amountCents / 100).toFixed(2) }),
           onLoad: () => active && setLoading(false),
           onSubmit: async (error: unknown, response: FinixTokenResponse) => {
             if (error) {
-              onError('Please check your card details and try again.');
+              onError(contentRef.current.text('cardInvalid'));
               return;
             }
             const token = response?.data?.id;
             if (!token) {
-              onError('Finix did not return a card token. Please try again.');
+              onError(contentRef.current.text('cardNoToken'));
               return;
             }
             await onToken(token);
           },
         });
       })
-      .catch((error: unknown) => {
+      .catch(() => {
         if (active) {
           setLoading(false);
-          onError(error instanceof Error ? error.message : 'Unable to load secure card fields.');
+          onError(contentRef.current.text('cardLoadError'));
         }
       });
     return () => {
@@ -106,7 +111,7 @@ export function FinixCardForm({ amountCents, disabled, onToken, onError }: Finix
 
   return (
     <div className={disabled ? 'pointer-events-none opacity-60' : undefined}>
-      {loading && <p className="text-sm text-secondary">Loading secure card fields…</p>}
+      {loading && <p className="text-sm text-secondary">{content.text('cardLoading')}</p>}
       <div id={elementId} aria-busy={loading} />
     </div>
   );

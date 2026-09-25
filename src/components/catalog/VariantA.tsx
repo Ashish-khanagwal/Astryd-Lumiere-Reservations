@@ -1,8 +1,8 @@
-import { useState, useEffect, useCallback } from 'react';
-import { Header } from './Header';
-import { Footer } from './Footer';
-import { ItemCustomizeModal } from './ItemCustomizeModal';
-import { CartAddAnimation } from './CartAddAnimation';
+import { Fragment, useState, useEffect, useCallback, useMemo } from 'react';
+import { Header } from '../Header';
+import { Footer } from '../Footer';
+import { ItemCustomizeModal } from '../ItemCustomizeModal';
+import { CartAddAnimation } from '../CartAddAnimation';
 import {
   ALL_MENU_ITEMS,
   type CartState,
@@ -12,9 +12,29 @@ import {
   getCartUniqueCount,
   getItemQuantity,
   projectUniqueCountAfterAdd,
-} from '../data/menuItems';
+} from '../../data/menuItems';
+import { usePageContent } from '../../context/usePageContent';
+import { usePublicData } from '../../context/PublicDataContext';
 
-interface MenuViewProps {
+const sectionIdFor = (categoryName: string) => `cat-${categoryName.toLowerCase().replace(/[^a-z0-9]+/g, '-')}`;
+
+/** A sensible Material Symbols icon from the category's own name (any business type), with a generic fallback. */
+const CATEGORY_ICON_RULES: Array<[RegExp, string]> = [
+  [/burger/, 'lunch_dining'], [/pizza/, 'local_pizza'], [/pasta|noodle/, 'dinner_dining'], [/steak|grill|meat/, 'flatware'],
+  [/dessert|sweet|cake/, 'icecream'], [/drink|beverage|wine|bar|cocktail|coffee/, 'local_bar'], [/starter|appetizer|small plate/, 'restaurant'],
+  [/strength|lift|weight/, 'fitness_center'], [/condition|cardio|hiit/, 'directions_run'], [/mobility|core|yoga|pilates|stretch/, 'self_improvement'],
+  [/personal|coach|training/, 'sports'], [/ceramic|pottery|mug|vase/, 'emoji_food_beverage'], [/home|living|furniture/, 'chair'],
+  [/apparel|cloth|wear|fashion/, 'checkroom'], [/accessor|jewel/, 'diamond'], [/beauty|skin|care/, 'spa'],
+];
+const iconForCategory = (name: string) => CATEGORY_ICON_RULES.find(([re]) => re.test(name.toLowerCase()))?.[1] ?? 'category';
+
+/** The site uses hash routing (#/menu), so in-page anchors would navigate away - scroll instead, clearing the fixed header. */
+const scrollToSection = (id: string) => {
+  const el = document.getElementById(id);
+  if (el) window.scrollTo({ top: el.getBoundingClientRect().top + window.scrollY - 190, behavior: 'smooth' });
+};
+
+export interface CatalogViewProps {
   cart: CartState;
   onUpdateItemQty: (itemId: string, delta: number) => void;
   onAddToCart: (itemId: string, quantity: number, addonIds?: string[]) => void;
@@ -26,7 +46,8 @@ interface MenuViewProps {
   onOpenCart?: () => void;
 }
 
-export const MenuView = ({
+/** Variant A - "Menu Grid" (Multi-Vertical Platform Plan §8.2), the original design; suits a Restaurant but any Site can pick it. */
+export const CatalogVariantA = ({
   cart,
   onUpdateItemQty,
   onAddToCart,
@@ -36,7 +57,8 @@ export const MenuView = ({
   onToast,
   cartUniqueCount = 0,
   onOpenCart,
-}: MenuViewProps) => {
+}: CatalogViewProps) => {
+  const { categories, items: rawItems } = usePublicData();
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedFilter, setSelectedFilter] = useState('Popular');
   const [isFavorite, setIsFavorite] = useState(false);
@@ -44,12 +66,46 @@ export const MenuView = ({
   const [customizeItem, setCustomizeItem] = useState<MenuItem | null>(null);
   const [cartFly, setCartFly] = useState<{ fromCount: number; toCount: number } | null>(null);
 
-  const CATEGORY_TABS = [
-    'Popular',
-    'Veg',
-    'Non-Veg',
-    ...Array.from(new Set(ALL_MENU_ITEMS.map((item) => item.category))),
-  ];
+  // Sections, side menu and filter tabs all come from this Site's own categories (Admin → Categories order),
+  // never a fixed restaurant list.
+  const categoryNames = useMemo(() => {
+    const inUse = new Set(ALL_MENU_ITEMS.map((item) => item.category));
+    const ordered = [...categories]
+      .filter((cat) => cat.isVisible && inUse.has(cat.name))
+      .sort((a, b) => a.displayOrder - b.displayOrder)
+      .map((cat) => cat.name);
+    return [...ordered, ...[...inUse].filter((name) => !ordered.includes(name))];
+    // ALL_MENU_ITEMS is swapped in by PublicDataProvider whenever `rawItems` changes.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [categories, rawItems]);
+
+  // Veg / Non-Veg only make sense for food - hide them when no item is marked either way (e.g. gym, retail).
+  const hasFoodTypes = rawItems.some((item) => item.foodType !== 'na');
+
+  const ratedItems = ALL_MENU_ITEMS.filter((item) => item.reviews > 0);
+  const reviewCount = ratedItems.reduce((sum, item) => sum + item.reviews, 0);
+  const avgRating = ratedItems.length ? (ratedItems.reduce((sum, item) => sum + item.rating, 0) / ratedItems.length).toFixed(1) : '';
+  const c = usePageContent('catalog');
+  const headerVars = {
+    avgRating,
+    reviewCount: reviewCount ? new Intl.NumberFormat('en', { notation: 'compact', maximumFractionDigits: 1 }).format(reviewCount) : '',
+  };
+  const ratingText = avgRating ? c.text('a_rating', headerVars) : '';
+  const headerDetails = [
+    { key: 'cuisine', icon: '', text: c.text('a_cuisine') },
+    { key: 'prep', icon: c.text('a_prepTimeIcon'), text: c.text('a_prepTime') },
+    { key: 'pickup', icon: c.text('a_pickupIcon'), text: c.text('a_pickup') },
+  ].filter((d) => d.text.trim());
+
+  const CATEGORY_TABS = ['Popular', ...(hasFoodTypes ? ['Veg', 'Non-Veg'] : []), ...categoryNames];
+  const sectionIds = ['popular', ...categoryNames.map(sectionIdFor)];
+
+  /** Filter tabs stay keyed on stable ids; only the displayed label is editable. */
+  const FILTER_LABELS: Record<string, string> = {
+    Popular: c.text('a_filterPopular'),
+    Veg: c.text('a_filterVeg'),
+    'Non-Veg': c.text('a_filterNonVeg'),
+  };
 
   const filteredItems = ALL_MENU_ITEMS.filter((item) => {
     const matchesSearch =
@@ -89,10 +145,10 @@ export const MenuView = ({
     setCartFly(null);
   }, []);
 
+  const sectionIdsKey = sectionIds.join('|');
   useEffect(() => {
     const handleScroll = () => {
-      const sections = ['popular', 'burgers', 'starters', 'pizza', 'pasta', 'steaks', 'desserts', 'beverages'];
-      for (const sectionId of sections) {
+      for (const sectionId of sectionIdsKey.split('|')) {
         const el = document.getElementById(sectionId);
         if (el) {
           const rect = el.getBoundingClientRect();
@@ -106,7 +162,7 @@ export const MenuView = ({
 
     window.addEventListener('scroll', handleScroll);
     return () => window.removeEventListener('scroll', handleScroll);
-  }, []);
+  }, [sectionIdsKey]);
 
   return (
     <div className="min-h-screen bg-background text-on-surface flex flex-col font-sans">
@@ -125,44 +181,47 @@ export const MenuView = ({
           <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
             <div>
               <span className="font-label-sm text-primary uppercase tracking-[0.2em] font-bold">
-                Fine Dining & Takeaway
+                {c.text('a_eyebrow')}
               </span>
               <h1 className="font-serif text-4xl md:text-5xl lg:text-6xl font-semibold text-on-surface mb-3 mt-1">
-                Lumière
+                {c.text('a_title')}
               </h1>
               <div className="flex flex-wrap items-center gap-4 text-secondary font-sans text-sm md:text-base">
-                <div className="flex items-center gap-1.5 text-on-surface font-bold">
-                  <span className="material-symbols-outlined text-primary text-xl filled">star</span>
-                  <span>4.9</span>
-                  <span className="text-secondary font-normal">(2.4k+ Reviews)</span>
-                </div>
-                <span className="w-1.5 h-1.5 bg-outline-variant rounded-full"></span>
-                <span>Modern French / Haute Cuisine</span>
-                <span className="w-1.5 h-1.5 bg-outline-variant rounded-full"></span>
-                <div className="flex items-center gap-1">
-                  <span className="material-symbols-outlined text-primary">schedule</span>
-                  <span>25-35 min</span>
-                </div>
-                <span className="w-1.5 h-1.5 bg-outline-variant rounded-full"></span>
-                <div className="flex items-center gap-1">
-                  <span className="material-symbols-outlined text-primary">shopping_bag</span>
-                  <span>Pickup Available</span>
-                </div>
+                {ratingText && (
+                  <div className="flex items-center gap-1.5 text-on-surface font-bold">
+                    <span className="material-symbols-outlined text-primary text-xl filled">star</span>
+                    <span>{ratingText}</span>
+                    {headerVars.reviewCount && <span className="text-secondary font-normal">{c.text('a_reviews', headerVars)}</span>}
+                  </div>
+                )}
+                {headerDetails.map((detail, idx) => (
+                  <Fragment key={detail.key}>
+                    {(idx > 0 || ratingText) && <span className="w-1.5 h-1.5 bg-outline-variant rounded-full"></span>}
+                    {detail.icon ? (
+                      <div className="flex items-center gap-1">
+                        <span className="material-symbols-outlined text-primary">{detail.icon}</span>
+                        <span>{detail.text}</span>
+                      </div>
+                    ) : (
+                      <span>{detail.text}</span>
+                    )}
+                  </Fragment>
+                ))}
               </div>
             </div>
 
             <div className="flex gap-3">
               <button
-                onClick={() => onToast('Menu link copied to clipboard!')}
+                onClick={() => onToast(c.text('a_shareToast'))}
                 className="flex items-center gap-2 px-5 py-2.5 border border-outline-variant/40 bg-surface rounded-xl hover:bg-surface-container-high transition-all text-on-surface font-sans text-sm font-medium"
               >
                 <span className="material-symbols-outlined text-xl">share</span>
-                <span>Share</span>
+                <span>{c.text('a_shareButton')}</span>
               </button>
               <button
                 onClick={() => {
                   setIsFavorite(!isFavorite);
-                  onToast(isFavorite ? 'Removed from favorites' : 'Added to favorites');
+                  onToast(isFavorite ? c.text('a_favoriteRemovedToast') : c.text('a_favoriteAddedToast'));
                 }}
                 className={`flex items-center gap-2 px-5 py-2.5 border rounded-xl transition-all font-sans text-sm font-medium ${
                   isFavorite
@@ -173,7 +232,7 @@ export const MenuView = ({
                 <span className={`material-symbols-outlined text-xl ${isFavorite ? 'filled text-rose-600' : ''}`}>
                   favorite
                 </span>
-                <span>{isFavorite ? 'Favorited' : 'Favorite'}</span>
+                <span>{isFavorite ? c.text('a_favoritedButton') : c.text('a_favoriteButton')}</span>
               </button>
             </div>
           </div>
@@ -189,7 +248,7 @@ export const MenuView = ({
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 type="text"
-                placeholder="Search for dishes, drinks, or ingredients..."
+                placeholder={c.text('a_searchPlaceholder')}
                 className="w-full pl-12 pr-4 py-3.5 bg-surface border border-outline-variant/30 rounded-2xl focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all font-body-md"
               />
               {searchQuery && (
@@ -213,7 +272,7 @@ export const MenuView = ({
                       : 'bg-surface border border-outline-variant/30 text-secondary hover:border-primary/50 hover:text-primary'
                   }`}
                 >
-                  {tab}
+                  {FILTER_LABELS[tab] ?? tab}
                 </button>
               ))}
             </div>
@@ -223,29 +282,21 @@ export const MenuView = ({
         <div className="grid grid-cols-1 md:grid-cols-12 gap-8 w-full">
           <aside className="md:col-span-3 lg:col-span-2 hidden md:block">
             <div className="sticky top-44 space-y-1.5 bg-surface p-3 rounded-2xl border border-outline-variant/20 shadow-sm">
-              <h3 className="font-label-sm text-secondary uppercase tracking-widest px-3 mb-2">Categories</h3>
-              {[
-                { id: 'popular', label: 'Popular', icon: 'star' },
-                { id: 'burgers', label: 'Burgers', icon: 'lunch_dining' },
-                { id: 'starters', label: 'Starters', icon: 'restaurant' },
-                { id: 'pizza', label: 'Pizza', icon: 'local_pizza' },
-                { id: 'pasta', label: 'Pasta', icon: 'dinner_dining' },
-                { id: 'steaks', label: 'Steaks', icon: 'flatware' },
-                { id: 'desserts', label: 'Desserts', icon: 'icecream' },
-                { id: 'beverages', label: 'Beverages', icon: 'local_bar' },
-              ].map((cat) => (
-                <a
+              <h3 className="font-label-sm text-secondary uppercase tracking-widest px-3 mb-2">{c.text('a_sidebarTitle')}</h3>
+              {[{ id: 'popular', label: c.text('a_filterPopular'), icon: 'star' }, ...categoryNames.map((name) => ({ id: sectionIdFor(name), label: name, icon: iconForCategory(name) }))].map((cat) => (
+                <button
                   key={cat.id}
-                  href={`#${cat.id}`}
-                  className={`flex items-center gap-3 px-3.5 py-2.5 rounded-xl transition-all font-body-md ${
+                  type="button"
+                  onClick={() => scrollToSection(cat.id)}
+                  className={`w-full text-left flex items-center gap-3 px-3.5 py-2.5 rounded-xl transition-all font-body-md ${
                     activeSection === cat.id
                       ? 'bg-primary/10 text-primary font-bold border-l-4 border-primary'
                       : 'text-secondary hover:bg-surface-container-high hover:text-on-surface'
                   }`}
                 >
                   <span className="material-symbols-outlined text-[20px]">{cat.icon}</span>
-                  <span>{cat.label}</span>
-                </a>
+                  <span className="leading-tight">{cat.label}</span>
+                </button>
               ))}
             </div>
           </aside>
@@ -254,17 +305,17 @@ export const MenuView = ({
             {filteredItems.length === 0 ? (
               <div className="text-center py-16 bg-surface rounded-2xl border border-outline-variant/20">
                 <span className="material-symbols-outlined text-4xl text-secondary mb-2">search_off</span>
-                <h3 className="font-headline-md font-semibold text-on-surface">No dishes found</h3>
+                <h3 className="font-headline-md font-semibold text-on-surface">{c.text('a_emptyTitle')}</h3>
                 <p className="font-body-md text-secondary mt-1">
-                  Try adjusting your search query or filter selection.
+                  {c.text('a_emptyText')}
                 </p>
               </div>
             ) : (
               <>
                 <section id="popular">
                   <div className="flex items-center justify-between mb-6">
-                    <h2 className="font-serif text-2xl md:text-3xl font-bold text-on-surface">Popular Choices</h2>
-                    <span className="text-secondary font-sans text-sm">Top rated by diners</span>
+                    <h2 className="font-serif text-2xl md:text-3xl font-bold text-on-surface">{c.text('a_popularHeading')}</h2>
+                    <span className="text-secondary font-sans text-sm">{c.text('a_popularSubheading')}</span>
                   </div>
                   <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                     {filteredItems
@@ -282,70 +333,28 @@ export const MenuView = ({
                   </div>
                 </section>
 
-                <section id="burgers">
-                  <div className="flex items-center justify-between mb-6">
-                    <h2 className="font-serif text-2xl md:text-3xl font-bold text-on-surface">Burgers & Steaks</h2>
-                    <a href="#steaks" className="text-primary font-bold text-sm hover:underline">
-                      View Steaks
-                    </a>
-                  </div>
-                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                    {filteredItems
-                      .filter((i) => i.category === 'Burgers' || i.category === 'Steaks')
-                      .map((item) => (
-                        <MenuItemCard
-                          key={item.id}
-                          item={item}
-                          qty={getItemQuantity(cart, item.id)}
-                          onUpdateQty={(delta) => onUpdateItemQty(item.id, delta)}
-                          onAdd={() => setCustomizeItem(item)}
-                        />
-                      ))}
-                  </div>
-                </section>
-
-                <section id="starters">
-                  <div className="flex items-center justify-between mb-6">
-                    <h2 className="font-serif text-2xl md:text-3xl font-bold text-on-surface">Starters & Pizza</h2>
-                  </div>
-                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                    {filteredItems
-                      .filter(
-                        (i) =>
-                          i.category === 'Starters' || i.category === 'Pizza' || i.category === 'Pasta'
-                      )
-                      .map((item) => (
-                        <MenuItemCard
-                          key={item.id}
-                          item={item}
-                          qty={getItemQuantity(cart, item.id)}
-                          onUpdateQty={(delta) => onUpdateItemQty(item.id, delta)}
-                          onAdd={() => setCustomizeItem(item)}
-                        />
-                      ))}
-                  </div>
-                </section>
-
-                <section id="desserts">
-                  <div className="flex items-center justify-between mb-6">
-                    <h2 className="font-serif text-2xl md:text-3xl font-bold text-on-surface">
-                      Desserts & Fine Beverages
-                    </h2>
-                  </div>
-                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                    {filteredItems
-                      .filter((i) => i.category === 'Desserts' || i.category === 'Beverages')
-                      .map((item) => (
-                        <MenuItemCard
-                          key={item.id}
-                          item={item}
-                          qty={getItemQuantity(cart, item.id)}
-                          onUpdateQty={(delta) => onUpdateItemQty(item.id, delta)}
-                          onAdd={() => setCustomizeItem(item)}
-                        />
-                      ))}
-                  </div>
-                </section>
+                {categoryNames.map((name) => {
+                  const inCategory = filteredItems.filter((i) => i.category === name);
+                  if (!inCategory.length) return null;
+                  return (
+                    <section key={name} id={sectionIdFor(name)}>
+                      <div className="flex items-center justify-between mb-6">
+                        <h2 className="font-serif text-2xl md:text-3xl font-bold text-on-surface">{name}</h2>
+                      </div>
+                      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                        {inCategory.map((item) => (
+                          <MenuItemCard
+                            key={item.id}
+                            item={item}
+                            qty={getItemQuantity(cart, item.id)}
+                            onUpdateQty={(delta) => onUpdateItemQty(item.id, delta)}
+                            onAdd={() => setCustomizeItem(item)}
+                          />
+                        ))}
+                      </div>
+                    </section>
+                  );
+                })}
               </>
             )}
           </div>
@@ -357,11 +366,11 @@ export const MenuView = ({
           <div className="bg-inverse-surface text-inverse-on-surface p-4 rounded-2xl shadow-2xl flex items-center gap-6 md:min-w-[360px] border border-white/10">
             <div className="flex flex-col">
               <span className="font-label-sm text-[11px] uppercase opacity-70 tracking-widest font-bold">
-                Selected Gourmet Order
+                {c.text('a_cartTitle')}
               </span>
               <div className="flex items-baseline gap-2">
                 <span className="font-sans text-xl font-bold">
-                  {totalCartCount} {totalCartCount === 1 ? 'Item' : 'Items'}
+                  {totalCartCount} {totalCartCount === 1 ? c.text('itemSingular') : c.text('itemPlural')}
                 </span>
                 <span className="opacity-50">•</span>
                 <span className="font-serif text-2xl font-bold text-primary-fixed-dim">
@@ -373,7 +382,7 @@ export const MenuView = ({
               onClick={onCheckout}
               className="ml-auto bg-primary hover:bg-primary-container text-on-primary px-6 py-3 rounded-xl font-bold flex items-center gap-2 transition-all active:scale-95 shadow-lg text-sm tracking-wide"
             >
-              <span>Checkout</span>
+              <span>{c.text('checkoutButton')}</span>
               <span className="material-symbols-outlined text-lg">arrow_forward</span>
             </button>
           </div>
@@ -413,6 +422,7 @@ interface MenuItemCardProps {
 }
 
 const MenuItemCard = ({ item, qty, onUpdateQty, onAdd }: MenuItemCardProps) => {
+  const c = usePageContent('catalog');
   return (
     <div className="bg-surface p-5 rounded-2xl border border-outline-variant/30 flex gap-5 transition-all duration-300 hover:shadow-lg group hover:-translate-y-1">
       <div className="relative w-32 h-32 md:w-36 md:h-36 shrink-0 overflow-hidden rounded-xl border border-outline-variant/20">
@@ -442,11 +452,15 @@ const MenuItemCard = ({ item, qty, onUpdateQty, onAdd }: MenuItemCardProps) => {
                 {item.rating} ({item.reviews})
               </span>
             </div>
-            <span className="w-1 h-1 bg-outline-variant rounded-full"></span>
-            <div className="flex items-center gap-1">
-              <span className="material-symbols-outlined text-sm">schedule</span>
-              <span>{item.prepTime}</span>
-            </div>
+            {item.prepTime && item.prepTime !== '—' && (
+              <>
+                <span className="w-1 h-1 bg-outline-variant rounded-full"></span>
+                <div className="flex items-center gap-1">
+                  <span className="material-symbols-outlined text-sm">schedule</span>
+                  <span>{item.prepTime}</span>
+                </div>
+              </>
+            )}
           </div>
         </div>
 
@@ -457,7 +471,7 @@ const MenuItemCard = ({ item, qty, onUpdateQty, onAdd }: MenuItemCardProps) => {
                 <span className="material-symbols-outlined text-sm">remove</span>
               </button>
               <span className="px-4 font-bold min-w-[36px] text-center text-sm">{qty}</span>
-              <button onClick={onAdd} className="p-2 hover:bg-outline-variant/20 transition-colors" aria-label="Add another with options">
+              <button onClick={onAdd} className="p-2 hover:bg-outline-variant/20 transition-colors" aria-label={c.text('a_addAnotherAria')}>
                 <span className="material-symbols-outlined text-sm">add</span>
               </button>
             </div>
@@ -466,7 +480,7 @@ const MenuItemCard = ({ item, qty, onUpdateQty, onAdd }: MenuItemCardProps) => {
               onClick={onAdd}
               className="px-6 py-2 bg-on-surface text-on-primary rounded-xl font-bold hover:bg-primary transition-all active:scale-95 shadow-sm text-xs tracking-wider uppercase"
             >
-              ADD
+              {c.text('a_addButton')}
             </button>
           )}
         </div>
