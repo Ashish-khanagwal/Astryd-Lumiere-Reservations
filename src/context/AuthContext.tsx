@@ -1,7 +1,7 @@
 import { createContext, useContext, useEffect, useState, type ReactNode } from 'react';
 import * as authService from '../services/auth';
 import { setAuthToken } from '../services/http';
-import type { Permission, Role, User } from '../types';
+import type { Permission, Role, User, SignupRequest } from '../types';
 
 const TOKEN_STORAGE_KEY = 'lumiere-cms-token';
 
@@ -21,6 +21,8 @@ interface AuthContextValue {
   can: (permission: keyof Permission) => boolean;
   login: (orgId: string, email: string, password: string) => Promise<void>;
   loginSuperAdmin: (email: string, password: string) => Promise<void>;
+  /** Plan §14 Phase 6 - self-serve signup; also signs the new Owner straight in, same as login. */
+  signup: (payload: SignupRequest) => Promise<{ orgCode: string }>;
   logout: () => Promise<void>;
 }
 
@@ -52,6 +54,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     localStorage.setItem(TOKEN_STORAGE_KEY, session.token);
     setAuthToken(session.token);
     setUser(session.user);
+  };
+
+  const signup = async (payload: SignupRequest) => {
+    const session = await authService.signup(payload);
+    localStorage.setItem(TOKEN_STORAGE_KEY, session.token);
+    setAuthToken(session.token);
+    setUser(session.user);
+    return { orgCode: session.orgCode };
   };
 
   const loginSuperAdmin = async (email: string, password: string) => {
@@ -87,6 +97,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     can,
     login,
     loginSuperAdmin,
+    signup,
     logout,
   };
 

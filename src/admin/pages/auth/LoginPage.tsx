@@ -78,9 +78,25 @@ export function LoginPage() {
         </Link>
       </div>
 
-      <div className="pt-4 border-t border-outline-variant/20 text-xs text-secondary space-y-1">
-        <p className="font-semibold">Demo Organization: LUMIERE</p>
-        <p>owner@lumiere.com (Owner) · staff@lumiere.com (Staff)</p>
+      <div className="pt-4 border-t border-outline-variant/20 text-xs text-secondary space-y-2">
+        <div>
+          <p className="font-semibold">LUMIERE (Restaurant)</p>
+          <p>owner@lumiere.com (Owner) · staff@lumiere.com (Staff)</p>
+        </div>
+        <div>
+          <p className="font-semibold">PULSEFIT (Gym)</p>
+          <p>owner@pulsefit.com (Owner)</p>
+        </div>
+        <div>
+          <p className="font-semibold">NOVAGOODS (Retail)</p>
+          <p>owner@novagoods.com (Owner)</p>
+        </div>
+      </div>
+
+      <div className="text-center">
+        <Link to="/signup" className="text-sm text-primary font-medium hover:underline">
+          New here? Create your site
+        </Link>
       </div>
 
       <div className="text-center">

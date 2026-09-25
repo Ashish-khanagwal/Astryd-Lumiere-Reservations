@@ -1,4 +1,4 @@
-import { createContext, useContext, useEffect, type ReactNode } from "react";
+import { createContext, useContext, useMemo, type ReactNode } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useRestaurant } from "./RestaurantContext";
 import { getHomepage } from "../services/homepage";
@@ -10,6 +10,7 @@ import { getMedia } from "../services/media";
 import { getPageConfigs } from "../services/pageConfig";
 import { getSiteBrandingBadge } from "../services/sites";
 import { getMembershipPlans } from "../services/membership";
+import { getPageContent } from "../services/pageContent";
 import {
   setMenuCatalog,
   type AddonCategory,
@@ -25,8 +26,10 @@ import type {
   Addon,
   Offer,
   PageConfig,
+  PageContentMap,
   PlatformModule,
   TemplateVariant,
+  Vertical,
 } from "../types";
 
 interface PublicDataValue {
@@ -49,6 +52,10 @@ interface PublicDataValue {
   membershipPlans: MembershipPlan[];
   /** Plan §5.2 - Super Admin only control; the public footer just reads this flag. */
   brandingBadgeEnabled: boolean;
+  /** Plan §2/§6 - defaults-only, but the public site's own chrome (landing sections, footer) uses it to style itself distinctly per business type. */
+  vertical: Vertical;
+  /** Owner-edited page text/images (draft when previewing); resolve against code defaults via `usePageContent`. */
+  pageContent: PageContentMap;
 }
 
 const PublicDataContext = createContext<PublicDataValue | undefined>(undefined);
@@ -148,12 +155,20 @@ export function PublicDataProvider({ children }: { children: ReactNode }) {
     queryKey: ["public-membership-plans", restaurantId],
     queryFn: () => getMembershipPlans(restaurantId),
   });
+  const pageContentQuery = useQuery({
+    queryKey: ["public-page-content", restaurantId, version],
+    queryFn: () => getPageContent(restaurantId, version),
+  });
 
   const items = menuQuery.data?.items ?? [];
   const categories = menuQuery.data?.categories ?? [];
   const addons = addonsQuery.data ?? [];
 
-  useEffect(() => {
+  // The catalog/items views read the module-level ALL_MENU_ITEMS (seeded with Lumière's dishes as a
+  // fallback) during render, so it must be swapped in *before* children render - an effect would run
+  // after the first paint and nothing would re-render, leaving a deep link to #/items or #/menu showing
+  // another Site's items.
+  useMemo(() => {
     if (menuQuery.data && addonsQuery.data) {
       setMenuCatalog(
         adaptItems(menuQuery.data.items, menuQuery.data.categories),
@@ -162,7 +177,14 @@ export function PublicDataProvider({ children }: { children: ReactNode }) {
     }
   }, [menuQuery.data, addonsQuery.data]);
 
-  const isLoading = homepageQuery.isLoading || brandQuery.isLoading;
+  // Page content, vertical and the catalog gate the first paint so a Gym/Retail site never flashes the Restaurant defaults.
+  const isLoading =
+    homepageQuery.isLoading ||
+    brandQuery.isLoading ||
+    pageContentQuery.isLoading ||
+    brandingBadgeQuery.isLoading ||
+    menuQuery.isLoading ||
+    addonsQuery.isLoading;
 
   const mediaMap = new Map(
     (mediaQuery.data?.items ?? []).map((m) => [m.id, m]),
@@ -171,8 +193,16 @@ export function PublicDataProvider({ children }: { children: ReactNode }) {
   const pageConfigs = pageConfigsQuery.data ?? [];
   const getNavLabel = (module: PlatformModule, fallback: string) =>
     pageConfigs.find((p) => p.module === module)?.navLabel || fallback;
-  const getTemplateVariant = (module: PlatformModule): TemplateVariant =>
-    pageConfigs.find((p) => p.module === module)?.templateVariant ?? "a";
+  // Preview-only `?layout=<module>:<variant>` lets the admin layout picker show a layout before it's saved.
+  const [layoutOverrideModule, layoutOverrideVariant] = isPreview
+    ? (new URLSearchParams(window.location.search).get("layout") ?? "").split(":")
+    : [];
+  const getTemplateVariant = (module: PlatformModule): TemplateVariant => {
+    if (module === layoutOverrideModule && ["a", "b", "c"].includes(layoutOverrideVariant)) {
+      return layoutOverrideVariant as TemplateVariant;
+    }
+    return pageConfigs.find((p) => p.module === module)?.templateVariant ?? "a";
+  };
   const isModuleEnabled = (module: PlatformModule) =>
     pageConfigs.find((p) => p.module === module)?.enabled ?? true;
 
@@ -191,6 +221,8 @@ export function PublicDataProvider({ children }: { children: ReactNode }) {
     isModuleEnabled,
     membershipPlans: (membershipPlansQuery.data ?? []).filter((p) => p.isActive),
     brandingBadgeEnabled: brandingBadgeQuery.data?.enabled ?? true,
+    vertical: brandingBadgeQuery.data?.vertical ?? 'restaurant',
+    pageContent: pageContentQuery.data ?? {},
   };
 
   return (

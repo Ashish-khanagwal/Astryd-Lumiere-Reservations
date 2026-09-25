@@ -1,4 +1,5 @@
 import type { FeaturedMenuSectionContent } from '../types';
+import { usePageContent } from '../context/usePageContent';
 
 export interface FeaturedMenuDisplayItem {
   id: string;
@@ -16,6 +17,7 @@ interface FeaturedMenuSectionProps {
 }
 
 export const FeaturedMenuSection = ({ content, items, onViewMenu }: FeaturedMenuSectionProps) => {
+  const c = usePageContent('landing');
   if (items.length === 0) return null;
 
   return (
@@ -35,7 +37,7 @@ export const FeaturedMenuSection = ({ content, items, onViewMenu }: FeaturedMenu
             onClick={onViewMenu}
             className="self-start md:self-auto font-sans text-sm text-primary font-bold flex items-center group hover:underline tracking-wide uppercase"
           >
-            <span>View Full Menu</span>
+            <span>{c.text('featuredViewAll')}</span>
             <span className="material-symbols-outlined ml-2 transition-transform group-hover:translate-x-1">arrow_forward</span>
           </button>
         </div>
@@ -62,7 +64,7 @@ export const FeaturedMenuSection = ({ content, items, onViewMenu }: FeaturedMenu
                 <div className="flex justify-between items-start gap-2 mb-1.5">
                   <h3 className="font-serif text-lg font-bold text-on-surface leading-tight">{item.name}</h3>
                   <span className="font-serif text-lg text-primary font-bold whitespace-nowrap">
-                    ${item.price.toFixed(2)}
+                    {c.text('featuredPrice', { price: item.price.toFixed(2) })}
                   </span>
                 </div>
                 <p className="text-secondary font-sans text-sm line-clamp-2 leading-relaxed">{item.description}</p>

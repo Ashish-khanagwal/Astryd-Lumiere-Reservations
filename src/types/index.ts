@@ -12,3 +12,4 @@ export * from './payments';
 export * from './pageConfig';
 export * from './membership';
 export * from './domain';
+export * from './pageContent';

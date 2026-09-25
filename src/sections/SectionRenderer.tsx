@@ -7,6 +7,7 @@ import { resolveGalleryImages } from './galleryUtils';
 import { OffersSection } from './OffersSection';
 import { TestimonialsSection } from './TestimonialsSection';
 import { LocationSection } from './LocationSection';
+import { usePageContent } from '../context/usePageContent';
 
 interface SectionRendererProps {
   sections: HomepageSection[];
@@ -20,13 +21,6 @@ interface SectionRendererProps {
   onViewMenu: () => void;
 }
 
-const OFFER_BADGE: Record<Offer['type'], (o: Offer) => string> = {
-  percentage: (o) => `${o.discountValue}% OFF`,
-  fixed: (o) => `$${o.discountValue} OFF`,
-  special_price: (o) => `Now $${o.specialPrice}`,
-  bogo: () => 'Buy 1 Get 1',
-};
-
 export const SectionRenderer = ({
   sections,
   brand,
@@ -38,11 +32,19 @@ export const SectionRenderer = ({
   onGalleryImageClick,
   onViewMenu,
 }: SectionRendererProps) => {
+  const c = usePageContent('landing');
+  const offerBadge: Record<Offer['type'], (o: Offer) => string> = {
+    percentage: (o) => c.text('offerBadgePercent', { value: o.discountValue }),
+    fixed: (o) => c.text('offerBadgeFixed', { value: o.discountValue }),
+    special_price: (o) => c.text('offerBadgeSpecial', { price: o.specialPrice }),
+    bogo: () => c.text('offerBadgeBogo'),
+  };
   const visibleSections = [...sections].filter((s) => s.visible).sort((a, b) => a.order - b.order);
 
   return (
     <>
       {visibleSections.map((section) => {
+        const element = (() => {
         try {
           switch (section.type) {
           case 'hero':
@@ -119,8 +121,8 @@ export const SectionRenderer = ({
                 offers={selectedOffers.map((o) => ({
                   id: o.id,
                   name: o.name,
-                  description: `Valid through ${new Date(o.endDate).toLocaleDateString()}`,
-                  badgeLabel: OFFER_BADGE[o.type](o),
+                  description: c.text('offerValidThrough', { date: new Date(o.endDate).toLocaleDateString() }),
+                  badgeLabel: offerBadge[o.type](o),
                   imageUrl: o.imageMediaId ? mediaMap.get(o.imageMediaId)?.fileUrl : undefined,
                   cta: o.cta,
                 }))}
@@ -155,6 +157,13 @@ export const SectionRenderer = ({
           // A malformed CMS section should not prevent the remaining sections from rendering.
           return null;
         }
+        })();
+        // `data-section` lets the Site Editor's preview scroll to, and select, a section.
+        return element ? (
+          <div key={section.id} data-section={section.type}>
+            {element}
+          </div>
+        ) : null;
       })}
     </>
   );

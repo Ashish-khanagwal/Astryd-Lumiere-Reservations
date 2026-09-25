@@ -1,5 +1,5 @@
 import { http } from './http';
-import type { Restaurant } from '../types';
+import type { Restaurant, Vertical } from '../types';
 
 export interface SuperAdminSiteRow extends Restaurant {
   organizationName: string;
@@ -16,6 +16,6 @@ export const getAllSitesForSuperAdmin = () => http.get<SuperAdminSiteRow[]>('/su
 export const updateSiteBrandingBadge = (siteId: string, enabled: boolean) =>
   http.patch<Restaurant>(`/superadmin/sites/${siteId}/branding-badge`, { enabled });
 
-/** Public, read-only - lets the storefront footer decide whether to show the badge. */
+/** Public, read-only - lets the storefront footer decide whether to show the badge; also carries `vertical` so the public site can style itself per Multi-Vertical Platform Plan §2 without a second round trip. */
 export const getSiteBrandingBadge = (siteId: string) =>
-  http.get<{ enabled: boolean }>(`/public/sites/${siteId}/branding-badge`);
+  http.get<{ enabled: boolean; vertical: Vertical }>(`/public/sites/${siteId}/branding-badge`);
