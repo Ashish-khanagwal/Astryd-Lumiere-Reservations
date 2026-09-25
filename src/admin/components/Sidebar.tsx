@@ -2,9 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { NavLink, useLocation } from 'react-router-dom';
 import {
   LayoutDashboard,
-  Home,
-  PanelTop,
-  Palette,
+  PanelsTopLeft,
   Image,
   LayoutGrid,
   UtensilsCrossed,
@@ -25,7 +23,6 @@ import {
   CalendarDays,
   ChevronsUpDown,
   Check,
-  LayoutList,
   Building2,
   Crown,
   Globe,
@@ -60,7 +57,7 @@ function SiteSwitcher() {
         <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-primary text-on-primary shadow-md shadow-primary/20">
           <Sparkles className="h-4 w-4" />
         </div>
-        <span className="text-lg font-bold text-on-surface truncate tracking-tight">Lumière</span>
+        <span className="text-lg font-bold text-on-surface truncate tracking-tight">{sites[0]?.name ?? ''}</span>
       </div>
     );
   }
@@ -123,6 +120,7 @@ const COLLAPSED_STORAGE_KEY = 'admin_sidebar_collapsed';
 export function Sidebar() {
   const perms = usePermissions();
   const location = useLocation();
+  const { restaurantId } = useRestaurant();
   const { mobileOpen, closeMobile, searchQuery, setSearchQuery } = useSidebar();
   const { flushDraft } = useDraftSave();
   const [isPreviewOpen, setIsPreviewOpen] = useState(false);
@@ -160,9 +158,8 @@ export function Sidebar() {
         title: 'Website',
         visible: perms.canManageWebsite,
         items: [
-          { to: '/admin/website/homepage', label: 'Homepage', icon: Home },
-          { to: '/admin/website/header', label: 'Header', icon: PanelTop },
-          { to: '/admin/website/branding', label: 'Branding', icon: Palette },
+          // Every page, its sections, text, layout and settings, plus header/footer and theme, live in the Site Editor.
+          { to: '/admin/website/pages', label: 'Site Editor', icon: PanelsTopLeft },
           { to: '/admin/website/media', label: 'Media Library', icon: Image },
         ],
       },
@@ -194,7 +191,6 @@ export function Sidebar() {
         visible: true,
         items: [
           { to: '/admin/settings/account', label: 'Account', icon: User },
-          { to: '/admin/settings/pages', label: 'Pages', icon: LayoutList },
           ...(perms.canManageSettings ? [{ to: '/admin/settings/domains', label: 'Domains', icon: Globe }] : []),
           ...(perms.canManageUsers ? [{ to: '/admin/settings/users', label: 'Users', icon: Users }] : []),
         ],
@@ -392,7 +388,7 @@ export function Sidebar() {
         </div>
       </aside>
 
-      <PreviewModal isOpen={isPreviewOpen} onClose={() => setIsPreviewOpen(false)} url={draftPreviewUrl()} />
+      <PreviewModal isOpen={isPreviewOpen} onClose={() => setIsPreviewOpen(false)} url={draftPreviewUrl(restaurantId)} />
     </>
   );
 }

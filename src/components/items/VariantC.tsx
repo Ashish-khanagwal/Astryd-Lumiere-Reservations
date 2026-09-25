@@ -3,6 +3,7 @@ import { Header } from '../Header';
 import { Footer } from '../Footer';
 import { ALL_MENU_ITEMS } from '../../data/menuItems';
 import type { ItemsViewProps } from './VariantA';
+import { usePageContent } from '../../context/usePageContent';
 
 /** Variant C - "Product Lookbook" (Multi-Vertical Platform Plan §8.5); minimal-chrome masonry grid for browsing the range - view only, no cart, no stock/variant chips. Suits Retail. */
 export const ItemsVariantC = ({
@@ -13,6 +14,7 @@ export const ItemsVariantC = ({
   cartUniqueCount = 0,
   onOpenCart,
 }: ItemsViewProps) => {
+  const c = usePageContent('items');
   const [categoryFilter, setCategoryFilter] = useState('all');
   const categories = useMemo(() => Array.from(new Set(ALL_MENU_ITEMS.map((i) => i.category))), []);
   const items = useMemo(
@@ -35,8 +37,8 @@ export const ItemsVariantC = ({
       <main className="flex-grow pt-28 pb-24 max-w-container-max mx-auto w-full px-margin-mobile md:px-margin-desktop">
         <div className="mb-10 flex flex-col md:flex-row md:items-end justify-between gap-4">
           <div>
-            <span className="text-primary uppercase tracking-[0.3em] font-bold text-xs">Lookbook</span>
-            <h1 className="font-serif text-4xl md:text-5xl font-semibold text-on-surface mt-2">The Collection</h1>
+            <span className="text-primary uppercase tracking-[0.3em] font-bold text-xs">{c.text('c_eyebrow')}</span>
+            <h1 className="font-serif text-4xl md:text-5xl font-semibold text-on-surface mt-2">{c.text('c_title')}</h1>
           </div>
           <div className="flex gap-2 overflow-x-auto category-scroll">
             <button
@@ -45,7 +47,7 @@ export const ItemsVariantC = ({
                 categoryFilter === 'all' ? 'bg-primary text-on-primary' : 'bg-surface border border-outline-variant/30 text-secondary hover:text-primary'
               }`}
             >
-              All
+              {c.text('c_allFilter')}
             </button>
             {categories.map((c) => (
               <button

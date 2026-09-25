@@ -40,9 +40,9 @@ export const siteHandlers = [
     return HttpResponse.json(site);
   }),
 
-  /** Public, read-only - lets the storefront footer decide whether to render the badge without exposing anything else about the Site. */
+  /** Public, read-only - lets the storefront footer decide whether to render the badge, and lets the whole public site style itself per Vertical (Plan §2), without exposing anything else about the Site. */
   http.get('*/api/v1/public/sites/:id/branding-badge', ({ params }) => {
     const site = db.data.restaurants.find((r) => r.id === params.id);
-    return HttpResponse.json({ enabled: site?.brandingBadgeEnabled ?? true });
+    return HttpResponse.json({ enabled: site?.brandingBadgeEnabled ?? true, vertical: site?.vertical ?? 'restaurant' });
   }),
 ];

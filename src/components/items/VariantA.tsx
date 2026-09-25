@@ -2,6 +2,10 @@ import { useMemo, useState } from 'react';
 import { Header } from '../Header';
 import { Footer } from '../Footer';
 import { ALL_MENU_ITEMS, type MenuItem } from '../../data/menuItems';
+import { usePageContent } from '../../context/usePageContent';
+
+/** Internal sentinel for the "show everything" filter - its visible label comes from Page Content. */
+const ALL = '__all__';
 
 export interface ItemsViewProps {
   onNavigateLanding: () => void;
@@ -21,12 +25,13 @@ export const ItemsVariantA = ({
   cartUniqueCount = 0,
   onOpenCart,
 }: ItemsViewProps) => {
-  const [selectedFilter, setSelectedFilter] = useState('All');
+  const c = usePageContent('items');
+  const [selectedFilter, setSelectedFilter] = useState(ALL);
 
-  const categories = useMemo(() => ['All', ...Array.from(new Set(ALL_MENU_ITEMS.map((item) => item.category)))], []);
+  const categories = useMemo(() => [ALL, ...Array.from(new Set(ALL_MENU_ITEMS.map((item) => item.category)))], []);
   const groups = useMemo(() => {
     const byCategory = new Map<string, MenuItem[]>();
-    ALL_MENU_ITEMS.filter((item) => selectedFilter === 'All' || item.category === selectedFilter).forEach((item) => {
+    ALL_MENU_ITEMS.filter((item) => selectedFilter === ALL || item.category === selectedFilter).forEach((item) => {
       if (!byCategory.has(item.category)) byCategory.set(item.category, []);
       byCategory.get(item.category)!.push(item);
     });
@@ -47,14 +52,14 @@ export const ItemsVariantA = ({
 
       <main className="flex-grow pt-28 pb-28">
         <div className="text-center max-w-2xl mx-auto px-margin-mobile mb-14">
-          <span className="font-label-sm text-primary uppercase tracking-[0.3em] font-bold">A Curated Selection</span>
-          <h1 className="font-serif text-4xl md:text-6xl font-semibold text-on-surface mt-3">The Menu</h1>
+          <span className="font-label-sm text-primary uppercase tracking-[0.3em] font-bold">{c.text('a_eyebrow')}</span>
+          <h1 className="font-serif text-4xl md:text-6xl font-semibold text-on-surface mt-3">{c.text('a_title')}</h1>
           <p className="text-secondary mt-4 font-sans">
-            Take a look through what we offer.{' '}
+            {c.text('a_introBefore')}{' '}
             <button onClick={onNavigateMenu} className="text-primary font-semibold hover:underline">
-              Order online
+              {c.text('a_introLink')}
             </button>{' '}
-            whenever you're ready.
+            {c.text('a_introAfter')}
           </p>
         </div>
 
@@ -69,7 +74,7 @@ export const ItemsVariantA = ({
                   : 'bg-surface border border-outline-variant/30 text-secondary hover:border-primary/50 hover:text-primary'
               }`}
             >
-              {cat}
+              {cat === ALL ? c.text('a_allFilter') : cat}
             </button>
           ))}
         </div>

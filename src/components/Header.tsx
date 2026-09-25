@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { usePublicData } from '../context/PublicDataContext';
+import { usePageContent } from '../context/usePageContent';
 
 interface HeaderProps {
   currentPage: 'landing' | 'items' | 'menu' | 'reservations' | 'membership';
@@ -27,6 +28,8 @@ export const Header: React.FC<HeaderProps> = ({
 }) => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const { brand, mediaMap, getNavLabel, isModuleEnabled } = usePublicData();
+  const c = usePageContent('global');
+  const homeLabel = c.text('navHomeLabel');
   const brandName = brand?.restaurantName ?? 'Lumière';
   const itemsLabel = getNavLabel('items', 'Menu');
   const catalogLabel = getNavLabel('catalog', 'Menu');
@@ -52,7 +55,7 @@ export const Header: React.FC<HeaderProps> = ({
       id="header-cart-btn"
       onClick={onOpenCart}
       className="relative w-10 h-10 flex items-center justify-center text-on-surface rounded-full hover:bg-surface-container-low transition-colors"
-      aria-label={`Open cart${cartUniqueCount > 0 ? `, ${cartUniqueCount} items` : ''}`}
+      aria-label={cartUniqueCount > 0 ? c.text('cartAriaLabelWithCount', { count: cartUniqueCount }) : c.text('cartAriaLabel')}
     >
       <span className="material-symbols-outlined text-[22px]">shopping_cart</span>
       {cartUniqueCount > 0 && (
@@ -100,7 +103,7 @@ export const Header: React.FC<HeaderProps> = ({
                   : navLinkInactiveClass
               }`}
             >
-              Discover
+              {homeLabel}
             </button>
 
             {itemsEnabled && (
@@ -160,7 +163,7 @@ export const Header: React.FC<HeaderProps> = ({
           <button
             onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
             className="w-10 h-10 flex items-center justify-center text-on-surface rounded-full hover:bg-surface-container-low transition-colors"
-            aria-label="Toggle navigation menu"
+            aria-label={c.text('mobileMenuAriaLabel')}
           >
             <span className="material-symbols-outlined">{isMobileMenuOpen ? 'close' : 'menu'}</span>
           </button>
@@ -181,7 +184,7 @@ export const Header: React.FC<HeaderProps> = ({
               currentPage === 'landing' ? 'text-primary font-bold' : navLinkInactiveClass
             }`}
           >
-            Discover
+            {homeLabel}
           </button>
           {itemsEnabled && (
             <button

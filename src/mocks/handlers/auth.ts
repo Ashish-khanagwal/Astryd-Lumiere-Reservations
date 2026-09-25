@@ -83,4 +83,4 @@ export const authHandlers = [
   }),
 ];
 
-export { userFromAuthHeader };
+export { userFromAuthHeader, issueToken };

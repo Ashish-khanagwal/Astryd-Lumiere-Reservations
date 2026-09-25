@@ -13,6 +13,7 @@ import {
   type MenuItem,
 } from '../../data/menuItems';
 import type { CatalogViewProps } from './VariantA';
+import { usePageContent } from '../../context/usePageContent';
 
 /** Variant C - "Product List" (Multi-Vertical Platform Plan §8.2); suits Retail - a dense, filterable list instead of Variant A's photo-forward cards. */
 export const CatalogVariantC = ({
@@ -26,6 +27,7 @@ export const CatalogVariantC = ({
   cartUniqueCount = 0,
   onOpenCart,
 }: CatalogViewProps) => {
+  const c = usePageContent('catalog');
   const [searchQuery, setSearchQuery] = useState('');
   const [categoryFilter, setCategoryFilter] = useState('all');
   const [customizeItem, setCustomizeItem] = useState<MenuItem | null>(null);
@@ -72,8 +74,8 @@ export const CatalogVariantC = ({
       <main className="flex-grow pt-28 pb-24 px-margin-mobile md:px-margin-desktop max-w-container-max mx-auto w-full">
         <div className="mb-6 flex flex-col md:flex-row md:items-end justify-between gap-4">
           <div>
-            <span className="text-primary uppercase tracking-[0.2em] font-bold text-xs">Shop</span>
-            <h1 className="font-serif text-3xl md:text-4xl font-semibold text-on-surface mt-1">Products</h1>
+            <span className="text-primary uppercase tracking-[0.2em] font-bold text-xs">{c.text('c_eyebrow')}</span>
+            <h1 className="font-serif text-3xl md:text-4xl font-semibold text-on-surface mt-1">{c.text('c_title')}</h1>
           </div>
           <div className="flex gap-3 w-full md:w-auto">
             <div className="relative flex-1 md:w-64">
@@ -81,7 +83,7 @@ export const CatalogVariantC = ({
               <input
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder="Search products..."
+                placeholder={c.text('c_searchPlaceholder')}
                 className="w-full pl-10 pr-3 py-2.5 bg-surface border border-outline-variant/30 rounded-xl text-sm outline-none focus:border-primary transition-colors"
               />
             </div>
@@ -90,7 +92,7 @@ export const CatalogVariantC = ({
               onChange={(e) => setCategoryFilter(e.target.value)}
               className="px-3 py-2.5 bg-surface border border-outline-variant/30 rounded-xl text-sm outline-none focus:border-primary transition-colors"
             >
-              <option value="all">All categories</option>
+              <option value="all">{c.text('c_allCategories')}</option>
               {categories.map((c) => (
                 <option key={c} value={c}>
                   {c}
@@ -103,16 +105,16 @@ export const CatalogVariantC = ({
         <div className="bg-surface rounded-2xl border border-outline-variant/20 overflow-hidden shadow-sm">
           <div className="hidden sm:grid grid-cols-[auto_1fr_auto_auto_auto] gap-4 px-5 py-3 bg-surface-container-low border-b border-outline-variant/10 text-xs font-bold uppercase tracking-wide text-secondary">
             <span></span>
-            <span>Product</span>
-            <span>Category</span>
-            <span className="text-right">Price</span>
-            <span className="text-right">Qty</span>
+            <span>{c.text('c_colProduct')}</span>
+            <span>{c.text('c_colCategory')}</span>
+            <span className="text-right">{c.text('c_colPrice')}</span>
+            <span className="text-right">{c.text('c_colQty')}</span>
           </div>
           <div className="divide-y divide-outline-variant/10">
             {filteredItems.length === 0 ? (
               <div className="text-center py-16">
                 <span className="material-symbols-outlined text-4xl text-secondary mb-2">inventory_2</span>
-                <p className="text-secondary text-sm">No products match your search.</p>
+                <p className="text-secondary text-sm">{c.text('c_emptyText')}</p>
               </div>
             ) : (
               filteredItems.map((item) => {
@@ -152,7 +154,7 @@ export const CatalogVariantC = ({
                           onClick={() => setCustomizeItem(item)}
                           className="px-4 py-1.5 bg-on-surface text-on-primary rounded-lg font-bold hover:bg-primary transition-all text-[11px] tracking-wider uppercase"
                         >
-                          Add
+                          {c.text('c_addButton')}
                         </button>
                       )}
                     </div>
@@ -168,10 +170,10 @@ export const CatalogVariantC = ({
         <div className="fixed bottom-6 right-6 left-6 md:left-auto z-50 animate-slideUp">
           <div className="bg-inverse-surface text-inverse-on-surface p-4 rounded-2xl shadow-2xl flex items-center gap-6 md:min-w-[360px] border border-white/10">
             <div className="flex flex-col">
-              <span className="text-[11px] uppercase opacity-70 tracking-widest font-bold">Cart</span>
+              <span className="text-[11px] uppercase opacity-70 tracking-widest font-bold">{c.text('c_cartTitle')}</span>
               <div className="flex items-baseline gap-2">
                 <span className="text-xl font-bold">
-                  {totalCartCount} {totalCartCount === 1 ? 'Item' : 'Items'}
+                  {totalCartCount} {totalCartCount === 1 ? c.text('itemSingular') : c.text('itemPlural')}
                 </span>
                 <span className="opacity-50">•</span>
                 <span className="font-serif text-2xl font-bold text-primary-fixed-dim">${totalCartPrice.toFixed(2)}</span>
@@ -181,7 +183,7 @@ export const CatalogVariantC = ({
               onClick={onCheckout}
               className="ml-auto bg-primary hover:bg-primary-container text-on-primary px-6 py-3 rounded-xl font-bold flex items-center gap-2 transition-all active:scale-95 shadow-lg text-sm tracking-wide"
             >
-              <span>Checkout</span>
+              <span>{c.text('checkoutButton')}</span>
               <span className="material-symbols-outlined text-lg">arrow_forward</span>
             </button>
           </div>

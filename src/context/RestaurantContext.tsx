@@ -26,13 +26,21 @@ const RestaurantContext = createContext<RestaurantContextValue>({
   setActiveSiteId: () => {},
 });
 
-/** Public site: always resolves to the single seeded restaurant (no real domain routing yet - Multi-Vertical Platform Plan §9.2 is what eventually replaces this with Host-header resolution). */
+/**
+ * Public site: resolves to the Site named by `?site=` (set by the admin's Preview flow, which now
+ * always passes the Site being edited - see `draftPreviewUrl`), falling back to the platform default
+ * when absent so a bare `?preview=true` link keeps working. No real domain routing yet - Multi-Vertical
+ * Platform Plan §9.2 is what eventually replaces this with Host-header resolution.
+ */
 export function PublicRestaurantProvider({ children }: { children: ReactNode }) {
+  const siteIdParam = new URLSearchParams(window.location.search).get('site');
+  const restaurantId = siteIdParam || DEFAULT_RESTAURANT_ID;
+
   return (
     <RestaurantContext.Provider
       value={{
         organizationId: DEFAULT_ORGANIZATION_ID,
-        restaurantId: DEFAULT_RESTAURANT_ID,
+        restaurantId,
         restaurantSlug: DEFAULT_RESTAURANT_SLUG,
         sites: [],
         setActiveSiteId: () => {},

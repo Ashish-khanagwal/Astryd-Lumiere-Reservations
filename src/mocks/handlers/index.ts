@@ -13,6 +13,8 @@ import { siteHandlers } from './sites';
 import { pageConfigHandlers } from './pageConfigs';
 import { membershipHandlers } from './membership';
 import { domainHandlers } from './domains';
+import { signupHandlers } from './signup';
+import { pageContentHandlers } from './pageContent';
 
 export const handlers = [
   ...authHandlers,
@@ -30,4 +32,6 @@ export const handlers = [
   ...pageConfigHandlers,
   ...membershipHandlers,
   ...domainHandlers,
+  ...signupHandlers,
+  ...pageContentHandlers,
 ];

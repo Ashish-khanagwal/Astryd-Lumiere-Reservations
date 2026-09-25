@@ -4,17 +4,17 @@ import { AdminLayout } from './layouts/AdminLayout';
 import { RequireAuth } from './guards/RequireAuth';
 import { RequireRole } from './guards/RequireRole';
 import { LoginPage } from './pages/auth/LoginPage';
+import { SignupPage } from './pages/auth/SignupPage';
 import { SuperAdminLoginPage } from './pages/auth/SuperAdminLoginPage';
 import { ForgotPasswordPage } from './pages/auth/ForgotPasswordPage';
 import { ResetPasswordPage } from './pages/auth/ResetPasswordPage';
 import { DashboardPage } from './pages/DashboardPage';
 import { OrdersPage } from './pages/orders/OrdersPage';
 import { ReservationsPage } from './pages/reservations/ReservationsPage';
-import { HomepageSectionsPage } from './pages/website/HomepageSectionsPage';
-import { SectionEditorPage } from './pages/website/SectionEditorPage';
-import { HeaderSettingsPage } from './pages/website/HeaderSettingsPage';
-import { BrandSettingsPage } from './pages/website/BrandSettingsPage';
 import { MediaLibraryPage } from './pages/website/MediaLibraryPage';
+import { PagesHubPage } from './pages/website/editor/PagesHubPage';
+import { SiteEditorPage } from './pages/website/editor/SiteEditorPage';
+import { LegacyContentRedirect, LegacySectionRedirect } from './pages/website/editor/legacyRedirects';
 import { CategoriesPage } from './pages/menu/CategoriesPage';
 import { MenuItemsPage } from './pages/menu/MenuItemsPage';
 import { MenuItemFormPage } from './pages/menu/MenuItemFormPage';
@@ -26,7 +26,6 @@ import { HoursPage } from './pages/restaurant/HoursPage';
 import { SocialMediaPage } from './pages/restaurant/SocialMediaPage';
 import { AccountPage } from './pages/settings/AccountPage';
 import { UsersPage } from './pages/settings/UsersPage';
-import { PagesPage } from './pages/settings/PagesPage';
 import { DomainsPage } from './pages/settings/DomainsPage';
 import { SuperAdminSitesPage } from './pages/superadmin/SitesPage';
 import { MembershipPage } from './pages/membership/MembershipPage';
@@ -44,6 +43,7 @@ export function AdminRoutes() {
       </Route>
 
       <Route path="/super-admin" element={<SuperAdminLoginPage />} />
+      <Route path="/signup" element={<SignupPage />} />
 
       <Route path="/admin" element={<RequireAuth />}>
         <Route element={<AdminLayout />}>
@@ -52,11 +52,17 @@ export function AdminRoutes() {
           <Route path="reservations" element={<ReservationsPage />} />
           <Route path="membership" element={<MembershipPage />} />
 
-          <Route path="website/homepage" element={<HomepageSectionsPage />} />
-          <Route path="website/homepage/:type" element={<SectionEditorPage />} />
-          <Route path="website/header" element={<HeaderSettingsPage />} />
-          <Route path="website/branding" element={<BrandSettingsPage />} />
+          <Route path="website" element={<Navigate to="/admin/website/pages" replace />} />
+          <Route path="website/pages" element={<PagesHubPage />} />
+          <Route path="website/pages/:page" element={<SiteEditorPage />} />
           <Route path="website/media" element={<MediaLibraryPage />} />
+          {/* Old addresses from before the Site Editor - kept so bookmarks and links still land in the right place. */}
+          <Route path="website/homepage" element={<Navigate to="/admin/website/pages/home" replace />} />
+          <Route path="website/homepage/:type" element={<LegacySectionRedirect />} />
+          <Route path="website/header" element={<Navigate to="/admin/website/pages/header-footer" replace />} />
+          <Route path="website/branding" element={<Navigate to="/admin/website/pages/theme" replace />} />
+          <Route path="website/content" element={<Navigate to="/admin/website/pages/home?tab=content" replace />} />
+          <Route path="website/content/:page" element={<LegacyContentRedirect />} />
 
           <Route path="menu/categories" element={<CategoriesPage />} />
           <Route path="menu/items" element={<MenuItemsPage />} />
@@ -70,7 +76,7 @@ export function AdminRoutes() {
           <Route path="restaurant/social" element={<SocialMediaPage />} />
 
           <Route path="settings/account" element={<AccountPage />} />
-          <Route path="settings/pages" element={<PagesPage />} />
+          <Route path="settings/pages" element={<Navigate to="/admin/website/pages" replace />} />
           <Route element={<RequireRole allow={['owner', 'super_admin']} />}>
             <Route path="settings/users" element={<UsersPage />} />
             <Route path="settings/domains" element={<DomainsPage />} />

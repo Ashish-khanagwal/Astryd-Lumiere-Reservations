@@ -15,12 +15,19 @@ export function ToggleField({ label, checked, onChange, description, disabled }:
       </div>
       <button
         type="button"
+        role="switch"
+        aria-checked={checked}
+        aria-label={label || undefined}
         disabled={disabled}
         onClick={() => onChange(!checked)}
-        className={`relative w-11 h-6 rounded-full transition-colors shrink-0 ${checked ? 'bg-primary' : 'bg-outline-variant/50'} disabled:cursor-not-allowed`}
+        // Solid palette colours on purpose: opacity modifiers on the theme's CSS-variable colours (e.g. `bg-outline-variant/50`)
+        // generate no CSS under the Tailwind CDN build, which left the "off" track fully transparent.
+        className={`relative w-11 h-6 rounded-full transition-colors shrink-0 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 disabled:cursor-not-allowed ${
+          checked ? 'bg-primary' : 'bg-slate-300 hover:bg-slate-400'
+        }`}
       >
         <span
-          className={`absolute top-0.5 left-0.5 w-5 h-5 rounded-full bg-white shadow transition-transform ${
+          className={`absolute top-0.5 left-0.5 w-5 h-5 rounded-full bg-white shadow-md ring-1 ring-black/5 transition-transform ${
             checked ? 'translate-x-5' : ''
           }`}
         />

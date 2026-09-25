@@ -17,10 +17,11 @@ import type {
   ReservationAvailabilitySettings,
   Restaurant,
   User,
+  PageContentMap,
   WebsiteSettings,
 } from '../types';
 
-interface Versioned<T> {
+export interface Versioned<T> {
   draft: T;
   published: T;
 }
@@ -45,9 +46,10 @@ export interface MockDbShape {
   members: Member[];
   memberCheckIns: MemberCheckIn[];
   domainMappings: DomainMapping[];
+  pageContent: Record<string, Versioned<PageContentMap>>;
 }
 
-const STORAGE_KEY = 'lumiere-cms-mock-db-v6';
+const STORAGE_KEY = 'lumiere-cms-mock-db-v9';
 
 function emptyDb(): MockDbShape {
   return {
@@ -70,6 +72,7 @@ function emptyDb(): MockDbShape {
     members: [],
     memberCheckIns: [],
     domainMappings: [],
+    pageContent: {},
   };
 }
 
@@ -86,6 +89,15 @@ function load(): MockDbShape {
 
 class MockDb {
   data: MockDbShape = load();
+
+  constructor() {
+    // Each document (admin tab, the Site Editor's preview iframe, other tabs) runs its own copy of this
+    // mock DB. `storage` fires in the *other* documents whenever one of them saves, so re-read to stay in
+    // sync - otherwise the live preview would keep serving the content it loaded with.
+    window.addEventListener('storage', (event) => {
+      if (event.key === STORAGE_KEY) this.data = load();
+    });
+  }
 
   save() {
     try {

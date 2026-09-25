@@ -1,4 +1,4 @@
-import type { InputHTMLAttributes, TextareaHTMLAttributes, SelectHTMLAttributes, ReactNode } from 'react';
+import { useId, type InputHTMLAttributes, type TextareaHTMLAttributes, type SelectHTMLAttributes, type ReactNode } from 'react';
 import type { LucideIcon } from 'lucide-react';
 
 interface FieldWrapperProps {
@@ -9,11 +9,11 @@ interface FieldWrapperProps {
   className?: string;
 }
 
-function FieldWrapper({ label, hint, required, children, className = '' }: FieldWrapperProps) {
+function FieldWrapper({ label, hint, required, children, className = '', htmlFor }: FieldWrapperProps & { htmlFor?: string }) {
   return (
     <div className={className}>
       {label && (
-        <label className="block text-sm font-semibold text-on-surface mb-1.5">
+        <label htmlFor={htmlFor} className="block text-sm font-semibold text-on-surface mb-1.5">
           {label}
           {required && <span className="text-error ml-0.5">*</span>}
         </label>
@@ -33,11 +33,13 @@ interface TextFieldProps extends InputHTMLAttributes<HTMLInputElement>, Omit<Fie
 }
 
 export function TextField({ label, hint, required, icon: Icon, wrapperClassName, className = '', ...rest }: TextFieldProps) {
+  const autoId = useId();
+  const id = rest.id ?? autoId;
   return (
-    <FieldWrapper label={label} hint={hint} required={required} className={wrapperClassName}>
+    <FieldWrapper label={label} hint={hint} required={required} className={wrapperClassName} htmlFor={id}>
       <div className="relative">
         {Icon && <Icon className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-secondary" />}
-        <input className={`${inputBase} ${Icon ? 'pl-9' : ''} ${className}`} {...rest} />
+        <input className={`${inputBase} ${Icon ? 'pl-9' : ''} ${className}`} {...rest} id={id} />
       </div>
     </FieldWrapper>
   );
@@ -48,9 +50,11 @@ interface TextareaFieldProps extends TextareaHTMLAttributes<HTMLTextAreaElement>
 }
 
 export function TextareaField({ label, hint, required, wrapperClassName, className = '', ...rest }: TextareaFieldProps) {
+  const autoId = useId();
+  const id = rest.id ?? autoId;
   return (
-    <FieldWrapper label={label} hint={hint} required={required} className={wrapperClassName}>
-      <textarea className={`${inputBase} resize-none ${className}`} {...rest} />
+    <FieldWrapper label={label} hint={hint} required={required} className={wrapperClassName} htmlFor={id}>
+      <textarea className={`${inputBase} resize-none ${className}`} {...rest} id={id} />
     </FieldWrapper>
   );
 }
@@ -60,9 +64,11 @@ interface SelectFieldProps extends SelectHTMLAttributes<HTMLSelectElement>, Omit
 }
 
 export function SelectField({ label, hint, required, wrapperClassName, className = '', children, ...rest }: SelectFieldProps) {
+  const autoId = useId();
+  const id = rest.id ?? autoId;
   return (
-    <FieldWrapper label={label} hint={hint} required={required} className={wrapperClassName}>
-      <select className={`${inputBase} ${className}`} {...rest}>
+    <FieldWrapper label={label} hint={hint} required={required} className={wrapperClassName} htmlFor={id}>
+      <select className={`${inputBase} ${className}`} {...rest} id={id}>
         {children}
       </select>
     </FieldWrapper>

@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { Loader2 } from 'lucide-react';
 import { getPublicAvailability, createPublicReservation } from '../../services/reservations';
 import { useRestaurant } from '../../context/RestaurantContext';
+import { usePageContent } from '../../context/usePageContent';
 import { Header } from '../Header';
 import { Footer } from '../Footer';
 import type { PublicAvailability, PublicReservationConfirmation } from '../../types';
@@ -23,6 +24,7 @@ function nextSevenDays() {
 /** Variant B - "Class/Session Booking" (Multi-Vertical Platform Plan §8.3); suits a Gym - a weekly timetable strip instead of Variant A's full calendar + multi-step wizard. Books directly (no deposit), same as a typical class booking flow. */
 export const BookingVariantB = ({ onNavigateLanding, onNavigateMenu, onToast, cartUniqueCount = 0, onOpenCart }: BookingViewProps) => {
   const { restaurantId } = useRestaurant();
+  const c = usePageContent('booking');
   const days = useMemo(() => nextSevenDays(), []);
   const [selectedDay, setSelectedDay] = useState(days[0]);
   const [spots, setSpots] = useState(1);
@@ -74,9 +76,9 @@ export const BookingVariantB = ({ onNavigateLanding, onNavigateMenu, onToast, ca
         newsletterOptIn: false,
       });
       setConfirmation(result);
-      onToast(`Session booked! Code: ${result.confirmationCode}`);
+      onToast(c.text('b_toast_booked', { code: result.confirmationCode }));
     } catch (error: unknown) {
-      onToast(error instanceof Error ? error.message : 'Unable to book this session. Please try again.');
+      onToast(error instanceof Error ? error.message : c.text('b_toast_failed'));
     } finally {
       setIsSubmitting(false);
     }
@@ -90,13 +92,16 @@ export const BookingVariantB = ({ onNavigateLanding, onNavigateMenu, onToast, ca
           <div className="w-20 h-20 rounded-full bg-primary/10 flex items-center justify-center mb-6">
             <span className="material-symbols-outlined text-4xl text-primary filled">check_circle</span>
           </div>
-          <h2 className="font-serif text-3xl font-semibold mb-2">You're booked in!</h2>
+          <h2 className="font-serif text-3xl font-semibold mb-2">{c.text('b_success_heading')}</h2>
           <p className="text-secondary max-w-md mb-1">
-            {confirmation.timeDisplay} on {new Date(confirmation.date).toLocaleDateString(undefined, { weekday: 'long', month: 'short', day: 'numeric' })}
+            {c.text('b_success_when', {
+              time: confirmation.timeDisplay,
+              date: new Date(confirmation.date).toLocaleDateString(undefined, { weekday: 'long', month: 'short', day: 'numeric' }),
+            })}
           </p>
-          <p className="text-secondary text-sm mb-8">Confirmation code: <span className="font-bold text-on-surface">{confirmation.confirmationCode}</span></p>
+          <p className="text-secondary text-sm mb-8">{c.text('b_success_code_label')} <span className="font-bold text-on-surface">{confirmation.confirmationCode}</span></p>
           <button onClick={onNavigateLanding} className="px-8 py-3.5 bg-primary text-on-primary rounded-full font-semibold text-sm uppercase tracking-wide">
-            Back to website
+            {c.text('b_back_website')}
           </button>
         </main>
         <Footer onNavigateLanding={onNavigateLanding} onNavigateMenu={onNavigateMenu} onNavigateReservations={() => {}} onToast={onToast} />
@@ -110,14 +115,14 @@ export const BookingVariantB = ({ onNavigateLanding, onNavigateMenu, onToast, ca
 
       <main className="flex-grow pt-28 pb-24 px-margin-mobile md:px-margin-desktop max-w-container-max mx-auto w-full">
         <div className="mb-8">
-          <span className="text-primary uppercase tracking-[0.2em] font-bold text-xs">Book a Session</span>
-          <h1 className="font-serif text-3xl md:text-4xl font-semibold mt-1">Weekly Timetable</h1>
+          <span className="text-primary uppercase tracking-[0.2em] font-bold text-xs">{c.text('b_eyebrow')}</span>
+          <h1 className="font-serif text-3xl md:text-4xl font-semibold mt-1">{c.text('b_heading')}</h1>
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
           <div className="lg:col-span-8 space-y-6">
             <section className="bg-surface p-6 rounded-2xl border border-outline-variant/20 shadow-sm">
-              <h3 className="font-semibold mb-4">Choose a day</h3>
+              <h3 className="font-semibold mb-4">{c.text('b_day_heading')}</h3>
               <div className="grid grid-cols-7 gap-2">
                 {days.map((day) => {
                   const isSelected = toIsoDate(day) === selectedDateIso;
@@ -139,9 +144,9 @@ export const BookingVariantB = ({ onNavigateLanding, onNavigateMenu, onToast, ca
 
             <section className="bg-surface p-6 rounded-2xl border border-outline-variant/20 shadow-sm">
               <div className="flex items-center justify-between mb-4">
-                <h3 className="font-semibold">Available sessions</h3>
+                <h3 className="font-semibold">{c.text('b_sessions_heading')}</h3>
                 <div className="flex items-center gap-2">
-                  <label className="text-xs text-secondary font-semibold uppercase">Spots</label>
+                  <label className="text-xs text-secondary font-semibold uppercase">{c.text('b_spots_label')}</label>
                   <select value={spots} onChange={(e) => setSpots(Number(e.target.value))} className="border border-outline-variant/40 rounded-lg px-2 py-1 text-sm">
                     {[1, 2, 3, 4].map((n) => (
                       <option key={n} value={n}>{n}</option>
@@ -152,10 +157,10 @@ export const BookingVariantB = ({ onNavigateLanding, onNavigateMenu, onToast, ca
 
               {isLoadingSlots ? (
                 <div className="flex items-center gap-2 text-sm text-secondary py-6">
-                  <Loader2 className="h-4 w-4 animate-spin" /> Loading sessions…
+                  <Loader2 className="h-4 w-4 animate-spin" /> {c.text('b_loading')}
                 </div>
               ) : allSlots.length === 0 ? (
-                <p className="text-sm text-secondary py-6">No sessions scheduled for this day.</p>
+                <p className="text-sm text-secondary py-6">{c.text('b_empty')}</p>
               ) : (
                 <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
                   {allSlots.map((slot) => (
@@ -172,7 +177,7 @@ export const BookingVariantB = ({ onNavigateLanding, onNavigateMenu, onToast, ca
                       }`}
                     >
                       <div className="text-sm font-semibold">{slot.time}</div>
-                      <div className="text-[11px] uppercase tracking-wide opacity-70">{slot.available ? 'Spots available' : 'Full'}</div>
+                      <div className="text-[11px] uppercase tracking-wide opacity-70">{slot.available ? c.text('b_slot_available') : c.text('b_slot_full')}</div>
                     </button>
                   ))}
                 </div>
@@ -182,17 +187,17 @@ export const BookingVariantB = ({ onNavigateLanding, onNavigateMenu, onToast, ca
 
           <div className="lg:col-span-4">
             <div className="sticky top-28 bg-surface p-6 rounded-2xl border border-outline-variant/20 shadow-sm space-y-4">
-              <h3 className="font-semibold">Your details</h3>
-              <input value={fullName} onChange={(e) => setFullName(e.target.value)} placeholder="Full name" className="w-full px-3 py-2.5 rounded-xl border border-outline-variant/40 text-sm outline-none focus:border-primary" />
-              <input value={email} onChange={(e) => setEmail(e.target.value)} type="email" placeholder="Email" className="w-full px-3 py-2.5 rounded-xl border border-outline-variant/40 text-sm outline-none focus:border-primary" />
-              <input value={phone} onChange={(e) => setPhone(e.target.value)} type="tel" placeholder="Phone" className="w-full px-3 py-2.5 rounded-xl border border-outline-variant/40 text-sm outline-none focus:border-primary" />
+              <h3 className="font-semibold">{c.text('b_details_heading')}</h3>
+              <input value={fullName} onChange={(e) => setFullName(e.target.value)} placeholder={c.text('b_placeholder_name')} className="w-full px-3 py-2.5 rounded-xl border border-outline-variant/40 text-sm outline-none focus:border-primary" />
+              <input value={email} onChange={(e) => setEmail(e.target.value)} type="email" placeholder={c.text('b_placeholder_email')} className="w-full px-3 py-2.5 rounded-xl border border-outline-variant/40 text-sm outline-none focus:border-primary" />
+              <input value={phone} onChange={(e) => setPhone(e.target.value)} type="tel" placeholder={c.text('b_placeholder_phone')} className="w-full px-3 py-2.5 rounded-xl border border-outline-variant/40 text-sm outline-none focus:border-primary" />
               <button
                 disabled={!selectedTimeSlot || !fullName.trim() || !email.trim() || isSubmitting}
                 onClick={handleSubmit}
                 className="w-full py-3.5 bg-on-surface text-on-primary rounded-xl font-bold text-sm uppercase tracking-wide disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
               >
                 {isSubmitting ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
-                Confirm booking
+                {c.text('b_submit')}
               </button>
             </div>
           </div>

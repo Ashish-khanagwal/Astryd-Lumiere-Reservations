@@ -14,26 +14,40 @@ export const MODULE_DESCRIPTION: Record<PlatformModule, string> = {
   membership: 'Plans and members - loyalty, gym membership, or a VIP club.',
 };
 
+export interface VariantInfo {
+  name: string;
+  description: string;
+  suits: string;
+}
+
 /** Multi-Vertical Platform Plan §8 - a variant name only ever suggests a vertical; any Site can pick any of the 3. */
-export const VARIANT_LABEL: Record<PlatformModule, Record<TemplateVariant, string>> = {
+export const VARIANT_INFO: Record<PlatformModule, Record<TemplateVariant, VariantInfo>> = {
   items: {
-    a: 'Editorial Showcase - full-bleed photography, lookbook spacing (suits Restaurant)',
-    b: 'Program Spotlight - large-card rail grouped by program (suits Gym)',
-    c: 'Product Lookbook - minimal-chrome masonry grid (suits Retail)',
+    a: { name: 'Editorial Showcase', description: 'Full-bleed photography with generous, lookbook-style spacing.', suits: 'Restaurant' },
+    b: { name: 'Program Spotlight', description: 'Large cards in scrolling rails, grouped by program.', suits: 'Gym' },
+    c: { name: 'Product Lookbook', description: 'A minimal, image-first grid for browsing the range.', suits: 'Retail' },
   },
   catalog: {
-    a: 'Menu Grid - dish cards with photo, price, description (suits Restaurant)',
-    b: 'Program Schedule - weekly class-style grid (suits Gym)',
-    c: 'Product List - dense filterable catalog (suits Retail)',
+    a: { name: 'Menu Grid', description: 'Dish cards with photo, price and description, plus a category sidebar.', suits: 'Restaurant' },
+    b: { name: 'Program Schedule', description: 'A weekly class-style list grouped by category.', suits: 'Gym' },
+    c: { name: 'Product List', description: 'A dense, filterable catalog table with quick add.', suits: 'Retail' },
   },
   booking: {
-    a: 'Table Reservation - date/time/party-size flow (suits Restaurant)',
-    b: 'Class/Session Booking - weekly timetable, spots left (suits Gym)',
-    c: 'Appointment Booking - staff + duration slot picker (suits Retail)',
+    a: { name: 'Table Reservation', description: 'Step-by-step date, time and party-size booking with seating choice.', suits: 'Restaurant' },
+    b: { name: 'Class / Session Booking', description: 'A weekly timetable showing spots left in each session.', suits: 'Gym' },
+    c: { name: 'Appointment Booking', description: 'Pick a service, then a date and time slot.', suits: 'Retail' },
   },
   membership: {
-    a: 'Loyalty/Rewards (suits Restaurant)',
-    b: 'Plan Tiers + Check-in (suits Gym)',
-    c: 'VIP/Store Credit Club (suits Retail)',
+    a: { name: 'Loyalty / Rewards', description: 'A friendly rewards club with a simple "how it works".', suits: 'Restaurant' },
+    b: { name: 'Plan Tiers + Check-in', description: 'Side-by-side plan comparison with visit tracking.', suits: 'Gym' },
+    c: { name: 'VIP / Store Credit Club', description: 'An exclusive club with perks and early access.', suits: 'Retail' },
   },
+};
+
+/** Which public page each module renders on, so a layout preview opens straight to it. */
+export const MODULE_PREVIEW_HASH: Record<PlatformModule, string> = {
+  items: '#/items',
+  catalog: '#/menu',
+  booking: '#/reservations',
+  membership: '#/membership',
 };

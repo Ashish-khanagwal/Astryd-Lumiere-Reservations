@@ -13,6 +13,7 @@ import {
   getItemQuantity,
   projectUniqueCountAfterAdd,
 } from '../../data/menuItems';
+import { usePageContent } from '../../context/usePageContent';
 
 export interface CatalogViewProps {
   cart: CartState;
@@ -38,6 +39,7 @@ export const CatalogVariantA = ({
   cartUniqueCount = 0,
   onOpenCart,
 }: CatalogViewProps) => {
+  const c = usePageContent('catalog');
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedFilter, setSelectedFilter] = useState('Popular');
   const [isFavorite, setIsFavorite] = useState(false);
@@ -51,6 +53,13 @@ export const CatalogVariantA = ({
     'Non-Veg',
     ...Array.from(new Set(ALL_MENU_ITEMS.map((item) => item.category))),
   ];
+
+  /** Filter tabs stay keyed on stable ids; only the displayed label is editable. */
+  const FILTER_LABELS: Record<string, string> = {
+    Popular: c.text('a_filterPopular'),
+    Veg: c.text('a_filterVeg'),
+    'Non-Veg': c.text('a_filterNonVeg'),
+  };
 
   const filteredItems = ALL_MENU_ITEMS.filter((item) => {
     const matchesSearch =
@@ -126,44 +135,44 @@ export const CatalogVariantA = ({
           <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
             <div>
               <span className="font-label-sm text-primary uppercase tracking-[0.2em] font-bold">
-                Fine Dining & Takeaway
+                {c.text('a_eyebrow')}
               </span>
               <h1 className="font-serif text-4xl md:text-5xl lg:text-6xl font-semibold text-on-surface mb-3 mt-1">
-                Lumière
+                {c.text('a_title')}
               </h1>
               <div className="flex flex-wrap items-center gap-4 text-secondary font-sans text-sm md:text-base">
                 <div className="flex items-center gap-1.5 text-on-surface font-bold">
                   <span className="material-symbols-outlined text-primary text-xl filled">star</span>
-                  <span>4.9</span>
-                  <span className="text-secondary font-normal">(2.4k+ Reviews)</span>
+                  <span>{c.text('a_rating')}</span>
+                  <span className="text-secondary font-normal">{c.text('a_reviews')}</span>
                 </div>
                 <span className="w-1.5 h-1.5 bg-outline-variant rounded-full"></span>
-                <span>Modern French / Haute Cuisine</span>
+                <span>{c.text('a_cuisine')}</span>
                 <span className="w-1.5 h-1.5 bg-outline-variant rounded-full"></span>
                 <div className="flex items-center gap-1">
                   <span className="material-symbols-outlined text-primary">schedule</span>
-                  <span>25-35 min</span>
+                  <span>{c.text('a_prepTime')}</span>
                 </div>
                 <span className="w-1.5 h-1.5 bg-outline-variant rounded-full"></span>
                 <div className="flex items-center gap-1">
                   <span className="material-symbols-outlined text-primary">shopping_bag</span>
-                  <span>Pickup Available</span>
+                  <span>{c.text('a_pickup')}</span>
                 </div>
               </div>
             </div>
 
             <div className="flex gap-3">
               <button
-                onClick={() => onToast('Menu link copied to clipboard!')}
+                onClick={() => onToast(c.text('a_shareToast'))}
                 className="flex items-center gap-2 px-5 py-2.5 border border-outline-variant/40 bg-surface rounded-xl hover:bg-surface-container-high transition-all text-on-surface font-sans text-sm font-medium"
               >
                 <span className="material-symbols-outlined text-xl">share</span>
-                <span>Share</span>
+                <span>{c.text('a_shareButton')}</span>
               </button>
               <button
                 onClick={() => {
                   setIsFavorite(!isFavorite);
-                  onToast(isFavorite ? 'Removed from favorites' : 'Added to favorites');
+                  onToast(isFavorite ? c.text('a_favoriteRemovedToast') : c.text('a_favoriteAddedToast'));
                 }}
                 className={`flex items-center gap-2 px-5 py-2.5 border rounded-xl transition-all font-sans text-sm font-medium ${
                   isFavorite
@@ -174,7 +183,7 @@ export const CatalogVariantA = ({
                 <span className={`material-symbols-outlined text-xl ${isFavorite ? 'filled text-rose-600' : ''}`}>
                   favorite
                 </span>
-                <span>{isFavorite ? 'Favorited' : 'Favorite'}</span>
+                <span>{isFavorite ? c.text('a_favoritedButton') : c.text('a_favoriteButton')}</span>
               </button>
             </div>
           </div>
@@ -190,7 +199,7 @@ export const CatalogVariantA = ({
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 type="text"
-                placeholder="Search for dishes, drinks, or ingredients..."
+                placeholder={c.text('a_searchPlaceholder')}
                 className="w-full pl-12 pr-4 py-3.5 bg-surface border border-outline-variant/30 rounded-2xl focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all font-body-md"
               />
               {searchQuery && (
@@ -214,7 +223,7 @@ export const CatalogVariantA = ({
                       : 'bg-surface border border-outline-variant/30 text-secondary hover:border-primary/50 hover:text-primary'
                   }`}
                 >
-                  {tab}
+                  {FILTER_LABELS[tab] ?? tab}
                 </button>
               ))}
             </div>
@@ -224,17 +233,8 @@ export const CatalogVariantA = ({
         <div className="grid grid-cols-1 md:grid-cols-12 gap-8 w-full">
           <aside className="md:col-span-3 lg:col-span-2 hidden md:block">
             <div className="sticky top-44 space-y-1.5 bg-surface p-3 rounded-2xl border border-outline-variant/20 shadow-sm">
-              <h3 className="font-label-sm text-secondary uppercase tracking-widest px-3 mb-2">Categories</h3>
-              {[
-                { id: 'popular', label: 'Popular', icon: 'star' },
-                { id: 'burgers', label: 'Burgers', icon: 'lunch_dining' },
-                { id: 'starters', label: 'Starters', icon: 'restaurant' },
-                { id: 'pizza', label: 'Pizza', icon: 'local_pizza' },
-                { id: 'pasta', label: 'Pasta', icon: 'dinner_dining' },
-                { id: 'steaks', label: 'Steaks', icon: 'flatware' },
-                { id: 'desserts', label: 'Desserts', icon: 'icecream' },
-                { id: 'beverages', label: 'Beverages', icon: 'local_bar' },
-              ].map((cat) => (
+              <h3 className="font-label-sm text-secondary uppercase tracking-widest px-3 mb-2">{c.text('a_sidebarTitle')}</h3>
+              {c.list('a_sidebarCategories').map((cat) => (
                 <a
                   key={cat.id}
                   href={`#${cat.id}`}
@@ -255,17 +255,17 @@ export const CatalogVariantA = ({
             {filteredItems.length === 0 ? (
               <div className="text-center py-16 bg-surface rounded-2xl border border-outline-variant/20">
                 <span className="material-symbols-outlined text-4xl text-secondary mb-2">search_off</span>
-                <h3 className="font-headline-md font-semibold text-on-surface">No dishes found</h3>
+                <h3 className="font-headline-md font-semibold text-on-surface">{c.text('a_emptyTitle')}</h3>
                 <p className="font-body-md text-secondary mt-1">
-                  Try adjusting your search query or filter selection.
+                  {c.text('a_emptyText')}
                 </p>
               </div>
             ) : (
               <>
                 <section id="popular">
                   <div className="flex items-center justify-between mb-6">
-                    <h2 className="font-serif text-2xl md:text-3xl font-bold text-on-surface">Popular Choices</h2>
-                    <span className="text-secondary font-sans text-sm">Top rated by diners</span>
+                    <h2 className="font-serif text-2xl md:text-3xl font-bold text-on-surface">{c.text('a_popularHeading')}</h2>
+                    <span className="text-secondary font-sans text-sm">{c.text('a_popularSubheading')}</span>
                   </div>
                   <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                     {filteredItems
@@ -285,9 +285,9 @@ export const CatalogVariantA = ({
 
                 <section id="burgers">
                   <div className="flex items-center justify-between mb-6">
-                    <h2 className="font-serif text-2xl md:text-3xl font-bold text-on-surface">Burgers & Steaks</h2>
+                    <h2 className="font-serif text-2xl md:text-3xl font-bold text-on-surface">{c.text('a_burgersHeading')}</h2>
                     <a href="#steaks" className="text-primary font-bold text-sm hover:underline">
-                      View Steaks
+                      {c.text('a_burgersLink')}
                     </a>
                   </div>
                   <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -307,7 +307,7 @@ export const CatalogVariantA = ({
 
                 <section id="starters">
                   <div className="flex items-center justify-between mb-6">
-                    <h2 className="font-serif text-2xl md:text-3xl font-bold text-on-surface">Starters & Pizza</h2>
+                    <h2 className="font-serif text-2xl md:text-3xl font-bold text-on-surface">{c.text('a_startersHeading')}</h2>
                   </div>
                   <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                     {filteredItems
@@ -330,7 +330,7 @@ export const CatalogVariantA = ({
                 <section id="desserts">
                   <div className="flex items-center justify-between mb-6">
                     <h2 className="font-serif text-2xl md:text-3xl font-bold text-on-surface">
-                      Desserts & Fine Beverages
+                      {c.text('a_dessertsHeading')}
                     </h2>
                   </div>
                   <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -358,11 +358,11 @@ export const CatalogVariantA = ({
           <div className="bg-inverse-surface text-inverse-on-surface p-4 rounded-2xl shadow-2xl flex items-center gap-6 md:min-w-[360px] border border-white/10">
             <div className="flex flex-col">
               <span className="font-label-sm text-[11px] uppercase opacity-70 tracking-widest font-bold">
-                Selected Gourmet Order
+                {c.text('a_cartTitle')}
               </span>
               <div className="flex items-baseline gap-2">
                 <span className="font-sans text-xl font-bold">
-                  {totalCartCount} {totalCartCount === 1 ? 'Item' : 'Items'}
+                  {totalCartCount} {totalCartCount === 1 ? c.text('itemSingular') : c.text('itemPlural')}
                 </span>
                 <span className="opacity-50">•</span>
                 <span className="font-serif text-2xl font-bold text-primary-fixed-dim">
@@ -374,7 +374,7 @@ export const CatalogVariantA = ({
               onClick={onCheckout}
               className="ml-auto bg-primary hover:bg-primary-container text-on-primary px-6 py-3 rounded-xl font-bold flex items-center gap-2 transition-all active:scale-95 shadow-lg text-sm tracking-wide"
             >
-              <span>Checkout</span>
+              <span>{c.text('checkoutButton')}</span>
               <span className="material-symbols-outlined text-lg">arrow_forward</span>
             </button>
           </div>
@@ -414,6 +414,7 @@ interface MenuItemCardProps {
 }
 
 const MenuItemCard = ({ item, qty, onUpdateQty, onAdd }: MenuItemCardProps) => {
+  const c = usePageContent('catalog');
   return (
     <div className="bg-surface p-5 rounded-2xl border border-outline-variant/30 flex gap-5 transition-all duration-300 hover:shadow-lg group hover:-translate-y-1">
       <div className="relative w-32 h-32 md:w-36 md:h-36 shrink-0 overflow-hidden rounded-xl border border-outline-variant/20">
@@ -458,7 +459,7 @@ const MenuItemCard = ({ item, qty, onUpdateQty, onAdd }: MenuItemCardProps) => {
                 <span className="material-symbols-outlined text-sm">remove</span>
               </button>
               <span className="px-4 font-bold min-w-[36px] text-center text-sm">{qty}</span>
-              <button onClick={onAdd} className="p-2 hover:bg-outline-variant/20 transition-colors" aria-label="Add another with options">
+              <button onClick={onAdd} className="p-2 hover:bg-outline-variant/20 transition-colors" aria-label={c.text('a_addAnotherAria')}>
                 <span className="material-symbols-outlined text-sm">add</span>
               </button>
             </div>
@@ -467,7 +468,7 @@ const MenuItemCard = ({ item, qty, onUpdateQty, onAdd }: MenuItemCardProps) => {
               onClick={onAdd}
               className="px-6 py-2 bg-on-surface text-on-primary rounded-xl font-bold hover:bg-primary transition-all active:scale-95 shadow-sm text-xs tracking-wider uppercase"
             >
-              ADD
+              {c.text('a_addButton')}
             </button>
           )}
         </div>

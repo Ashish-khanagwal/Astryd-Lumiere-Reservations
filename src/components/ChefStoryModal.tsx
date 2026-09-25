@@ -1,4 +1,5 @@
 import { usePublicData } from '../context/PublicDataContext';
+import { usePageContent } from '../context/usePageContent';
 
 interface ChefStoryModalProps {
   isOpen: boolean;
@@ -7,11 +8,12 @@ interface ChefStoryModalProps {
 
 export const ChefStoryModal: React.FC<ChefStoryModalProps> = ({ isOpen, onClose }) => {
   const { sections, mediaMap } = usePublicData();
+  const c = usePageContent('global');
   if (!isOpen) return null;
 
   const about = sections.find((s) => s.type === 'about');
   const content = about?.type === 'about' ? about.content : undefined;
-  const chefName = content?.chefName ?? 'Our Chef';
+  const chefName = content?.chefName ?? c.text('chefNameFallback');
   const chefQuote = content?.chefQuote ?? '';
   const chefBio = content?.chefBio ?? '';
   const chefImage = content?.chefImageMediaId ? mediaMap.get(content.chefImageMediaId)?.fileUrl : undefined;
@@ -22,11 +24,12 @@ export const ChefStoryModal: React.FC<ChefStoryModalProps> = ({ isOpen, onClose 
         {/* Header */}
         <div className="px-6 py-5 bg-surface-container flex items-center justify-between border-b border-outline-variant/20 font-sans">
           <div>
-            <span className="font-label-sm text-tertiary uppercase tracking-[0.2em] font-bold">Executive Chef</span>
+            <span className="font-label-sm text-tertiary uppercase tracking-[0.2em] font-bold">{c.text('chefEyebrow')}</span>
             <h3 className="font-serif text-2xl text-on-surface font-semibold">{chefName}</h3>
           </div>
           <button
             onClick={onClose}
+            aria-label={c.text('chefCloseAriaLabel')}
             className="w-9 h-9 rounded-full bg-surface-container-high flex items-center justify-center text-secondary hover:text-on-surface transition-colors"
           >
             <span className="material-symbols-outlined">close</span>
@@ -60,7 +63,7 @@ export const ChefStoryModal: React.FC<ChefStoryModalProps> = ({ isOpen, onClose 
             onClick={onClose}
             className="px-6 py-2.5 rounded-xl bg-primary text-on-primary font-body-md font-semibold hover:bg-primary-container transition-all"
           >
-            Close Story
+            {c.text('chefCloseButton')}
           </button>
         </div>
       </div>

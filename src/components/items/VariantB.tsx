@@ -3,6 +3,7 @@ import { Header } from '../Header';
 import { Footer } from '../Footer';
 import { ALL_MENU_ITEMS, type MenuItem } from '../../data/menuItems';
 import type { ItemsViewProps } from './VariantA';
+import { usePageContent } from '../../context/usePageContent';
 
 /** Variant B - "Program Spotlight" (Multi-Vertical Platform Plan §8.5); large-card rails grouped by program, built to sell the program rather than show a bookable calendar - view only, no cart. Suits a Gym. */
 export const ItemsVariantB = ({
@@ -13,6 +14,7 @@ export const ItemsVariantB = ({
   cartUniqueCount = 0,
   onOpenCart,
 }: ItemsViewProps) => {
+  const c = usePageContent('items');
   const groups = useMemo(() => {
     const byCategory = new Map<string, MenuItem[]>();
     ALL_MENU_ITEMS.forEach((item) => {
@@ -37,14 +39,14 @@ export const ItemsVariantB = ({
       <main className="flex-grow pt-28 pb-24">
         <div className="max-w-container-max mx-auto px-margin-mobile md:px-margin-desktop mb-14 flex flex-col md:flex-row md:items-end justify-between gap-4">
           <div>
-            <span className="text-primary uppercase tracking-[0.3em] font-bold text-xs">Explore</span>
-            <h1 className="font-serif text-4xl md:text-5xl font-semibold text-on-surface mt-2">Our Programs</h1>
+            <span className="text-primary uppercase tracking-[0.3em] font-bold text-xs">{c.text('b_eyebrow')}</span>
+            <h1 className="font-serif text-4xl md:text-5xl font-semibold text-on-surface mt-2">{c.text('b_title')}</h1>
           </div>
           <button
             onClick={onNavigateReservations}
             className="self-start md:self-auto px-6 py-3 bg-primary text-on-primary rounded-xl font-bold hover:bg-primary-container transition-all active:scale-95 shadow-sm text-sm tracking-wide"
           >
-            Reserve a spot
+            {c.text('b_reserveButton')}
           </button>
         </div>
 
@@ -53,7 +55,7 @@ export const ItemsVariantB = ({
             <section key={category} className="max-w-container-max mx-auto px-margin-mobile md:px-margin-desktop">
               <div className="flex items-center justify-between mb-6">
                 <h2 className="font-serif text-2xl font-bold text-on-surface">{category}</h2>
-                <span className="text-xs text-secondary font-semibold uppercase tracking-wide">{items.length} programs</span>
+                <span className="text-xs text-secondary font-semibold uppercase tracking-wide">{c.text('b_programCount', { count: items.length })}</span>
               </div>
 
               <div className="flex gap-6 overflow-x-auto pb-4 category-scroll">

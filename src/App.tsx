@@ -1,7 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
 import { Loader2 } from 'lucide-react';
-import { ReservationModal } from './components/ReservationModal';
-import { OrderOnlineModal } from './components/OrderOnlineModal';
 import { GalleryLightbox } from './components/GalleryLightbox';
 import { ChefStoryModal } from './components/ChefStoryModal';
 import { Toast } from './components/Toast';
@@ -10,12 +8,15 @@ import { OrderSummaryView } from './components/OrderSummaryView';
 import { BookingView } from './components/booking';
 import { MembershipView } from './components/membership';
 import { ItemsView } from './components/items';
+import { LandingChrome } from './components/landing/LandingChrome';
 import { ScrollToTop } from './components/ScrollToTop';
 import { Header } from './components/Header';
 import { Footer } from './components/Footer';
 import { CartDrawer } from './components/CartDrawer';
 import { PublicRestaurantProvider } from './context/RestaurantContext';
 import { PublicDataProvider, usePublicData } from './context/PublicDataContext';
+import { usePageContent } from './context/usePageContent';
+import { usePreviewBridge } from './preview/usePreviewBridge';
 import { ThemeProvider } from './theme/ThemeProvider';
 import { HeroSection } from './sections/HeroSection';
 import { SectionRenderer } from './sections/SectionRenderer';
@@ -36,10 +37,6 @@ import {
 type AppPage = 'landing' | 'items' | 'menu' | 'reservations' | 'membership' | 'checkout';
 
 const CART_STORAGE_KEY = 'lumiere-cart';
-
-const DAY_LABEL: Record<string, string> = {
-  mon: 'Mon', tue: 'Tue', wed: 'Wed', thu: 'Thu', fri: 'Fri', sat: 'Sat', sun: 'Sun',
-};
 
 function pageFromHash(): AppPage {
   const raw = window.location.hash.replace(/^#\/?/, '').toLowerCase();
@@ -65,12 +62,12 @@ function loadCart(): CartState {
 }
 
 function AppShell() {
-  const { brand, sections, mediaMap, items, offers, isLoading } = usePublicData();
+  const { brand, sections, mediaMap, items, offers, isLoading, vertical } = usePublicData();
+  const checkoutContent = usePageContent('checkout');
+  usePreviewBridge();
   const [currentPage, setCurrentPageState] = useState<AppPage>(() => pageFromHash());
   const [cart, setCart] = useState<CartState>(() => loadCart());
   const [isCartOpen, setIsCartOpen] = useState(false);
-  const [isReserveModalOpen, setIsReserveModalOpen] = useState(false);
-  const [isOrderOpen, setIsOrderOpen] = useState(false);
   const [isChefStoryOpen, setIsChefStoryOpen] = useState(false);
   const [lightboxIndex, setLightboxIndex] = useState<number | null>(null);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
@@ -138,7 +135,7 @@ function AppShell() {
 
   const handleCheckout = () => {
     if (getCartCount(cart) === 0) {
-      triggerToast('Add items to your cart before checkout.');
+      triggerToast(checkoutContent.text('emptyCartToast'));
       return;
     }
     setIsCartOpen(false);
@@ -272,7 +269,6 @@ function AppShell() {
           onOpenCart={() => setIsCartOpen(true)}
         />
 
-        <ReservationModal isOpen={isReserveModalOpen} onClose={() => setIsReserveModalOpen(false)} onSuccess={triggerToast} />
         <ChefStoryModal isOpen={isChefStoryOpen} onClose={() => setIsChefStoryOpen(false)} />
 
         {cartDrawer}
@@ -292,8 +288,6 @@ function AppShell() {
     // An invalid CMS gallery must not prevent the rest of the public site from rendering.
     galleryImages = [];
   }
-  const openStatus = 'Open for Dinner';
-
   return (
     <div className="min-h-screen bg-background text-on-surface flex flex-col font-sans antialiased">
       <Header
@@ -310,114 +304,25 @@ function AppShell() {
 
       <main className="pt-0 flex-1">
         {heroSection?.type === 'hero' && (
-          <HeroSection
-            content={heroSection.content}
-            backgroundImageUrl={
-              heroBackgroundMediaId ? mediaMap.get(heroBackgroundMediaId)?.fileUrl : undefined
-            }
-            onNavigate={navigateFromLink}
-          />
+          <div data-section="hero">
+            <HeroSection
+              content={heroSection.content}
+              backgroundImageUrl={
+                heroBackgroundMediaId ? mediaMap.get(heroBackgroundMediaId)?.fileUrl : undefined
+              }
+              onNavigate={navigateFromLink}
+            />
+          </div>
         )}
 
-        {/* Sticky Action Bar - fixed platform chrome, not admin-editable */}
-        <div
-          className={`sticky top-[73px] z-40 bg-[#241F17] border-b border-[#C5A059]/30 text-[#E5D4B3] transition-all duration-300 ${
-            isStickyShadowed ? 'shadow-2xl bg-[#241F17]/95 backdrop-blur-md' : 'shadow-md'
-          }`}
-        >
-          <div className="max-w-container-max mx-auto px-margin-mobile md:px-margin-desktop py-4 flex flex-col md:flex-row justify-between items-center gap-4">
-            <div className="flex items-center text-[#D3C4AF]">
-              <span className="material-symbols-outlined text-[#C5A059] mr-2 text-xl">location_on</span>
-              <span className="font-sans text-sm font-semibold text-white">{(brand?.contact?.address ?? '').split(',').slice(-2, -1)[0]?.trim() || 'Mayfair, London'}</span>
-              <span className="mx-3 text-[#C5A059]/40">•</span>
-              <span className="text-xs text-green-300 bg-green-950/70 px-3 py-1 rounded-full font-semibold flex items-center gap-1.5 border border-green-700/40">
-                <span className="w-2 h-2 rounded-full bg-green-400 animate-pulse"></span>
-                <span>{openStatus}</span>
-              </span>
-            </div>
-
-            <div className="flex items-center space-x-3 w-full md:w-auto">
-              <button
-                onClick={() => setCurrentPage('menu')}
-                className="flex-1 md:flex-none px-6 py-2.5 rounded-xl border border-[#C5A059]/40 text-[#E5D4B3] font-sans text-sm font-medium hover:bg-[#C5A059]/20 hover:text-white transition-all"
-              >
-                Order Online
-              </button>
-              <button
-                onClick={() => setCurrentPage('reservations')}
-                className="flex-1 md:flex-none px-6 py-2.5 rounded-xl bg-[#C5A059] text-[#1E1A14] font-sans text-sm font-bold hover:bg-[#d8b063] transition-all active:scale-95 shadow-lg"
-              >
-                Reserve a Table
-              </button>
-            </div>
-          </div>
-        </div>
-
-        {/* Key Info Cards - Amenities/Details are fixed platform chrome; Opening Hours is sourced from Brand Settings */}
-        <section className="py-section-gap bg-[#F4EFE6] w-full border-b border-outline-variant/15">
-          <div className="max-w-container-max mx-auto px-margin-mobile md:px-margin-desktop">
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-              <div className="bg-surface rounded-2xl p-8 shadow-sm border border-outline-variant/20 hover:shadow-md transition-all duration-300">
-                <div className="flex items-center space-x-3 mb-6">
-                  <span className="material-symbols-outlined text-primary text-2.5xl">concierge</span>
-                  <h3 className="font-serif text-2xl font-bold text-on-surface">Amenities</h3>
-                </div>
-                <ul className="space-y-4 font-sans text-sm text-secondary">
-                  <li className="flex justify-between border-b border-outline-variant/10 pb-3">
-                    <span>Valet Parking</span> <span className="text-on-surface font-semibold">Available</span>
-                  </li>
-                  <li className="flex justify-between border-b border-outline-variant/10 pb-3">
-                    <span>Private Dining</span> <span className="text-on-surface font-semibold">Vault Room</span>
-                  </li>
-                  <li className="flex justify-between border-b border-outline-variant/10 pb-3">
-                    <span>Wheelchair Access</span> <span className="text-on-surface font-semibold">Fully Accessible</span>
-                  </li>
-                  <li className="flex justify-between">
-                    <span>Wi-Fi</span> <span className="text-on-surface font-semibold">Complimentary</span>
-                  </li>
-                </ul>
-              </div>
-
-              <div className="bg-surface rounded-2xl p-8 shadow-sm border border-outline-variant/20 hover:shadow-md transition-all duration-300">
-                <div className="flex items-center space-x-3 mb-6">
-                  <span className="material-symbols-outlined text-primary text-2.5xl">info</span>
-                  <h3 className="font-serif text-2xl font-bold text-on-surface">The Details</h3>
-                </div>
-                <ul className="space-y-4 font-sans text-sm text-secondary">
-                  <li className="flex justify-between border-b border-outline-variant/10 pb-3">
-                    <span>Dress Code</span> <span className="text-on-surface font-semibold">Smart Casual</span>
-                  </li>
-                  <li className="flex justify-between border-b border-outline-variant/10 pb-3">
-                    <span>Dining Style</span> <span className="text-on-surface font-semibold">Fine Dining</span>
-                  </li>
-                  <li className="flex justify-between border-b border-outline-variant/10 pb-3">
-                    <span>Payment</span> <span className="text-on-surface font-semibold">Visa, MC, AMEX</span>
-                  </li>
-                  <li className="flex justify-between">
-                    <span>Corkage</span> <span className="text-on-surface font-semibold">$50 per bottle</span>
-                  </li>
-                </ul>
-              </div>
-
-              <div className="bg-surface rounded-2xl p-8 shadow-sm border border-outline-variant/20 hover:shadow-md transition-all duration-300">
-                <div className="flex items-center space-x-3 mb-6">
-                  <span className="material-symbols-outlined text-primary text-2.5xl">schedule</span>
-                  <h3 className="font-serif text-2xl font-bold text-on-surface">Opening Hours</h3>
-                </div>
-                <ul className="space-y-4 font-sans text-sm text-secondary">
-                  {(brand?.businessHours ?? []).map((h) => (
-                    <li key={h.day} className="flex justify-between border-b border-outline-variant/10 pb-3 last:border-0">
-                      <span>{DAY_LABEL[h.day]}</span>
-                      <span className="text-on-surface font-semibold">
-                        {h.isClosed ? 'Closed' : `${h.openTime} - ${h.closeTime}`}
-                      </span>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            </div>
-          </div>
-        </section>
+        <LandingChrome
+          vertical={vertical}
+          address={brand?.contact?.address}
+          businessHours={brand?.businessHours ?? []}
+          isStickyShadowed={isStickyShadowed}
+          onPrimaryAction={() => setCurrentPage('menu')}
+          onSecondaryAction={() => setCurrentPage('reservations')}
+        />
 
         <SectionRenderer
           sections={restSections}
@@ -440,9 +345,6 @@ function AppShell() {
       />
 
       {cartDrawer}
-
-      <ReservationModal isOpen={isReserveModalOpen} onClose={() => setIsReserveModalOpen(false)} onSuccess={triggerToast} />
-      <OrderOnlineModal isOpen={isOrderOpen} onClose={() => setIsOrderOpen(false)} onSuccess={triggerToast} />
 
       <GalleryLightbox
         isOpen={lightboxIndex !== null}

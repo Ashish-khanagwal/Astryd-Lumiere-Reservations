@@ -3,6 +3,7 @@ import { Loader2 } from 'lucide-react';
 import { createMember } from '../../services/membership';
 import { useRestaurant } from '../../context/RestaurantContext';
 import { usePublicData } from '../../context/PublicDataContext';
+import { usePageContent } from '../../context/usePageContent';
 import { Header } from '../Header';
 import { Footer } from '../Footer';
 import { formatCents } from './shared';
@@ -21,6 +22,7 @@ export interface MembershipViewProps {
 export const MembershipVariantA = ({ onNavigateLanding, onNavigateMenu, onNavigateReservations, onToast, cartUniqueCount = 0, onOpenCart }: MembershipViewProps) => {
   const { restaurantId } = useRestaurant();
   const { membershipPlans } = usePublicData();
+  const c = usePageContent('membership');
   const [selectedPlan, setSelectedPlan] = useState<MembershipPlan | null>(null);
   const [fullName, setFullName] = useState('');
   const [email, setEmail] = useState('');
@@ -40,9 +42,9 @@ export const MembershipVariantA = ({ onNavigateLanding, onNavigateMenu, onNaviga
         startDate: new Date().toISOString().slice(0, 10),
       });
       setJoined(true);
-      onToast('Welcome to the club!');
+      onToast(c.text('a_joinSuccessToast'));
     } catch (error: unknown) {
-      onToast(error instanceof Error ? error.message : 'Unable to sign you up right now.');
+      onToast(error instanceof Error ? error.message : c.text('a_joinErrorToast'));
     } finally {
       setIsSubmitting(false);
     }
@@ -54,29 +56,25 @@ export const MembershipVariantA = ({ onNavigateLanding, onNavigateMenu, onNaviga
 
       <main className="flex-grow pt-28 pb-24 px-margin-mobile md:px-margin-desktop max-w-container-max mx-auto w-full max-w-4xl">
         <div className="text-center mb-12">
-          <span className="text-primary uppercase tracking-[0.2em] font-bold text-xs">Rewards</span>
-          <h1 className="font-serif text-4xl md:text-5xl font-semibold mt-2">A little something extra, every visit.</h1>
-          <p className="text-secondary mt-3 max-w-xl mx-auto">Join for free perks, or upgrade to a paid tier for the full experience.</p>
+          <span className="text-primary uppercase tracking-[0.2em] font-bold text-xs">{c.text('a_eyebrow')}</span>
+          <h1 className="font-serif text-4xl md:text-5xl font-semibold mt-2">{c.text('a_heading')}</h1>
+          <p className="text-secondary mt-3 max-w-xl mx-auto">{c.text('a_subheading')}</p>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 text-center mb-14">
-          {[
-            { step: '1', title: 'Pick a tier', desc: 'Choose the plan that fits how often you visit.' },
-            { step: '2', title: 'Sign up', desc: 'Tell us who you are - takes under a minute.' },
-            { step: '3', title: 'Enjoy the perks', desc: "We'll recognize you next time you visit." },
-          ].map((s) => (
-            <div key={s.step} className="bg-surface p-6 rounded-2xl border border-outline-variant/20">
-              <div className="w-10 h-10 rounded-full bg-primary/10 text-primary font-bold flex items-center justify-center mx-auto mb-3">{s.step}</div>
+          {c.list('a_steps').map((s) => (
+            <div key={s.id} className="bg-surface p-6 rounded-2xl border border-outline-variant/20">
+              <div className="w-10 h-10 rounded-full bg-primary/10 text-primary font-bold flex items-center justify-center mx-auto mb-3">{s.number}</div>
               <h3 className="font-semibold mb-1">{s.title}</h3>
-              <p className="text-sm text-secondary">{s.desc}</p>
+              <p className="text-sm text-secondary">{s.description}</p>
             </div>
           ))}
         </div>
 
         {joined ? (
           <div className="bg-surface rounded-2xl border border-outline-variant/20 p-10 text-center">
-            <h2 className="font-serif text-2xl font-semibold mb-2">You're in!</h2>
-            <p className="text-secondary">A confirmation has been sent to {email}. See you soon.</p>
+            <h2 className="font-serif text-2xl font-semibold mb-2">{c.text('a_successHeading')}</h2>
+            <p className="text-secondary">{c.text('a_successMessage', { email })}</p>
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -108,17 +106,17 @@ export const MembershipVariantA = ({ onNavigateLanding, onNavigateMenu, onNaviga
 
         {selectedPlan && !joined && (
           <div className="mt-8 bg-surface p-6 rounded-2xl border border-outline-variant/20 max-w-md mx-auto space-y-3">
-            <h3 className="font-semibold">Join {selectedPlan.name}</h3>
-            <input value={fullName} onChange={(e) => setFullName(e.target.value)} placeholder="Full name" className="w-full px-3 py-2.5 rounded-xl border border-outline-variant/40 text-sm outline-none focus:border-primary" />
-            <input value={email} onChange={(e) => setEmail(e.target.value)} type="email" placeholder="Email" className="w-full px-3 py-2.5 rounded-xl border border-outline-variant/40 text-sm outline-none focus:border-primary" />
-            <input value={phone} onChange={(e) => setPhone(e.target.value)} type="tel" placeholder="Phone" className="w-full px-3 py-2.5 rounded-xl border border-outline-variant/40 text-sm outline-none focus:border-primary" />
+            <h3 className="font-semibold">{c.text('joinFormHeading', { plan: selectedPlan.name })}</h3>
+            <input value={fullName} onChange={(e) => setFullName(e.target.value)} placeholder={c.text('namePlaceholder')} className="w-full px-3 py-2.5 rounded-xl border border-outline-variant/40 text-sm outline-none focus:border-primary" />
+            <input value={email} onChange={(e) => setEmail(e.target.value)} type="email" placeholder={c.text('emailPlaceholder')} className="w-full px-3 py-2.5 rounded-xl border border-outline-variant/40 text-sm outline-none focus:border-primary" />
+            <input value={phone} onChange={(e) => setPhone(e.target.value)} type="tel" placeholder={c.text('phonePlaceholder')} className="w-full px-3 py-2.5 rounded-xl border border-outline-variant/40 text-sm outline-none focus:border-primary" />
             <button
               disabled={!fullName.trim() || !email.trim() || isSubmitting}
               onClick={handleJoin}
               className="w-full py-3 bg-primary text-on-primary rounded-xl font-bold text-sm uppercase tracking-wide disabled:opacity-50 flex items-center justify-center gap-2"
             >
               {isSubmitting ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
-              Join now
+              {c.text('a_joinButton')}
             </button>
           </div>
         )}
