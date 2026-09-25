@@ -1,6 +1,7 @@
 import type {
   Addon,
   BrandSettings,
+  DomainMapping,
   Homepage,
   MediaAsset,
   Member,
@@ -43,9 +44,10 @@ export interface MockDbShape {
   membershipPlans: MembershipPlan[];
   members: Member[];
   memberCheckIns: MemberCheckIn[];
+  domainMappings: DomainMapping[];
 }
 
-const STORAGE_KEY = 'lumiere-cms-mock-db-v5';
+const STORAGE_KEY = 'lumiere-cms-mock-db-v6';
 
 function emptyDb(): MockDbShape {
   return {
@@ -67,6 +69,7 @@ function emptyDb(): MockDbShape {
     membershipPlans: [],
     members: [],
     memberCheckIns: [],
+    domainMappings: [],
   };
 }
 

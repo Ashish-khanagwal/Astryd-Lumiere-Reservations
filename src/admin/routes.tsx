@@ -27,6 +27,7 @@ import { SocialMediaPage } from './pages/restaurant/SocialMediaPage';
 import { AccountPage } from './pages/settings/AccountPage';
 import { UsersPage } from './pages/settings/UsersPage';
 import { PagesPage } from './pages/settings/PagesPage';
+import { DomainsPage } from './pages/settings/DomainsPage';
 import { SuperAdminSitesPage } from './pages/superadmin/SitesPage';
 import { MembershipPage } from './pages/membership/MembershipPage';
 
@@ -72,6 +73,7 @@ export function AdminRoutes() {
           <Route path="settings/pages" element={<PagesPage />} />
           <Route element={<RequireRole allow={['owner', 'super_admin']} />}>
             <Route path="settings/users" element={<UsersPage />} />
+            <Route path="settings/domains" element={<DomainsPage />} />
           </Route>
           <Route element={<RequireRole allow={['super_admin']} />}>
             <Route path="superadmin/sites" element={<SuperAdminSitesPage />} />

@@ -28,6 +28,7 @@ import {
   LayoutList,
   Building2,
   Crown,
+  Globe,
   type LucideIcon,
 } from 'lucide-react';
 import { usePermissions } from '../hooks/usePermissions';
@@ -194,6 +195,7 @@ export function Sidebar() {
         items: [
           { to: '/admin/settings/account', label: 'Account', icon: User },
           { to: '/admin/settings/pages', label: 'Pages', icon: LayoutList },
+          ...(perms.canManageSettings ? [{ to: '/admin/settings/domains', label: 'Domains', icon: Globe }] : []),
           ...(perms.canManageUsers ? [{ to: '/admin/settings/users', label: 'Users', icon: Users }] : []),
         ],
       },
@@ -209,6 +211,7 @@ export function Sidebar() {
       perms.canManageMenu,
       perms.canManageBranding,
       perms.canManageUsers,
+      perms.canManageSettings,
       perms.canManageMembership,
       perms.isSuperAdmin,
       catalogLabel,

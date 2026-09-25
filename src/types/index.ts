@@ -11,3 +11,4 @@ export * from './reservations';
 export * from './payments';
 export * from './pageConfig';
 export * from './membership';
+export * from './domain';

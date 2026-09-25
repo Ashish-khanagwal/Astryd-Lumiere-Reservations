@@ -12,6 +12,7 @@ import { reservationHandlers } from './reservations';
 import { siteHandlers } from './sites';
 import { pageConfigHandlers } from './pageConfigs';
 import { membershipHandlers } from './membership';
+import { domainHandlers } from './domains';
 
 export const handlers = [
   ...authHandlers,
@@ -28,4 +29,5 @@ export const handlers = [
   ...siteHandlers,
   ...pageConfigHandlers,
   ...membershipHandlers,
+  ...domainHandlers,
 ];

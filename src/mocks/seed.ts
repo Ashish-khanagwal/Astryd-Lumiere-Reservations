@@ -2,6 +2,7 @@ import { db, nowIso, type MockDbShape } from './db';
 import type {
   Addon,
   BrandSettings,
+  DomainMapping,
   Homepage,
   HomepageSection,
   MediaAsset,
@@ -473,6 +474,25 @@ function buildSeed(): MockDbShape {
     }));
   }
 
+  /** Plan §9/§12 - every Site gets one always-present, non-removable platform_subdomain row, already verified/issued (no DNS to wait on for a subdomain we control). */
+  function buildDefaultDomainMappings(siteId: string, slug: string): DomainMapping[] {
+    return [
+      {
+        id: `domain_${siteId}_platform`,
+        restaurantId: siteId,
+        type: 'platform_subdomain',
+        hostname: `${slug}.ourplatform.com`,
+        recordType: 'CNAME',
+        recordName: '@',
+        recordValue: `${slug}.ourplatform.com`,
+        verificationStatus: 'verified',
+        sslStatus: 'issued',
+        createdAt: now,
+        updatedAt: now,
+      },
+    ];
+  }
+
   /** Plan §3.2/§8.4 - a few demo Plans + Members for the Lumière Site, whose Membership module ships enabled out of the box. */
   const membershipPlans: MembershipPlan[] = [
     {
@@ -751,6 +771,10 @@ function buildSeed(): MockDbShape {
     membershipPlans,
     members,
     memberCheckIns,
+    domainMappings: [
+      ...buildDefaultDomainMappings(RESTAURANT_ID, RESTAURANT_SLUG),
+      ...buildDefaultDomainMappings(SECOND_SITE_ID, SECOND_SITE_SLUG),
+    ],
   };
 }
 
