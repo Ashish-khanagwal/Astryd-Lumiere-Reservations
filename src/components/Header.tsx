@@ -2,10 +2,12 @@ import React, { useState } from 'react';
 import { usePublicData } from '../context/PublicDataContext';
 
 interface HeaderProps {
-  currentPage: 'landing' | 'menu' | 'reservations' | 'membership';
+  currentPage: 'landing' | 'items' | 'menu' | 'reservations' | 'membership';
   onNavigateLanding: () => void;
   onNavigateMenu: () => void;
   onNavigateReservations: () => void;
+  /** Optional - a Header rendered inside a page that has no direct reference to App's page state falls back to a hash-based navigation, since Items is a newer, sometimes-disabled module (Multi-Vertical Platform Plan §8.5). */
+  onNavigateItems?: () => void;
   /** Optional - a Header rendered inside a page that has no direct reference to App's page state falls back to a hash-based navigation, since Membership is a newer, sometimes-disabled module (Multi-Vertical Platform Plan §8.4). */
   onNavigateMembership?: () => void;
   onToast?: (msg: string) => void;
@@ -18,6 +20,7 @@ export const Header: React.FC<HeaderProps> = ({
   onNavigateLanding,
   onNavigateMenu,
   onNavigateReservations,
+  onNavigateItems,
   onNavigateMembership,
   cartUniqueCount = 0,
   onOpenCart,
@@ -25,10 +28,13 @@ export const Header: React.FC<HeaderProps> = ({
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const { brand, mediaMap, getNavLabel, isModuleEnabled } = usePublicData();
   const brandName = brand?.restaurantName ?? 'Lumière';
+  const itemsLabel = getNavLabel('items', 'Menu');
   const catalogLabel = getNavLabel('catalog', 'Menu');
   const bookingLabel = getNavLabel('booking', 'Reservation');
   const membershipLabel = getNavLabel('membership', 'Membership');
+  const itemsEnabled = isModuleEnabled('items');
   const membershipEnabled = isModuleEnabled('membership');
+  const goItems = onNavigateItems ?? (() => { window.location.hash = '#/items'; });
   const goMembership = onNavigateMembership ?? (() => { window.location.hash = '#/membership'; });
   const logoUrl = brand?.logoMediaId ? mediaMap.get(brand.logoMediaId)?.fileUrl : undefined;
   const navPosition = brand?.navPosition ?? 'right';
@@ -97,6 +103,19 @@ export const Header: React.FC<HeaderProps> = ({
               Discover
             </button>
 
+            {itemsEnabled && (
+              <button
+                onClick={goItems}
+                className={`font-sans text-sm tracking-wide py-1 font-medium transition-colors relative ${
+                  currentPage === 'items'
+                    ? 'text-primary font-bold after:content-[""] after:absolute after:bottom-0 after:left-0 after:right-0 after:h-0.5 after:bg-primary after:rounded-full'
+                    : navLinkInactiveClass
+                }`}
+              >
+                {itemsLabel}
+              </button>
+            )}
+
             <button
               onClick={onNavigateMenu}
               className={`font-sans text-sm tracking-wide py-1 font-medium transition-colors relative ${
@@ -164,6 +183,19 @@ export const Header: React.FC<HeaderProps> = ({
           >
             Discover
           </button>
+          {itemsEnabled && (
+            <button
+              onClick={() => {
+                goItems();
+                setIsMobileMenuOpen(false);
+              }}
+              className={`block w-full text-left font-sans text-base py-2.5 font-medium transition-colors ${
+                currentPage === 'items' ? 'text-primary font-bold' : navLinkInactiveClass
+              }`}
+            >
+              {itemsLabel}
+            </button>
+          )}
           <button
             onClick={() => {
               onNavigateMenu();

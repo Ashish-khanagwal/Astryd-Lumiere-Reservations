@@ -16,9 +16,11 @@ export const Footer: React.FC<FooterProps> = ({
 }) => {
   const { brand, getNavLabel, brandingBadgeEnabled, isModuleEnabled } = usePublicData();
   const brandName = brand?.restaurantName ?? 'Lumière';
+  const itemsLabel = getNavLabel('items', 'Menu');
   const catalogLabel = getNavLabel('catalog', 'Menu');
   const bookingLabel = getNavLabel('booking', 'Reservation');
   const membershipLabel = getNavLabel('membership', 'Membership');
+  const itemsEnabled = isModuleEnabled('items');
   const membershipEnabled = isModuleEnabled('membership');
   const description =
     brand?.description ??
@@ -49,6 +51,16 @@ export const Footer: React.FC<FooterProps> = ({
                   Discover
                 </button>
               </li>
+              {itemsEnabled && (
+                <li>
+                  <button
+                    className="hover:text-white transition-colors text-left"
+                    onClick={() => { window.location.hash = '#/items'; }}
+                  >
+                    {itemsLabel}
+                  </button>
+                </li>
+              )}
               <li>
                 <button className="hover:text-white transition-colors text-left" onClick={onNavigateMenu}>
                   {catalogLabel}

@@ -45,7 +45,7 @@ export interface MockDbShape {
   memberCheckIns: MemberCheckIn[];
 }
 
-const STORAGE_KEY = 'lumiere-cms-mock-db-v4';
+const STORAGE_KEY = 'lumiere-cms-mock-db-v5';
 
 function emptyDb(): MockDbShape {
   return {

@@ -1,7 +1,7 @@
 import type { Id, Tenant, Timestamps } from './common';
 
 /** Multi-Vertical Platform Plan §2 - a functional page type with its own data model. */
-export const PLATFORM_MODULES = ['catalog', 'booking', 'membership'] as const;
+export const PLATFORM_MODULES = ['items', 'catalog', 'booking', 'membership'] as const;
 export type PlatformModule = (typeof PLATFORM_MODULES)[number];
 
 /** Plan §8 - 3 fixed layouts per module, freely selectable regardless of Vertical. */

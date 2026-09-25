@@ -455,7 +455,8 @@ function buildSeed(): MockDbShape {
   /** Plan §6/§12 - default nav label + variant per module for a freshly seeded Site; membership defaults off for a freshly created Site until its owner turns it on. */
   function buildDefaultPageConfigs(siteId: string, membershipEnabled = false): PageConfig[] {
     const defaults: Array<{ module: PlatformModule; navLabel: string; enabled: boolean }> = [
-      { module: 'catalog', navLabel: 'Menu', enabled: true },
+      { module: 'items', navLabel: 'Menu', enabled: true },
+      { module: 'catalog', navLabel: 'Online Order', enabled: true },
       { module: 'booking', navLabel: 'Reservations', enabled: true },
       { module: 'membership', navLabel: 'Membership', enabled: membershipEnabled },
     ];

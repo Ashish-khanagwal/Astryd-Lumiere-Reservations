@@ -9,6 +9,7 @@ import { CatalogView } from './components/catalog';
 import { OrderSummaryView } from './components/OrderSummaryView';
 import { BookingView } from './components/booking';
 import { MembershipView } from './components/membership';
+import { ItemsView } from './components/items';
 import { ScrollToTop } from './components/ScrollToTop';
 import { Header } from './components/Header';
 import { Footer } from './components/Footer';
@@ -32,7 +33,7 @@ import {
   updateCartLineNote,
 } from './data/menuItems';
 
-type AppPage = 'landing' | 'menu' | 'reservations' | 'membership' | 'checkout';
+type AppPage = 'landing' | 'items' | 'menu' | 'reservations' | 'membership' | 'checkout';
 
 const CART_STORAGE_KEY = 'lumiere-cart';
 
@@ -42,7 +43,7 @@ const DAY_LABEL: Record<string, string> = {
 
 function pageFromHash(): AppPage {
   const raw = window.location.hash.replace(/^#\/?/, '').toLowerCase();
-  if (raw === 'menu' || raw === 'reservations' || raw === 'membership' || raw === 'checkout') {
+  if (raw === 'items' || raw === 'menu' || raw === 'reservations' || raw === 'membership' || raw === 'checkout') {
     return raw;
   }
   return 'landing';
@@ -103,6 +104,7 @@ function AppShell() {
   const navigateFromLink = useCallback(
     (link: string) => {
       if (link.includes('reservation')) setCurrentPage('reservations');
+      else if (link.includes('items')) setCurrentPage('items');
       else if (link.includes('menu')) setCurrentPage('menu');
       else if (link.includes('membership')) setCurrentPage('membership');
       else setCurrentPage('landing');
@@ -237,6 +239,24 @@ function AppShell() {
     );
   }
 
+  if (currentPage === 'items') {
+    return (
+      <>
+        <ItemsView
+          onNavigateLanding={() => setCurrentPage('landing')}
+          onNavigateMenu={() => setCurrentPage('menu')}
+          onNavigateReservations={() => setCurrentPage('reservations')}
+          onToast={triggerToast}
+          cartUniqueCount={cartUniqueCount}
+          onOpenCart={() => setIsCartOpen(true)}
+        />
+        {cartDrawer}
+        <ScrollToTop />
+        {toastMessage && <Toast message={toastMessage} onClose={() => setToastMessage(null)} />}
+      </>
+    );
+  }
+
   if (currentPage === 'menu') {
     return (
       <>
@@ -281,6 +301,7 @@ function AppShell() {
         onNavigateLanding={() => setCurrentPage('landing')}
         onNavigateMenu={() => setCurrentPage('menu')}
         onNavigateReservations={() => setCurrentPage('reservations')}
+        onNavigateItems={() => setCurrentPage('items')}
         onNavigateMembership={() => setCurrentPage('membership')}
         onToast={triggerToast}
         cartUniqueCount={cartUniqueCount}
