@@ -144,8 +144,8 @@ export function PublicDataProvider({ children }: { children: ReactNode }) {
     queryFn: () => getMedia(restaurantId),
   });
   const pageConfigsQuery = useQuery({
-    queryKey: ["public-page-configs", restaurantId],
-    queryFn: () => getPageConfigs(restaurantId),
+    queryKey: ["public-page-configs", restaurantId, version],
+    queryFn: () => getPageConfigs(restaurantId, version),
   });
   const brandingBadgeQuery = useQuery({
     queryKey: ["public-branding-badge", restaurantId],

@@ -191,7 +191,7 @@ export function Sidebar() {
         visible: true,
         items: [
           { to: '/admin/settings/account', label: 'Account', icon: User },
-          ...(perms.canManageSettings ? [{ to: '/admin/settings/domains', label: 'Domains', icon: Globe }] : []),
+          ...(perms.canManageSettings && import.meta.env.VITE_USE_MOCKS === 'true' ? [{ to: '/admin/settings/domains', label: 'Domains', icon: Globe }] : []),
           ...(perms.canManageUsers ? [{ to: '/admin/settings/users', label: 'Users', icon: Users }] : []),
         ],
       },

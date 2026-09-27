@@ -24,7 +24,9 @@ async function request<T>(path: string, init: RequestInit = {}): Promise<T> {
   if (!(init.body instanceof FormData) && init.body) {
     headers.set('Content-Type', 'application/json');
   }
-  if (authToken) {
+  const preview = new URLSearchParams(window.location.search).get('preview') === 'true';
+  const storefront = window.location.pathname.startsWith('/s/');
+  if (authToken && (!storefront || preview)) {
     headers.set('Authorization', `Bearer ${authToken}`);
   }
 

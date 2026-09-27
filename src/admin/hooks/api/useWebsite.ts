@@ -1,5 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useRestaurant } from '../../../context/RestaurantContext';
+import { useDraftSave } from '../../context/DraftSaveContext';
+import { useAdminToast } from '../../context/AdminToastContext';
 import * as homepageService from '../../../services/homepage';
 import * as websiteService from '../../../services/website';
 import type { BrandSettings, Homepage, HomepageSectionType } from '../../../types';
@@ -104,8 +106,28 @@ export function useWebsiteStatus() {
 export function usePublishWebsite() {
   const { restaurantId } = useRestaurant();
   const queryClient = useQueryClient();
+  const { flushDraft } = useDraftSave();
+  const { showToast } = useAdminToast();
   return useMutation({
-    mutationFn: () => websiteService.publishWebsite(restaurantId),
+    mutationKey: ['publish-website', restaurantId],
+    mutationFn: async () => {
+      await flushDraft();
+      const cache = queryClient.getMutationCache();
+      const pending = cache.getAll().filter((m) => m.state.status === 'pending' && m.options.mutationKey?.[0] !== 'publish-website');
+      if (pending.length) await new Promise<void>((resolve, reject) => {
+        const check = () => {
+          const failed = pending.find((m) => m.state.status === 'error');
+          if (failed) { cleanup(); reject(failed.state.error); }
+          else if (pending.every((m) => m.state.status === 'success')) { cleanup(); resolve(); }
+        };
+        const unsubscribe = cache.subscribe(check);
+        const timeout = window.setTimeout(() => { cleanup(); reject(new Error('Draft changes are still saving. Please retry publishing.')); }, 30000);
+        const cleanup = () => { unsubscribe(); window.clearTimeout(timeout); };
+        check();
+      });
+      return websiteService.publishWebsite(restaurantId);
+    },
+    onError: (error) => showToast(error instanceof Error ? error.message : 'Publishing failed. Your draft is preserved.'),
     onSuccess: () => queryClient.invalidateQueries(),
   });
 }

@@ -1,6 +1,8 @@
 import { useEffect, useState } from 'react';
 import { Loader2 } from 'lucide-react';
-import { getPublicAvailability, createPublicReservation } from '../../services/reservations';
+import { getPublicAvailability, createPublicReservation, createReservationCheckout } from '../../services/reservations';
+import { PaidCheckout } from '../PaidCheckout';
+import type { CheckoutSession } from '../../types';
 import { useRestaurant } from '../../context/RestaurantContext';
 import { usePageContent } from '../../context/usePageContent';
 import { Header } from '../Header';
@@ -32,6 +34,7 @@ export const BookingVariantC = ({ onNavigateLanding, onNavigateMenu, onToast, ca
   const [notes, setNotes] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [confirmation, setConfirmation] = useState<PublicReservationConfirmation | null>(null);
+  const [checkout, setCheckout] = useState<CheckoutSession | null>(null);
 
   const allSlots = [...availability.afternoon, ...availability.evening];
 
@@ -56,20 +59,25 @@ export const BookingVariantC = ({ onNavigateLanding, onNavigateMenu, onToast, ca
   }, [restaurantId, dateInput]);
 
   const handleSubmit = async () => {
-    if (!selectedTimeSlot || !fullName.trim() || !email.trim() || !service) return;
+    if (!selectedTimeSlot || !fullName.trim() || !email.trim() || !phone.trim() || !service) return;
     setIsSubmitting(true);
     try {
-      const result = await createPublicReservation(restaurantId, {
+      const input = {
         date: dateInput,
         timeSlot: selectedTimeSlot,
         partySize: 1,
-        seatingPreference: service,
+        seatingPreference: 'Indoor',
         guestName: fullName,
         guestEmail: email,
         guestPhone: phone,
-        specialRequests: notes,
+        specialRequests: `Appointment: ${service}. ${notes}`,
         newsletterOptIn: false,
-      });
+      };
+      if (import.meta.env.VITE_USE_MOCKS !== 'true') {
+        setCheckout(await createReservationCheckout(restaurantId, input));
+        return;
+      }
+      const result = await createPublicReservation(restaurantId, input);
       setConfirmation(result);
       onToast(c.text('c_toast_booked', { code: result.confirmationCode }));
     } catch (error: unknown) {
@@ -90,7 +98,7 @@ export const BookingVariantC = ({ onNavigateLanding, onNavigateMenu, onToast, ca
           <h2 className="font-serif text-3xl font-semibold mb-2">{c.text('c_success_heading')}</h2>
           <p className="text-secondary max-w-md mb-1">
             {c.text('c_success_when', {
-              service: confirmation.seatingPreference,
+              service,
               time: confirmation.timeDisplay,
               date: new Date(confirmation.date).toLocaleDateString(undefined, { weekday: 'long', month: 'short', day: 'numeric' }),
             })}
@@ -110,6 +118,7 @@ export const BookingVariantC = ({ onNavigateLanding, onNavigateMenu, onToast, ca
       <Header currentPage="reservations" onNavigateLanding={onNavigateLanding} onNavigateMenu={onNavigateMenu} onNavigateReservations={() => {}} onToast={onToast} cartUniqueCount={cartUniqueCount} onOpenCart={onOpenCart} />
 
       <main className="flex-grow pt-28 pb-24 px-margin-mobile md:px-margin-desktop max-w-container-max mx-auto w-full max-w-3xl">
+        {checkout ? <PaidCheckout key={checkout.id} initialSession={checkout} onSuccess={(session) => { if (session.reservation) { setConfirmation(session.reservation); onToast('Appointment confirmed after successful payment.'); } }} /> : <>
         <div className="mb-8">
           <span className="text-primary uppercase tracking-[0.2em] font-bold text-xs">{c.text('c_eyebrow')}</span>
           <h1 className="font-serif text-3xl md:text-4xl font-semibold mt-1">{c.text('c_heading')}</h1>
@@ -185,7 +194,7 @@ export const BookingVariantC = ({ onNavigateLanding, onNavigateMenu, onToast, ca
           </div>
           <textarea value={notes} onChange={(e) => setNotes(e.target.value)} placeholder={c.text('c_placeholder_notes')} rows={3} className="w-full px-3 py-2.5 rounded-xl border border-outline-variant/40 text-sm outline-none focus:border-primary resize-none" />
           <button
-            disabled={!selectedTimeSlot || !fullName.trim() || !email.trim() || !service || isSubmitting}
+            disabled={!selectedTimeSlot || !fullName.trim() || !email.trim() || !phone.trim() || !service || isSubmitting}
             onClick={handleSubmit}
             className="w-full py-3.5 bg-on-surface text-on-primary rounded-xl font-bold text-sm uppercase tracking-wide disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
           >
@@ -193,6 +202,7 @@ export const BookingVariantC = ({ onNavigateLanding, onNavigateMenu, onToast, ca
             {c.text('c_submit')}
           </button>
         </section>
+        </>}
       </main>
 
       <Footer onNavigateLanding={onNavigateLanding} onNavigateMenu={onNavigateMenu} onNavigateReservations={() => {}} onToast={onToast} />

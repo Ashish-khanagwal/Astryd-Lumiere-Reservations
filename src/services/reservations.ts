@@ -277,17 +277,17 @@ function mapAdminReservation(reservation: AdminReservationResponse): Reservation
   };
 }
 
-export async function getReservations(): Promise<Reservation[]> {
-  const response = await http.get<AdminReservationListResponse>('/admin/reservations?limit=100');
+export async function getReservations(siteId?: string): Promise<Reservation[]> {
+  const response = await http.get<AdminReservationListResponse>(`/admin/reservations?limit=100${siteId ? `&siteId=${encodeURIComponent(siteId)}` : ''}`);
   return response.reservations.map(mapAdminReservation);
 }
 
 export const createReservation = (restaurantId: string, payload: Partial<Reservation>) =>
   http.post<Reservation>(`/restaurants/${restaurantId}/reservations`, payload);
 
-export async function updateReservationStatus(reservationId: string, status: ReservationStatus): Promise<Reservation> {
+export async function updateReservationStatus(reservationId: string, status: ReservationStatus, siteId?: string): Promise<Reservation> {
   const response = await http.patch<{ reservation: AdminReservationResponse }>(
-    `/admin/reservations/${reservationId}/status`,
+    `/admin/reservations/${reservationId}/status${siteId ? `?siteId=${encodeURIComponent(siteId)}` : ''}`,
     { status },
   );
   return mapAdminReservation(response.reservation);
@@ -312,15 +312,16 @@ function mapAvailabilitySettings(response: AdminAvailabilityResponse): Reservati
   };
 }
 
-export async function getReservationAvailability(): Promise<ReservationAvailabilitySettings> {
-  const response = await http.get<AdminAvailabilityResponse>('/admin/reservation-availability');
+export async function getReservationAvailability(siteId?: string): Promise<ReservationAvailabilitySettings> {
+  const response = await http.get<AdminAvailabilityResponse>(`/admin/reservation-availability${siteId ? `?siteId=${encodeURIComponent(siteId)}` : ''}`);
   return mapAvailabilitySettings(response);
 }
 
 export async function updateReservationAvailability(
   settings: Pick<ReservationAvailabilitySettings, 'days' | 'blockedDates'>,
+  siteId?: string,
 ): Promise<ReservationAvailabilitySettings> {
-  const response = await http.put<AdminAvailabilityResponse>('/admin/reservation-availability', {
+  const response = await http.put<AdminAvailabilityResponse>(`/admin/reservation-availability${siteId ? `?siteId=${encodeURIComponent(siteId)}` : ''}`, {
     operating_hours: settings.days.map((day) => ({
       day_of_week: WEEK_DAYS.indexOf(day.day),
       open_time: day.openTime,

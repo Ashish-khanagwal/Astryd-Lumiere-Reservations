@@ -3,11 +3,13 @@ import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../../context/AuthContext';
 
 export function LoginPage() {
+  const mocks = import.meta.env.VITE_USE_MOCKS === 'true';
+  const demo = mocks || import.meta.env.MODE === 'staging';
   const { login } = useAuth();
   const navigate = useNavigate();
   const location = useLocation() as { state?: { from?: string } };
-  const [orgId, setOrgId] = useState('LUMIERE');
-  const [email, setEmail] = useState('owner@lumiere.com');
+  const [orgId, setOrgId] = useState(demo ? 'LUMIERE' : '');
+  const [email, setEmail] = useState(demo ? mocks ? 'owner@lumiere.com' : 'admin@lumiere.com' : '');
   const [password, setPassword] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -56,10 +58,10 @@ export function LoginPage() {
           value={password}
           onChange={(e) => setPassword(e.target.value)}
           required
-          placeholder="password123"
+          placeholder="Your password"
           className="w-full px-3 py-2.5 text-sm rounded-xl border border-outline-variant/40 bg-surface-container-low focus:border-primary outline-none"
         />
-        <p className="text-xs text-secondary mt-1">Demo password: password123</p>
+        {demo && <p className="text-xs text-secondary mt-1">Staging demo password: {mocks ? 'password123' : 'admin123'}</p>}
       </div>
 
       {error && <p className="text-sm text-error font-medium">{error}</p>}
@@ -78,20 +80,20 @@ export function LoginPage() {
         </Link>
       </div>
 
-      <div className="pt-4 border-t border-outline-variant/20 text-xs text-secondary space-y-2">
+      {demo && <div className="pt-4 border-t border-outline-variant/20 text-xs text-secondary space-y-2">
         <div>
           <p className="font-semibold">LUMIERE (Restaurant)</p>
-          <p>owner@lumiere.com (Owner) · staff@lumiere.com (Staff)</p>
+          <p>{mocks ? 'owner' : 'admin'}@lumiere.com (Owner) · staff@lumiere.com (Staff)</p>
         </div>
         <div>
           <p className="font-semibold">PULSEFIT (Gym)</p>
-          <p>owner@pulsefit.com (Owner)</p>
+          <p>{mocks ? 'owner' : 'admin'}@pulsefit.com (Owner)</p>
         </div>
         <div>
           <p className="font-semibold">NOVAGOODS (Retail)</p>
-          <p>owner@novagoods.com (Owner)</p>
+          <p>{mocks ? 'owner' : 'admin'}@novagoods.com (Owner)</p>
         </div>
-      </div>
+      </div>}
 
       <div className="text-center">
         <Link to="/signup" className="text-sm text-primary font-medium hover:underline">

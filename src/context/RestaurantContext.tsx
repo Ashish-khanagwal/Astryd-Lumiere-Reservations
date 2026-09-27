@@ -2,11 +2,13 @@ import { createContext, useCallback, useContext, useEffect, useState, type React
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useAuth } from './AuthContext';
 import { getSites } from '../services/sites';
+import { http } from '../services/http';
 import type { Restaurant } from '../types';
 
-const DEFAULT_RESTAURANT_ID = import.meta.env.VITE_DEFAULT_RESTAURANT_ID || 'rest_lumiere';
-const DEFAULT_RESTAURANT_SLUG = import.meta.env.VITE_DEFAULT_RESTAURANT_SLUG || 'lumiere-mayfair';
-const DEFAULT_ORGANIZATION_ID = import.meta.env.VITE_DEFAULT_ORGANIZATION_ID || 'org_lumiere';
+const MOCKS = import.meta.env.VITE_USE_MOCKS === 'true';
+const DEFAULT_RESTAURANT_ID = MOCKS ? 'rest_lumiere' : '';
+const DEFAULT_RESTAURANT_SLUG = MOCKS ? 'lumiere-mayfair' : '';
+const DEFAULT_ORGANIZATION_ID = MOCKS ? 'org_lumiere' : '';
 const ACTIVE_SITE_STORAGE_KEY = 'admin_active_site_id';
 
 interface RestaurantContextValue {
@@ -34,14 +36,23 @@ const RestaurantContext = createContext<RestaurantContextValue>({
  */
 export function PublicRestaurantProvider({ children }: { children: ReactNode }) {
   const siteIdParam = new URLSearchParams(window.location.search).get('site');
-  const restaurantId = siteIdParam || DEFAULT_RESTAURANT_ID;
+  const slug = window.location.pathname.match(/^\/s\/([^/]+)/)?.[1];
+  const { data: site, isPending, error } = useQuery({
+    queryKey: ['public-site-resolver', slug, window.location.hostname],
+    queryFn: () => http.get<Restaurant>(`/public/sites/resolve?${slug ? `slug=${encodeURIComponent(slug)}` : `hostname=${encodeURIComponent(window.location.hostname)}`}`),
+    enabled: !MOCKS && !siteIdParam,
+    retry: false,
+  });
+  const restaurantId = siteIdParam || site?.id || DEFAULT_RESTAURANT_ID;
+  if (!MOCKS && !siteIdParam && isPending) return <p role="status">Loading site…</p>;
+  if (!restaurantId || error) return <p role="alert">Site not found. Open a site address or preview it from your dashboard.</p>;
 
   return (
     <RestaurantContext.Provider
       value={{
-        organizationId: DEFAULT_ORGANIZATION_ID,
+        organizationId: site?.organizationId || DEFAULT_ORGANIZATION_ID,
         restaurantId,
-        restaurantSlug: DEFAULT_RESTAURANT_SLUG,
+        restaurantSlug: site?.slug || DEFAULT_RESTAURANT_SLUG,
         sites: [],
         setActiveSiteId: () => {},
       }}
@@ -65,7 +76,7 @@ export function AdminRestaurantProvider({ children }: { children: ReactNode }) {
   const { data: sites } = useQuery({
     queryKey: ['sites', organizationId],
     queryFn: () => getSites(organizationId),
-    enabled: Boolean(user),
+    enabled: Boolean(user && organizationId),
   });
 
   const [activeSiteId, setActiveSiteIdState] = useState<string | null>(() =>
@@ -82,6 +93,7 @@ export function AdminRestaurantProvider({ children }: { children: ReactNode }) {
 
   const setActiveSiteId = useCallback(
     (siteId: string) => {
+      if (!sites?.some((s) => s.id === siteId)) return;
       setActiveSiteIdState(siteId);
       localStorage.setItem(ACTIVE_SITE_STORAGE_KEY, siteId);
       // Every admin data hook keys its queries `['admin-<domain>', restaurantId, ...]` - re-scope them all in one go.
@@ -92,10 +104,13 @@ export function AdminRestaurantProvider({ children }: { children: ReactNode }) {
         },
       });
     },
-    [queryClient],
+    [queryClient, sites],
   );
 
   const activeSite = sites?.find((s) => s.id === activeSiteId);
+  useEffect(() => {
+    document.title = activeSite?.name ? `${activeSite.name} | Admin` : 'Astryd | Admin';
+  }, [activeSite?.name]);
   const restaurantId = activeSite?.id ?? user?.restaurantId ?? DEFAULT_RESTAURANT_ID;
   const restaurantSlug = activeSite?.slug ?? DEFAULT_RESTAURANT_SLUG;
 

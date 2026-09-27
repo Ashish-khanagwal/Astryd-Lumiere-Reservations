@@ -204,7 +204,7 @@ export function MembershipPage() {
                 ),
               },
               { header: 'Plan', render: (m) => <span className="text-secondary">{planNameById.get(m.planId) ?? '—'}</span> },
-              { header: 'Status', render: (m) => <MemberStatusBadge status={m.status} /> },
+              { header: 'Status', render: (m) => m.paymentId && m.paymentStatus !== 'succeeded' && m.status === 'paused' ? <span className="text-sm text-secondary">{m.paymentStatus === 'failed' ? 'Payment failed' : 'Awaiting payment'}</span> : <MemberStatusBadge status={m.status} /> },
               { header: 'Started', render: (m) => <span className="text-secondary">{new Date(m.startDate).toLocaleDateString()}</span> },
               {
                 header: 'Next billing',

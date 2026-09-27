@@ -13,7 +13,7 @@ import { ScrollToTop } from './components/ScrollToTop';
 import { Header } from './components/Header';
 import { Footer } from './components/Footer';
 import { CartDrawer } from './components/CartDrawer';
-import { PublicRestaurantProvider } from './context/RestaurantContext';
+import { PublicRestaurantProvider, useRestaurant } from './context/RestaurantContext';
 import { PublicDataProvider, usePublicData } from './context/PublicDataContext';
 import { usePageContent } from './context/usePageContent';
 import { usePreviewBridge } from './preview/usePreviewBridge';
@@ -50,9 +50,9 @@ function hashForPage(page: AppPage) {
   return page === 'landing' ? '#/' : `#/${page}`;
 }
 
-function loadCart(): CartState {
+function loadCart(siteId: string): CartState {
   try {
-    const raw = localStorage.getItem(CART_STORAGE_KEY);
+    const raw = localStorage.getItem(`${CART_STORAGE_KEY}:${siteId}`);
     if (!raw) return [];
     const parsed = JSON.parse(raw);
     return Array.isArray(parsed) ? parsed : [];
@@ -62,11 +62,15 @@ function loadCart(): CartState {
 }
 
 function AppShell() {
+  const { restaurantId } = useRestaurant();
   const { brand, sections, mediaMap, items, offers, isLoading, vertical } = usePublicData();
+  useEffect(() => {
+    if (brand?.restaurantName) document.title = brand.restaurantName;
+  }, [brand?.restaurantName]);
   const checkoutContent = usePageContent('checkout');
   usePreviewBridge();
   const [currentPage, setCurrentPageState] = useState<AppPage>(() => pageFromHash());
-  const [cart, setCart] = useState<CartState>(() => loadCart());
+  const [cart, setCart] = useState<CartState>(() => loadCart(restaurantId));
   const [isCartOpen, setIsCartOpen] = useState(false);
   const [isChefStoryOpen, setIsChefStoryOpen] = useState(false);
   const [lightboxIndex, setLightboxIndex] = useState<number | null>(null);
@@ -91,8 +95,8 @@ function AppShell() {
   }, []);
 
   useEffect(() => {
-    localStorage.setItem(CART_STORAGE_KEY, JSON.stringify(cart));
-  }, [cart]);
+    localStorage.setItem(`${CART_STORAGE_KEY}:${restaurantId}`, JSON.stringify(cart));
+  }, [cart, restaurantId]);
 
   const triggerToast = (msg: string) => {
     setToastMessage(msg);

@@ -7,7 +7,7 @@ const TOKEN_STORAGE_KEY = 'lumiere-cms-token';
 
 const ROLE_DEFAULT_PERMISSIONS: Record<Role, Permission> = {
   super_admin: { menu: true, branding: true, homepage: true, media: true, offers: true, addons: true, settings: true, users: true, booking: true, membership: true },
-  owner: { menu: true, branding: true, homepage: true, media: true, offers: true, addons: true, settings: true, users: false, booking: true, membership: true },
+  owner: { menu: true, branding: true, homepage: true, media: true, offers: true, addons: true, settings: true, users: true, booking: true, membership: true },
   staff: { menu: true, branding: false, homepage: false, media: false, offers: false, addons: false, settings: false, users: false, booking: true, membership: false },
 };
 
@@ -22,7 +22,7 @@ interface AuthContextValue {
   login: (orgId: string, email: string, password: string) => Promise<void>;
   loginSuperAdmin: (email: string, password: string) => Promise<void>;
   /** Plan §14 Phase 6 - self-serve signup; also signs the new Owner straight in, same as login. */
-  signup: (payload: SignupRequest) => Promise<{ orgCode: string }>;
+  signup: (payload: SignupRequest) => Promise<{ orgCode: string; emailDeliveryConfigured?: boolean; emailVerificationRequiredForPublish?: boolean }>;
   logout: () => Promise<void>;
 }
 
@@ -61,7 +61,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     localStorage.setItem(TOKEN_STORAGE_KEY, session.token);
     setAuthToken(session.token);
     setUser(session.user);
-    return { orgCode: session.orgCode };
+    return { orgCode: session.orgCode, emailDeliveryConfigured: session.emailDeliveryConfigured, emailVerificationRequiredForPublish: session.emailVerificationRequiredForPublish };
   };
 
   const loginSuperAdmin = async (email: string, password: string) => {

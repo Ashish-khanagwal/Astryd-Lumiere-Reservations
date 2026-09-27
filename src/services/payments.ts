@@ -6,7 +6,7 @@ const API_BASE_URL = import.meta.env.VITE_API_URL ?? 'http://localhost:5000';
 interface PaymentResponse {
   id: string;
   checkout_secret?: string;
-  context_type: 'order' | 'reservation';
+  context_type: 'order' | 'reservation' | 'membership';
   context_id?: string;
   amount_cents: number;
   currency: string;

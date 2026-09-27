@@ -1,6 +1,8 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Loader2 } from 'lucide-react';
-import { getPublicAvailability, createPublicReservation } from '../../services/reservations';
+import { getPublicAvailability, createPublicReservation, createReservationCheckout } from '../../services/reservations';
+import { PaidCheckout } from '../PaidCheckout';
+import type { CheckoutSession } from '../../types';
 import { useRestaurant } from '../../context/RestaurantContext';
 import { usePageContent } from '../../context/usePageContent';
 import { Header } from '../Header';
@@ -37,6 +39,7 @@ export const BookingVariantB = ({ onNavigateLanding, onNavigateMenu, onToast, ca
   const [phone, setPhone] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [confirmation, setConfirmation] = useState<PublicReservationConfirmation | null>(null);
+  const [checkout, setCheckout] = useState<CheckoutSession | null>(null);
 
   const selectedDateIso = toIsoDate(selectedDay);
   const allSlots = [...availability.afternoon, ...availability.evening];
@@ -61,20 +64,25 @@ export const BookingVariantB = ({ onNavigateLanding, onNavigateMenu, onToast, ca
   }, [restaurantId, selectedDateIso, spots]);
 
   const handleSubmit = async () => {
-    if (!selectedTimeSlot || !fullName.trim() || !email.trim()) return;
+    if (!selectedTimeSlot || !fullName.trim() || !email.trim() || !phone.trim()) return;
     setIsSubmitting(true);
     try {
-      const result = await createPublicReservation(restaurantId, {
+      const input = {
         date: selectedDateIso,
         timeSlot: selectedTimeSlot,
         partySize: spots,
-        seatingPreference: 'Class',
+        seatingPreference: 'Indoor',
         guestName: fullName,
         guestEmail: email,
         guestPhone: phone,
-        specialRequests: '',
+        specialRequests: 'Gym class/session booking',
         newsletterOptIn: false,
-      });
+      };
+      if (import.meta.env.VITE_USE_MOCKS !== 'true') {
+        setCheckout(await createReservationCheckout(restaurantId, input));
+        return;
+      }
+      const result = await createPublicReservation(restaurantId, input);
       setConfirmation(result);
       onToast(c.text('b_toast_booked', { code: result.confirmationCode }));
     } catch (error: unknown) {
@@ -119,7 +127,7 @@ export const BookingVariantB = ({ onNavigateLanding, onNavigateMenu, onToast, ca
           <h1 className="font-serif text-3xl md:text-4xl font-semibold mt-1">{c.text('b_heading')}</h1>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
+        {checkout ? <PaidCheckout key={checkout.id} initialSession={checkout} onSuccess={(session) => { if (session.reservation) { setConfirmation(session.reservation); onToast('Booking confirmed after successful payment.'); } }} /> : <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
           <div className="lg:col-span-8 space-y-6">
             <section className="bg-surface p-6 rounded-2xl border border-outline-variant/20 shadow-sm">
               <h3 className="font-semibold mb-4">{c.text('b_day_heading')}</h3>
@@ -192,7 +200,7 @@ export const BookingVariantB = ({ onNavigateLanding, onNavigateMenu, onToast, ca
               <input value={email} onChange={(e) => setEmail(e.target.value)} type="email" placeholder={c.text('b_placeholder_email')} className="w-full px-3 py-2.5 rounded-xl border border-outline-variant/40 text-sm outline-none focus:border-primary" />
               <input value={phone} onChange={(e) => setPhone(e.target.value)} type="tel" placeholder={c.text('b_placeholder_phone')} className="w-full px-3 py-2.5 rounded-xl border border-outline-variant/40 text-sm outline-none focus:border-primary" />
               <button
-                disabled={!selectedTimeSlot || !fullName.trim() || !email.trim() || isSubmitting}
+                disabled={!selectedTimeSlot || !fullName.trim() || !email.trim() || !phone.trim() || isSubmitting}
                 onClick={handleSubmit}
                 className="w-full py-3.5 bg-on-surface text-on-primary rounded-xl font-bold text-sm uppercase tracking-wide disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
               >
@@ -201,7 +209,7 @@ export const BookingVariantB = ({ onNavigateLanding, onNavigateMenu, onToast, ca
               </button>
             </div>
           </div>
-        </div>
+        </div>}
       </main>
 
       <Footer onNavigateLanding={onNavigateLanding} onNavigateMenu={onNavigateMenu} onNavigateReservations={() => {}} onToast={onToast} />
