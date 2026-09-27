@@ -1,4 +1,6 @@
 import { KeyRound, Mail, ShieldCheck, User as UserIcon } from 'lucide-react';
+import { useState } from 'react';
+import { http } from '../../../services/http';
 import { useAuth } from '../../../context/AuthContext';
 import { PageHeader } from '../../components/PageHeader';
 import { SectionCard } from '../../components/SectionCard';
@@ -7,6 +9,19 @@ import { StatusPill } from '../../components/StatusPill';
 export function AccountPage() {
   const { user } = useAuth();
   const initials = user?.name?.[0] ?? '?';
+  const [verificationMessage, setVerificationMessage] = useState('');
+  const [sending, setSending] = useState(false);
+  const resendVerification = async () => {
+    setSending(true);
+    try {
+      const response = await http.post<{ message: string }>('/auth/resend-verification');
+      setVerificationMessage(response.message);
+    } catch (error) {
+      setVerificationMessage(error instanceof Error ? error.message : 'Unable to request verification.');
+    } finally {
+      setSending(false);
+    }
+  };
 
   return (
     <div className="space-y-6 max-w-4xl">
@@ -57,9 +72,19 @@ export function AccountPage() {
         </div>
       </SectionCard>
 
+      {user?.emailVerified === false && (
+        <SectionCard>
+          <p className="text-sm text-secondary">Verify your email before publishing your site.</p>
+          <button type="button" disabled={sending} onClick={resendVerification} className="mt-3 text-sm font-bold text-primary disabled:opacity-50">
+            {sending ? 'Requesting…' : 'Resend verification email'}
+          </button>
+          {verificationMessage && <p role="status" className="mt-2 text-sm text-secondary">{verificationMessage}</p>}
+        </SectionCard>
+      )}
+
       <div className="flex items-start gap-2.5 rounded-xl bg-surface-container-low/60 border border-outline-variant/20 p-4">
         <KeyRound className="h-4 w-4 text-secondary shrink-0 mt-0.5" />
-        <p className="text-xs text-secondary">Password changes and two-factor authentication are managed via the "Forgot password" flow on the login screen.</p>
+        <p className="text-xs text-secondary">Use the "Forgot password" flow on the login screen to request a password reset link.</p>
       </div>
     </div>
   );

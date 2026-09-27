@@ -32,12 +32,14 @@ export function SignupPage() {
   const [slugTouched, setSlugTouched] = useState(false);
   const [ownerName, setOwnerName] = useState('');
   const [ownerEmail, setOwnerEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [passwordConfirmation, setPasswordConfirmation] = useState('');
   const [modules, setModules] = useState<ModuleDefault[]>([]);
   const [themePresetId, setThemePresetId] = useState(THEME_PRESETS[0].id);
   const [tagline, setTagline] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [result, setResult] = useState<{ orgCode: string } | null>(null);
+  const [result, setResult] = useState<{ orgCode: string; emailDeliveryConfigured?: boolean; emailVerificationRequiredForPublish?: boolean } | null>(null);
 
   const pickVertical = (v: Vertical) => {
     setVertical(v);
@@ -50,12 +52,16 @@ export function SignupPage() {
 
   const canContinue = () => {
     if (step === 1) return vertical !== null;
-    if (step === 2) return Boolean(name.trim() && slug.trim() && ownerName.trim() && /\S+@\S+\.\S+/.test(ownerEmail));
+    if (step === 2) return Boolean(name.trim() && slug.trim() && ownerName.trim() && /\S+@\S+\.\S+/.test(ownerEmail) && password.length >= 10 && password.length <= 128 && /[a-z]/i.test(password) && /\d/.test(password) && password === passwordConfirmation);
     return true;
   };
 
   const handleNext = () => {
-    if (!canContinue()) return;
+    if (!canContinue()) {
+      setError(step === 2 ? 'Complete all fields. Your password must contain 10–128 characters, including letters and numbers, and both passwords must match.' : 'Choose a business type to continue.');
+      return;
+    }
+    setError(null);
     setStep((s) => Math.min(s + 1, 5));
   };
 
@@ -64,17 +70,19 @@ export function SignupPage() {
     setError(null);
     setIsSubmitting(true);
     try {
-      const { orgCode } = await signup({
+      const { orgCode, emailDeliveryConfigured, emailVerificationRequiredForPublish } = await signup({
         organizationName: name.trim(),
         vertical,
         siteName: name.trim(),
         slug,
         ownerName: ownerName.trim(),
         ownerEmail: ownerEmail.trim(),
+        password,
+        passwordConfirmation,
         modules,
         branding: { themePresetId, tagline: tagline.trim() },
       });
-      setResult({ orgCode });
+      setResult({ orgCode, emailDeliveryConfigured, emailVerificationRequiredForPublish });
     } catch (err: unknown) {
       setError(err instanceof ApiError ? err.message : 'Something went wrong creating your site.');
     } finally {
@@ -89,17 +97,20 @@ export function SignupPage() {
           <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-primary text-on-primary shadow-lg shadow-primary/20">
             <Check className="h-7 w-7" />
           </div>
-          <h1 className="text-3xl font-bold text-on-surface mt-5 tracking-tight">Your site is live</h1>
+          <h1 className="text-3xl font-bold text-on-surface mt-5 tracking-tight">Your site is ready to edit</h1>
           <p className="text-sm text-secondary mt-2">
-            <span className="font-mono">{slug}.ourplatform.com</span> is up. Save your Organization ID below - you'll need it every time you sign in.
+            Save your Organization ID below. {result.emailVerificationRequiredForPublish !== false ? 'Verify your email, then edit and publish when ready.' : 'Edit your draft, preview it, then publish when ready. Email verification is deferred.'} Your site address is <span className="font-mono">/s/{slug}</span>.
           </p>
+
+          {result.emailVerificationRequiredForPublish !== false && result.emailDeliveryConfigured === false && (
+            <p role="status" className="text-sm text-secondary mt-4">Your account and draft are saved. Email delivery is not configured yet; contact the platform team to enable verification before publishing.</p>
+          )}
 
           <div className="admin-card p-6 mt-6 text-left">
             <p className="text-xs font-bold uppercase tracking-widest text-secondary mb-1">Organization ID</p>
             <p className="text-2xl font-mono font-bold text-primary">{result.orgCode}</p>
             <p className="text-xs text-secondary mt-3">
-              Sign in any time at <span className="font-mono">/login</span> with this Organization ID, {ownerEmail}, and the demo
-              password (<span className="font-mono">password123</span> in this environment).
+              Sign in at <span className="font-mono">/login</span> with this Organization ID, {ownerEmail}, and your chosen password.
             </p>
           </div>
 
@@ -177,7 +188,7 @@ export function SignupPage() {
                   setSlugTouched(true);
                   setSlug(slugify(e.target.value));
                 }}
-                hint={slug ? `Your site will be live at ${slug}.ourplatform.com` : 'Lowercase letters, numbers, and hyphens only.'}
+                hint={slug ? `Site address: /s/${slug}` : 'Lowercase letters, numbers, and hyphens only.'}
                 required
               />
               <div className="grid sm:grid-cols-2 gap-4">
@@ -191,6 +202,8 @@ export function SignupPage() {
                   required
                 />
               </div>
+              <TextField label="Password" type="password" value={password} onChange={(e) => setPassword(e.target.value)} hint="At least 10 characters, including letters and numbers." required />
+              <TextField label="Confirm password" type="password" value={passwordConfirmation} onChange={(e) => setPasswordConfirmation(e.target.value)} required />
             </div>
           )}
 
@@ -253,7 +266,7 @@ export function SignupPage() {
               <dl className="text-sm divide-y divide-outline-variant/10">
                 <div className="flex justify-between py-2.5"><dt className="text-secondary">Business</dt><dd className="font-semibold text-on-surface">{name}</dd></div>
                 <div className="flex justify-between py-2.5"><dt className="text-secondary">Type</dt><dd className="font-semibold text-on-surface">{vertical && VERTICAL_LABEL[vertical]}</dd></div>
-                <div className="flex justify-between py-2.5"><dt className="text-secondary">Address</dt><dd className="font-mono text-on-surface">{slug}.ourplatform.com</dd></div>
+                <div className="flex justify-between py-2.5"><dt className="text-secondary">Address</dt><dd className="font-mono text-on-surface">/s/{slug}</dd></div>
                 <div className="flex justify-between py-2.5"><dt className="text-secondary">Owner</dt><dd className="font-semibold text-on-surface">{ownerName} ({ownerEmail})</dd></div>
                 <div className="flex justify-between py-2.5">
                   <dt className="text-secondary">Pages</dt>
@@ -263,13 +276,12 @@ export function SignupPage() {
                 </div>
               </dl>
               <p className="text-xs text-secondary bg-surface-container-low rounded-xl p-3">
-                Your password will be the demo default (<span className="font-mono">password123</span>) - every account in this
-                environment shares it.
+                Your chosen password will be stored securely. Your new site starts as a draft; you can preview it before publishing.
               </p>
-              {error && <p className="text-sm text-error font-medium">{error}</p>}
             </div>
           )}
 
+          {error && <p role="alert" className="mt-4 text-sm text-error font-medium">{error}</p>}
           <div className="flex items-center justify-between mt-8 pt-6 border-t border-outline-variant/10">
             {step > 1 ? (
               <button
@@ -288,7 +300,7 @@ export function SignupPage() {
             {step < 5 ? (
               <button
                 type="button"
-                disabled={!canContinue()}
+                disabled={step === 1 && !canContinue()}
                 onClick={handleNext}
                 className="inline-flex items-center gap-1.5 px-6 py-2.5 rounded-full bg-primary text-on-primary font-bold text-sm hover:bg-primary-container transition-colors disabled:opacity-40 shadow-md shadow-primary/20"
               >

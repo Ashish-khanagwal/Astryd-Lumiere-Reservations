@@ -79,7 +79,7 @@ export function AdminRoutes() {
           <Route path="settings/pages" element={<Navigate to="/admin/website/pages" replace />} />
           <Route element={<RequireRole allow={['owner', 'super_admin']} />}>
             <Route path="settings/users" element={<UsersPage />} />
-            <Route path="settings/domains" element={<DomainsPage />} />
+            <Route path="settings/domains" element={import.meta.env.VITE_USE_MOCKS === 'true' ? <DomainsPage /> : <p>Custom domains are not enabled yet. Use your platform site address.</p>} />
           </Route>
           <Route element={<RequireRole allow={['super_admin']} />}>
             <Route path="superadmin/sites" element={<SuperAdminSitesPage />} />

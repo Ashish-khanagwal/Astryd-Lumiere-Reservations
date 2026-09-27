@@ -1,7 +1,7 @@
 import { http } from './http';
 import type { PageConfig, PlatformModule } from '../types';
 
-export const getPageConfigs = (siteId: string) => http.get<PageConfig[]>(`/sites/${siteId}/pages`);
+export const getPageConfigs = (siteId: string, version: 'draft' | 'published' = 'draft') => http.get<PageConfig[]>(`/sites/${siteId}/pages?version=${version}`);
 
 export const updatePageConfig = (
   siteId: string,

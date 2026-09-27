@@ -163,7 +163,7 @@ export function buildStarterSections(siteId: string, now: string, hero: Homepage
   ];
 }
 
-function buildSeed(): MockDbShape {
+export function buildSeed(): MockDbShape {
   const now = nowIso();
 
   const restaurant: Restaurant = {

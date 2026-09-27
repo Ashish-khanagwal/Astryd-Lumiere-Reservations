@@ -6,7 +6,7 @@ export type PaymentFulfillmentStatus = 'pending' | 'processing' | 'completed' | 
 export interface CheckoutSession {
   id: string;
   checkoutSecret: string;
-  contextType: 'order' | 'reservation';
+  contextType: 'order' | 'reservation' | 'membership';
   contextId?: string;
   amountCents: number;
   currency: string;

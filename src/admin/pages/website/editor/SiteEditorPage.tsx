@@ -4,7 +4,7 @@ import { AlertCircle, ArrowLeft, Check, ExternalLink, Eye, Loader2, Monitor, Pen
 import { usePageConfigs } from '../../../hooks/api/usePageConfigs';
 import { usePublishWebsite, useWebsiteStatus } from '../../../hooks/api/useWebsite';
 import { useAdminToast } from '../../../context/AdminToastContext';
-import { draftPreviewUrl, useDraftSave } from '../../../context/DraftSaveContext';
+import { draftPreviewUrl } from '../../../context/DraftSaveContext';
 import { useRestaurant } from '../../../../context/RestaurantContext';
 import { Button } from '../../../components/Button';
 import { SitePreviewFrame, type PreviewDevice } from '../../../components/SitePreviewFrame';
@@ -60,7 +60,6 @@ export function SiteEditorPage() {
   const { data: pageConfigs } = usePageConfigs();
   const { data: website } = useWebsiteStatus();
   const publishWebsite = usePublishWebsite();
-  const { flushDraft } = useDraftSave();
   const { showToast } = useAdminToast();
 
   const def = isEditorPageKey(pageParam) ? EDITOR_PAGE_BY_KEY[pageParam] : undefined;
@@ -137,10 +136,11 @@ export function SiteEditorPage() {
   const callbacks = { onSaved: refreshPreview, onStatus: setStatus };
 
   const handlePublish = async () => {
-    await flushDraft();
-    await publishWebsite.mutateAsync();
-    showToast('Website published - your changes are live.');
-    refreshPreview();
+    try {
+      await publishWebsite.mutateAsync();
+      showToast('Website published - your changes are live.');
+      refreshPreview();
+    } catch { /* The shared publication hook displays the error; retain the draft. */ }
   };
 
   const title = config?.navLabel || def.title;

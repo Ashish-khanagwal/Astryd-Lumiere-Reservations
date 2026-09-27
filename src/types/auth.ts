@@ -30,6 +30,7 @@ export interface User extends Timestamps {
   permissions?: Partial<Permission>;
   avatarUrl?: string | null;
   isActive: boolean;
+  emailVerified?: boolean;
 }
 
 export interface Session {
@@ -47,6 +48,7 @@ export interface LoginRequest {
 export type LoginResponse = Session;
 
 export interface ForgotPasswordRequest {
+  orgId?: string;
   email: string;
 }
 
@@ -58,8 +60,10 @@ export interface SignupRequest {
   slug: string;
   ownerName: string;
   ownerEmail: string;
+  password?: string;
+  passwordConfirmation?: string;
   modules: Array<{ module: PlatformModule; navLabel: string; enabled: boolean }>;
   branding: { themePresetId: string; tagline: string };
 }
 
-export type SignupResponse = Session & { orgCode: string };
+export type SignupResponse = Session & { orgCode: string; emailDeliveryConfigured?: boolean; emailVerificationRequiredForPublish?: boolean };

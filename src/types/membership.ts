@@ -25,6 +25,9 @@ export interface Member extends Tenant, Timestamps {
   customerEmail: string;
   customerPhone: string;
   status: MemberStatus;
+  paymentStatus?: 'created' | 'failed' | 'succeeded';
+  paymentId?: string;
+  paidAmountCents?: number;
   startDate: string; // "YYYY-MM-DD"
   nextBillingDate: string | null;
   notes?: string;

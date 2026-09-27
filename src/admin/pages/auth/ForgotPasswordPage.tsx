@@ -4,12 +4,16 @@ import { forgotPassword } from '../../../services/auth';
 
 export function ForgotPasswordPage() {
   const [email, setEmail] = useState('');
+  const [orgId, setOrgId] = useState('');
+  const [error, setError] = useState('');
   const [sent, setSent] = useState(false);
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
-    await forgotPassword({ email });
-    setSent(true);
+    try {
+      await forgotPassword({ email, orgId });
+      setSent(true);
+    } catch (err) { setError(err instanceof Error ? err.message : 'Please try again.'); }
   };
 
   if (sent) {
@@ -27,6 +31,8 @@ export function ForgotPasswordPage() {
   return (
     <form onSubmit={handleSubmit} className="space-y-5">
       <p className="text-sm text-secondary">Enter your email and we'll send you a reset link.</p>
+      <label className="block text-sm">Organization ID<input required value={orgId} onChange={(e) => setOrgId(e.target.value)} className="w-full px-3 py-2.5 rounded-xl border" /></label>
+      {error && <p role="alert">{error}</p>}
       <div>
         <label className="block text-sm font-semibold text-on-surface mb-1.5">Email</label>
         <input

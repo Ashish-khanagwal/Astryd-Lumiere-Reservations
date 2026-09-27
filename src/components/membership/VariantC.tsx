@@ -1,6 +1,8 @@
 import { useState } from 'react';
 import { Loader2, Sparkles } from 'lucide-react';
-import { createMember, findMemberByEmail } from '../../services/membership';
+import { createMember, createMembershipCheckout, findMemberByEmail } from '../../services/membership';
+import { PaidCheckout } from '../PaidCheckout';
+import type { CheckoutSession } from '../../types/payments';
 import { useRestaurant } from '../../context/RestaurantContext';
 import { usePublicData } from '../../context/PublicDataContext';
 import { usePageContent } from '../../context/usePageContent';
@@ -21,6 +23,7 @@ export const MembershipVariantC = ({ onNavigateLanding, onNavigateMenu, onNaviga
   const [phone, setPhone] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [joined, setJoined] = useState(false);
+  const [checkout, setCheckout] = useState<CheckoutSession | null>(null);
 
   const [lookupEmail, setLookupEmail] = useState('');
   const [lookupResult, setLookupResult] = useState<Member | null | 'not_found'>(null);
@@ -30,6 +33,13 @@ export const MembershipVariantC = ({ onNavigateLanding, onNavigateMenu, onNaviga
     if (!joiningPlan || !fullName.trim() || !email.trim()) return;
     setIsSubmitting(true);
     try {
+      if (import.meta.env.VITE_USE_MOCKS !== 'true') {
+        setCheckout(await createMembershipCheckout(restaurantId, {
+          planId: joiningPlan.id, customerName: fullName,
+          customerEmail: email, customerPhone: phone,
+        }));
+        return;
+      }
       await createMember(restaurantId, {
         planId: joiningPlan.id,
         customerName: fullName,
@@ -38,7 +48,7 @@ export const MembershipVariantC = ({ onNavigateLanding, onNavigateMenu, onNaviga
         startDate: new Date().toISOString().slice(0, 10),
       });
       setJoined(true);
-      onToast(c.text('c_joinSuccessToast'));
+      onToast(import.meta.env.VITE_USE_MOCKS === 'true' ? c.text('c_joinSuccessToast') : 'Request received. The business will activate your membership after review.');
     } catch (error: unknown) {
       onToast(error instanceof Error ? error.message : c.text('c_joinErrorToast'));
     } finally {
@@ -52,6 +62,8 @@ export const MembershipVariantC = ({ onNavigateLanding, onNavigateMenu, onNaviga
     try {
       const member = await findMemberByEmail(restaurantId, lookupEmail);
       setLookupResult(member ?? 'not_found');
+    } catch (error: unknown) {
+      onToast(error instanceof Error ? error.message : 'Unable to look up membership.');
     } finally {
       setIsLookingUp(false);
     }
@@ -94,6 +106,7 @@ export const MembershipVariantC = ({ onNavigateLanding, onNavigateMenu, onNaviga
                   ))}
                 </ul>
                 <button
+                  disabled={Boolean(checkout)}
                   onClick={() => { setJoiningPlan(plan); setJoined(false); }}
                   className="w-full py-2.5 rounded-xl bg-on-surface text-on-primary font-bold text-sm uppercase tracking-wide hover:bg-primary transition-colors"
                 >
@@ -104,12 +117,16 @@ export const MembershipVariantC = ({ onNavigateLanding, onNavigateMenu, onNaviga
           ))}
         </div>
 
-        {joiningPlan && (
+        {checkout && <PaidCheckout initialSession={checkout} onSuccess={() => {
+          setCheckout(null); setJoined(true);
+          onToast('Payment succeeded. Your membership is active.');
+        }} />}
+        {joiningPlan && !checkout && (
           <div className="max-w-md mx-auto mb-16 bg-surface p-6 rounded-2xl border border-outline-variant/20">
             {joined ? (
               <div className="text-center">
                 <h3 className="font-serif text-xl font-semibold mb-1">{c.text('c_successHeading')}</h3>
-                <p className="text-sm text-secondary">{c.text('c_successMessage', { email })}</p>
+                <p className="text-sm text-secondary">{import.meta.env.VITE_USE_MOCKS === 'true' ? c.text('c_successMessage', { email }) : 'Payment succeeded. Your membership is active.'}</p>
               </div>
             ) : (
               <div className="space-y-3">
@@ -118,7 +135,7 @@ export const MembershipVariantC = ({ onNavigateLanding, onNavigateMenu, onNaviga
                 <input value={email} onChange={(e) => setEmail(e.target.value)} type="email" placeholder={c.text('emailPlaceholder')} className="w-full px-3 py-2.5 rounded-xl border border-outline-variant/40 text-sm outline-none focus:border-primary" />
                 <input value={phone} onChange={(e) => setPhone(e.target.value)} type="tel" placeholder={c.text('phonePlaceholder')} className="w-full px-3 py-2.5 rounded-xl border border-outline-variant/40 text-sm outline-none focus:border-primary" />
                 <button
-                  disabled={!fullName.trim() || !email.trim() || isSubmitting}
+                  disabled={!fullName.trim() || !email.trim() || !phone.trim() || isSubmitting}
                   onClick={handleJoin}
                   className="w-full py-3 bg-primary text-on-primary rounded-xl font-bold text-sm uppercase tracking-wide disabled:opacity-50 flex items-center justify-center gap-2"
                 >
