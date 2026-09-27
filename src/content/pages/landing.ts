@@ -1,5 +1,6 @@
 import type { ContentFields, ContentPageDefinition } from '../../types';
 import heroFallback from '../../assets/hero.png';
+import { SALON_IMAGES } from '../verticalImages';
 
 const rowFields = [
   { key: 'label', label: 'Label', type: 'text' as const },
@@ -73,6 +74,8 @@ export const landingContent: ContentPageDefinition = {
         { key: 'heroHeading', label: 'Title', type: 'text', hint: '{brand} is replaced with your business name.' },
         { key: 'heroDescription', label: 'Description', type: 'textarea', hint: '{city} is replaced with the area from your address.' },
         { key: 'heroButtonText', label: 'Button text', type: 'text' },
+        { key: 'heroButtonIcon', label: 'Button icon', type: 'text', hint: ICON_HINT },
+        { key: 'heroSecondaryButtonIcon', label: 'Second button icon', type: 'text', hint: ICON_HINT },
         { key: 'heroFallbackImage', label: 'Background image', type: 'image', hint: 'Shown when no hero background image is chosen.' },
       ],
     },
@@ -120,6 +123,7 @@ export const landingContent: ContentPageDefinition = {
       fields: [
         { key: 'closedLabel', label: '"Closed" label', type: 'text', hint: 'Shown for days you are closed.' },
         { key: 'hoursRange', label: 'Opening hours format', type: 'text', hint: '{open} and {close} are the opening and closing times.' },
+        { key: 'clockFormat', label: 'Clock format', type: 'text', hint: 'Type 12h to show times like 8:00 PM, or 24h for 20:00.' },
         {
           key: 'weekdays',
           label: 'Day names',
@@ -142,6 +146,8 @@ export const landingContent: ContentPageDefinition = {
     heroHeading: '{brand}',
     heroDescription: 'Experience invisible excellence at our flagship dining room in {city}.',
     heroButtonText: 'Reserve a Table',
+    heroButtonIcon: 'table_restaurant',
+    heroSecondaryButtonIcon: 'restaurant_menu',
     heroFallbackImage: heroFallback,
     aboutEyebrow: 'The Philosophy',
     aboutHeading: 'A sanctuary of light and culinary precision.',
@@ -157,6 +163,7 @@ export const landingContent: ContentPageDefinition = {
     offerBadgeBogo: 'Buy 1 Get 1',
     closedLabel: 'Closed',
     hoursRange: '{open} - {close}',
+    clockFormat: '24h',
     weekdays: [
       { id: 'mon', short: 'Mon', full: 'Monday' },
       { id: 'tue', short: 'Tue', full: 'Tuesday' },
@@ -178,6 +185,8 @@ export const landingContent: ContentPageDefinition = {
       secondaryButton: 'Book a Class',
       featuredViewAll: 'View All Programs',
       offerCtaFallback: 'View Programs',
+      heroButtonIcon: 'event_available',
+      heroSecondaryButtonIcon: 'fitness_center',
       card1Icon: 'fitness_center',
       card1Title: 'Facilities',
       card1Rows: [
@@ -202,6 +211,8 @@ export const landingContent: ContentPageDefinition = {
       secondaryButton: 'Book a Fitting',
       featuredViewAll: 'Shop All Products',
       offerCtaFallback: 'Shop Now',
+      heroButtonIcon: 'shopping_bag',
+      heroSecondaryButtonIcon: 'storefront',
       card1Icon: 'local_shipping',
       card1Title: 'Shipping & Returns',
       card1Rows: [
@@ -217,6 +228,45 @@ export const landingContent: ContentPageDefinition = {
         { id: 'r2', label: 'Loyalty Program', value: 'Points on every order' },
         { id: 'r3', label: 'Price Match', value: 'On request' },
         { id: 'r4', label: 'Gift Cards', value: 'Available in-store' },
+      ],
+    },
+    salon: {
+      locationFallback: 'Austin, TX',
+      openStatus: 'Now Booking',
+      primaryButton: 'View Services',
+      secondaryButton: 'Book Now',
+      heroEyebrow: '{city}',
+      heroDescription: 'Expert cuts, lived-in color, flawless nails and glowing skin - book your stylist online.',
+      heroButtonText: 'Book an Appointment',
+      heroButtonIcon: 'calendar_month',
+      heroSecondaryButtonIcon: 'content_cut',
+      heroFallbackImage: SALON_IMAGES.hero,
+      aboutEyebrow: 'Our Story',
+      aboutHeading: 'Great hair, zero attitude.',
+      aboutDescription: 'At {brand}, every visit starts with a real consultation - so you leave with a look that fits your life.',
+      aboutStoryLink: 'Meet our founder',
+      featuredViewAll: 'View All Services',
+      featuredPrice: 'From ${price}',
+      offerCtaFallback: 'Book Now',
+      hoursTitle: 'Salon Hours',
+      hoursRange: '{open} – {close}',
+      clockFormat: '12h',
+      locationHoursTitle: 'Salon Hours',
+      card1Icon: 'spa',
+      card1Title: 'The Experience',
+      card1Rows: [
+        { id: 'r1', label: 'Consultation', value: 'Always complimentary' },
+        { id: 'r2', label: 'Refreshments', value: 'Coffee, tea & mimosas' },
+        { id: 'r3', label: 'Parking', value: 'Free lot behind salon' },
+        { id: 'r4', label: 'Wi-Fi', value: 'Complimentary' },
+      ],
+      card2Icon: 'event_available',
+      card2Title: 'Booking Info',
+      card2Rows: [
+        { id: 'r1', label: 'Cancellations', value: '24 hours notice' },
+        { id: 'r2', label: 'Late Arrivals', value: '15-min grace period' },
+        { id: 'r3', label: 'Payment', value: 'Visa, MC, AMEX, Apple Pay' },
+        { id: 'r4', label: 'Gift Cards', value: 'Available in salon' },
       ],
     },
   },

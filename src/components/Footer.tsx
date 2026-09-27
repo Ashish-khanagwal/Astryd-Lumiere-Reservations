@@ -53,6 +53,16 @@ const FOOTER_THEME: Record<Vertical, FooterTheme> = {
     borderTop: 'border-outline-variant/30',
     extraNavTarget: 'menu',
   },
+  salon: {
+    bg: 'bg-[#2B1D22]',
+    glow: 'bg-gradient-to-b from-[#F2B8C6]/10 via-transparent to-black/40',
+    text: 'text-[#EBD9DD]',
+    accent: 'text-[#F2B8C6]',
+    mutedText: 'text-[#CDB5BB]',
+    hoverText: 'hover:text-white',
+    borderTop: 'border-[#F2B8C6]/20',
+    extraNavTarget: 'reservations',
+  },
 };
 
 export const Footer: React.FC<FooterProps> = ({
@@ -72,6 +82,8 @@ export const Footer: React.FC<FooterProps> = ({
   const membershipLabel = getNavLabel('membership', 'Membership');
   const itemsEnabled = isModuleEnabled('items');
   const membershipEnabled = isModuleEnabled('membership');
+  const catalogEnabled = isModuleEnabled('catalog');
+  const bookingEnabled = isModuleEnabled('booking');
   const description = brand?.description ?? c.text('footerDescription');
   const contact = brand?.contact;
   const instagram = brand?.socialLinks?.instagram ?? '';
@@ -109,21 +121,27 @@ export const Footer: React.FC<FooterProps> = ({
                   </button>
                 </li>
               )}
-              <li>
-                <button className={`${theme.hoverText} transition-colors text-left`} onClick={onNavigateMenu}>
-                  {catalogLabel}
-                </button>
-              </li>
-              <li>
-                <button className={`${theme.hoverText} transition-colors text-left`} onClick={onNavigateReservations}>
-                  {bookingLabel}
-                </button>
-              </li>
-              <li>
-                <button className={`${theme.hoverText} transition-colors text-left`} onClick={onExtraNav}>
-                  {c.text('footerExtraNavLabel')}
-                </button>
-              </li>
+              {catalogEnabled && (
+                <li>
+                  <button className={`${theme.hoverText} transition-colors text-left`} onClick={onNavigateMenu}>
+                    {catalogLabel}
+                  </button>
+                </li>
+              )}
+              {bookingEnabled && (
+                <li>
+                  <button className={`${theme.hoverText} transition-colors text-left`} onClick={onNavigateReservations}>
+                    {bookingLabel}
+                  </button>
+                </li>
+              )}
+              {(theme.extraNavTarget === 'menu' ? catalogEnabled : bookingEnabled) && (
+                <li>
+                  <button className={`${theme.hoverText} transition-colors text-left`} onClick={onExtraNav}>
+                    {c.text('footerExtraNavLabel')}
+                  </button>
+                </li>
+              )}
               {membershipEnabled && (
                 <li>
                   <button

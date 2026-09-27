@@ -37,6 +37,8 @@ export const Header: React.FC<HeaderProps> = ({
   const membershipLabel = getNavLabel('membership', 'Membership');
   const itemsEnabled = isModuleEnabled('items');
   const membershipEnabled = isModuleEnabled('membership');
+  const catalogEnabled = isModuleEnabled('catalog');
+  const bookingEnabled = isModuleEnabled('booking');
   const goItems = onNavigateItems ?? (() => { window.location.hash = '#/items'; });
   const goMembership = onNavigateMembership ?? (() => { window.location.hash = '#/membership'; });
   const logoUrl = brand?.logoMediaId ? mediaMap.get(brand.logoMediaId)?.fileUrl : undefined;
@@ -49,7 +51,7 @@ export const Header: React.FC<HeaderProps> = ({
   };
   const navLinkInactiveClass = 'text-[var(--nav-color,#5f5e5e)] hover:text-[var(--nav-hover-color,#1b1c1c)]';
 
-  const cartButton = onOpenCart ? (
+  const cartButton = (brand?.showCart ?? true) && onOpenCart ? (
     <button
       type="button"
       id="header-cart-btn"
@@ -119,27 +121,31 @@ export const Header: React.FC<HeaderProps> = ({
               </button>
             )}
 
-            <button
-              onClick={onNavigateMenu}
-              className={`font-sans text-sm tracking-wide py-1 font-medium transition-colors relative ${
-                currentPage === 'menu'
-                  ? 'text-primary font-bold after:content-[""] after:absolute after:bottom-0 after:left-0 after:right-0 after:h-0.5 after:bg-primary after:rounded-full'
-                  : navLinkInactiveClass
-              }`}
-            >
-              {catalogLabel}
-            </button>
+            {catalogEnabled && (
+              <button
+                onClick={onNavigateMenu}
+                className={`font-sans text-sm tracking-wide py-1 font-medium transition-colors relative ${
+                  currentPage === 'menu'
+                    ? 'text-primary font-bold after:content-[""] after:absolute after:bottom-0 after:left-0 after:right-0 after:h-0.5 after:bg-primary after:rounded-full'
+                    : navLinkInactiveClass
+                }`}
+              >
+                {catalogLabel}
+              </button>
+            )}
 
-            <button
-              onClick={onNavigateReservations}
-              className={`font-sans text-sm tracking-wide py-1 font-medium transition-colors relative ${
-                currentPage === 'reservations'
-                  ? 'text-primary font-bold after:content-[""] after:absolute after:bottom-0 after:left-0 after:right-0 after:h-0.5 after:bg-primary after:rounded-full'
-                  : navLinkInactiveClass
-              }`}
-            >
-              {bookingLabel}
-            </button>
+            {bookingEnabled && (
+              <button
+                onClick={onNavigateReservations}
+                className={`font-sans text-sm tracking-wide py-1 font-medium transition-colors relative ${
+                  currentPage === 'reservations'
+                    ? 'text-primary font-bold after:content-[""] after:absolute after:bottom-0 after:left-0 after:right-0 after:h-0.5 after:bg-primary after:rounded-full'
+                    : navLinkInactiveClass
+                }`}
+              >
+                {bookingLabel}
+              </button>
+            )}
 
             {membershipEnabled && (
               <button
@@ -199,28 +205,32 @@ export const Header: React.FC<HeaderProps> = ({
               {itemsLabel}
             </button>
           )}
-          <button
-            onClick={() => {
-              onNavigateMenu();
-              setIsMobileMenuOpen(false);
-            }}
-            className={`block w-full text-left font-sans text-base py-2.5 font-medium transition-colors ${
-              currentPage === 'menu' ? 'text-primary font-bold' : navLinkInactiveClass
-            }`}
-          >
-            {catalogLabel}
-          </button>
-          <button
-            onClick={() => {
-              onNavigateReservations();
-              setIsMobileMenuOpen(false);
-            }}
-            className={`block w-full text-left font-sans text-base py-2.5 font-medium transition-colors ${
-              currentPage === 'reservations' ? 'text-primary font-bold' : navLinkInactiveClass
-            }`}
-          >
-            {bookingLabel}
-          </button>
+          {catalogEnabled && (
+            <button
+              onClick={() => {
+                onNavigateMenu();
+                setIsMobileMenuOpen(false);
+              }}
+              className={`block w-full text-left font-sans text-base py-2.5 font-medium transition-colors ${
+                currentPage === 'menu' ? 'text-primary font-bold' : navLinkInactiveClass
+              }`}
+            >
+              {catalogLabel}
+            </button>
+          )}
+          {bookingEnabled && (
+            <button
+              onClick={() => {
+                onNavigateReservations();
+                setIsMobileMenuOpen(false);
+              }}
+              className={`block w-full text-left font-sans text-base py-2.5 font-medium transition-colors ${
+                currentPage === 'reservations' ? 'text-primary font-bold' : navLinkInactiveClass
+              }`}
+            >
+              {bookingLabel}
+            </button>
+          )}
           {membershipEnabled && (
             <button
               onClick={() => {

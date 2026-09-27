@@ -1,6 +1,7 @@
 import type { BusinessHoursEntry, Vertical } from '../../types';
 import { usePageContent } from '../../context/usePageContent';
 import { LANDING_EXTRAS_SECTION } from '../../preview/bridge';
+import { formatClockTime } from '../../content/formatTime';
 
 interface InfoCard {
   id: string;
@@ -44,6 +45,14 @@ const STYLE: Record<Vertical, VerticalStyle> = {
     secondaryButtonClassName: 'bg-primary text-on-primary hover:bg-primary-container',
     cardsSectionClassName: 'bg-surface-container-low',
   },
+  salon: {
+    stickyBarClassName: 'bg-[#2B1D22] border-b border-[#F2B8C6]/20',
+    stickyBarTextClassName: 'text-[#EBD9DD]',
+    stickyPillClassName: 'text-[#F2B8C6]',
+    primaryButtonClassName: 'border border-[#F2B8C6]/40 text-[#F7E6EA] hover:bg-[#F2B8C6]/15 hover:text-white',
+    secondaryButtonClassName: 'bg-[#F2B8C6] text-[#2B1D22] hover:bg-[#f7c9d4]',
+    cardsSectionClassName: 'bg-[#FBF4F2]',
+  },
 };
 
 interface LandingChromeProps {
@@ -72,7 +81,7 @@ export function LandingChrome({ vertical, address, businessHours, isStickyShadow
       rows: businessHours.map((h) => ({
         id: h.day,
         label: dayLabel.get(h.day) || h.day,
-        value: h.isClosed ? c.text('closedLabel') : c.text('hoursRange', { open: h.openTime ?? '', close: h.closeTime ?? '' }),
+        value: h.isClosed ? c.text('closedLabel') : c.text('hoursRange', { open: formatClockTime(h.openTime, c.text('clockFormat')), close: formatClockTime(h.closeTime, c.text('clockFormat')) }),
       })),
     },
   ];

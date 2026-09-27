@@ -97,5 +97,18 @@ export const itemsContent: ContentPageDefinition = {
       b_reserveButton: 'Book an appointment',
       b_programCount: '{count} products',
     },
+    salon: {
+      a_eyebrow: 'The Service Menu',
+      a_title: 'Our Services',
+      a_introBefore: 'Every appointment starts with a complimentary consultation.',
+      a_introLink: 'Book online',
+      a_introAfter: 'in under a minute.',
+      b_eyebrow: 'Explore',
+      b_title: 'Our Services',
+      b_reserveButton: 'Book this service',
+      b_programCount: '{count} services',
+      c_eyebrow: 'Lookbook',
+      c_title: 'Our Services',
+    },
   },
 };

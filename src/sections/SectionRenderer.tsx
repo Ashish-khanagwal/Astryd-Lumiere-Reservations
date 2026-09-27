@@ -19,6 +19,8 @@ interface SectionRendererProps {
   onAboutImageClick: () => void;
   onGalleryImageClick: (index: number) => void;
   onViewMenu: () => void;
+  /** Where an offer's button leads; defaults to onViewMenu. */
+  onOfferClick?: () => void;
 }
 
 export const SectionRenderer = ({
@@ -31,6 +33,7 @@ export const SectionRenderer = ({
   onAboutImageClick,
   onGalleryImageClick,
   onViewMenu,
+  onOfferClick,
 }: SectionRendererProps) => {
   const c = usePageContent('landing');
   const offerBadge: Record<Offer['type'], (o: Offer) => string> = {
@@ -126,7 +129,7 @@ export const SectionRenderer = ({
                   imageUrl: o.imageMediaId ? mediaMap.get(o.imageMediaId)?.fileUrl : undefined,
                   cta: o.cta,
                 }))}
-                onCtaClick={onViewMenu}
+                onCtaClick={onOfferClick ?? onViewMenu}
               />
             );
           }

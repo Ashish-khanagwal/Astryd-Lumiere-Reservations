@@ -1,4 +1,4 @@
-/** Unsplash photos (checked to load and to show their subject) used as Gym/Retail defaults for page images and demo content. */
+/** Unsplash photos (checked to load and to show their subject) used as Gym/Retail/Salon defaults for page images and demo content. */
 const photo = (id: string, w = 1200) => `https://images.unsplash.com/${id}?w=${w}&q=80&auto=format&fit=crop`;
 
 export const GYM_IMAGES = {
@@ -27,4 +27,37 @@ export const RETAIL_IMAGES = {
   loveseat: photo('photo-1555041469-a586c61ea9bc'),
   floorVase: photo('photo-1612196808214-b8e1d6145a8c'),
   capsule: photo('photo-1602028915047-37269d1a73f7'),
+};
+
+export const SALON_IMAGES = {
+  hero: photo('photo-1633681926022-84c23e8cb2d6', 1800),
+  interior: photo('photo-1626383137804-ff908d2753a2', 1600),
+  interiorModern: photo('photo-1600948836101-f9ffda59d250'),
+  stylingChairs: photo('photo-1521590832167-7bcbfaa6381f'),
+  blowout: photo('photo-1562322140-8baeececf3df'),
+  blowDry: photo('photo-1580618672591-eb180b1a973f'),
+  shampoo: photo('photo-1595476108010-b4d1f102b1b1'),
+  team: photo('photo-1559599101-f09722fb4948'),
+  founder: photo('photo-1580489944761-15a19d654956', 800),
+  longHair: photo('photo-1522337360788-8b13dee7a37e'),
+  vividColor: photo('photo-1492106087820-71f1a00d2b11'),
+  naturalCurls: photo('photo-1519699047748-de8e457a634e'),
+  colorFoils: photo('photo-1617391654484-2894196c2cc9'),
+  curlingIron: photo('photo-1560869713-7d0a29430803'),
+  updo: photo('photo-1582095133179-bfd08e2fc6b3'),
+  mensCut: photo('photo-1605497788044-5a32c7078486'),
+  fade: photo('photo-1599351431202-1e0f0137899a'),
+  makeup: photo('photo-1487412947147-5cebf100ffc2'),
+  brushes: photo('photo-1516975080664-ed2fc6a32937'),
+  tortoiseNails: photo('photo-1604654894610-df63bc536371'),
+  nudeNails: photo('photo-1610992015732-2449b76344bc'),
+  nailArt: photo('photo-1519014816548-bf5fe059798b'),
+  gelManicure: photo('photo-1632345031435-8727f6897d53'),
+  manicure: photo('photo-1457972729786-0411a3b2b626'),
+  pedicure: photo('photo-1519415510236-718bdfcd89c8'),
+  facial: photo('photo-1570172619644-dfd03ed5d881'),
+  hydrafacial: photo('photo-1616394584738-fc6e612e71b9'),
+  brows: photo('photo-1552693673-1bf958298935'),
+  hairMask: photo('photo-1608248597279-f99d160bfcbc'),
+  tools: photo('photo-1527799820374-dcf8d9d4a388'),
 };

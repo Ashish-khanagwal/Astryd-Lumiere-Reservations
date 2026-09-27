@@ -93,6 +93,10 @@ export function LoginPage() {
           <p className="font-semibold">NOVAGOODS (Retail)</p>
           <p>{mocks ? 'owner' : 'admin'}@novagoods.com (Owner)</p>
         </div>
+        <div>
+          <p className="font-semibold">SLOANECO (Salon)</p>
+          <p>{mocks ? 'owner' : 'admin'}@sloaneandco.com (Owner)</p>
+        </div>
       </div>}
 
       <div className="text-center">

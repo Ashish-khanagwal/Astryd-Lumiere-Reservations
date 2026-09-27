@@ -280,5 +280,19 @@ export const globalContent: ContentPageDefinition = {
       chefNameFallback: 'Our Founder',
       footerDescription: 'An independent lifestyle & home goods shop - small-batch makers, thoughtfully curated.',
     },
+    salon: {
+      navHomeLabel: 'Home',
+      footerExtraNavLabel: 'Bridal & Events',
+      cartEmptyBody: 'Add a service to get started.',
+      chefEyebrow: 'Founder & Lead Stylist',
+      chefNameFallback: 'Our Founder',
+      footerDescription: 'A full-service Austin salon - expert cuts, color, nails and skin care, with easy online booking.',
+      legalLinks: [
+        { id: 'privacy', label: 'Privacy Policy', url: '#' },
+        { id: 'terms', label: 'Terms of Service', url: '#' },
+        { id: 'cancellation', label: 'Cancellation Policy', url: '#' },
+        { id: 'accessibility', label: 'Accessibility', url: '#' },
+      ],
+    },
   },
 };

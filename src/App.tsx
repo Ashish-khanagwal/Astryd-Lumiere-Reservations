@@ -63,7 +63,10 @@ function loadCart(siteId: string): CartState {
 
 function AppShell() {
   const { restaurantId } = useRestaurant();
-  const { brand, sections, mediaMap, items, offers, isLoading, vertical } = usePublicData();
+  const { brand, sections, mediaMap, items, offers, isLoading, vertical, isModuleEnabled } = usePublicData();
+  // With online ordering switched off (e.g. a Salon), homepage "browse" buttons show the Items page and offers lead to booking.
+  const browsePage: AppPage = isModuleEnabled('catalog') || !isModuleEnabled('items') ? 'menu' : 'items';
+  const offerPage: AppPage = isModuleEnabled('catalog') || !isModuleEnabled('booking') ? browsePage : 'reservations';
   useEffect(() => {
     if (brand?.restaurantName) document.title = brand.restaurantName;
   }, [brand?.restaurantName]);
@@ -324,7 +327,7 @@ function AppShell() {
           address={brand?.contact?.address}
           businessHours={brand?.businessHours ?? []}
           isStickyShadowed={isStickyShadowed}
-          onPrimaryAction={() => setCurrentPage('menu')}
+          onPrimaryAction={() => setCurrentPage(browsePage)}
           onSecondaryAction={() => setCurrentPage('reservations')}
         />
 
@@ -337,7 +340,8 @@ function AppShell() {
           onNavigate={navigateFromLink}
           onAboutImageClick={() => setIsChefStoryOpen(true)}
           onGalleryImageClick={(idx) => setLightboxIndex(idx)}
-          onViewMenu={() => setCurrentPage('menu')}
+          onViewMenu={() => setCurrentPage(browsePage)}
+          onOfferClick={() => setCurrentPage(offerPage)}
         />
       </main>
 

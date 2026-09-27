@@ -7,6 +7,7 @@ import { useAutoSave } from '../../../../hooks/useAutoSave';
 import { SectionCard } from '../../../../components/SectionCard';
 import { FormSkeleton } from '../../../../components/Skeleton';
 import { TextField, SelectField } from '../../../../components/forms/Field';
+import { ToggleField } from '../../../../components/forms/ToggleField';
 import { ImagePickerField } from '../../../../components/forms/ImagePickerField';
 import { HexColorField } from '../../../../components/forms/HexColorField';
 import { ColorTokenSelect } from '../../../../components/forms/ColorTokenSelect';
@@ -70,6 +71,15 @@ export function BrandPanel({ mode, ...callbacks }: { mode: 'header' | 'style' } 
               </button>
             ))}
           </div>
+        </SectionCard>
+
+        <SectionCard title="Cart" description="Control whether the cart icon can appear in the header.">
+          <ToggleField
+            label="Show cart in header"
+            description="Turn off to hide the cart icon everywhere on your site, even when it has items."
+            checked={draft.showCart ?? true}
+            onChange={(showCart) => set({ showCart })}
+          />
         </SectionCard>
 
         <SectionCard title="Header colors" description="Override the header's background and link colors. Leave as default to follow your theme.">

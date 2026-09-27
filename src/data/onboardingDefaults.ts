@@ -5,18 +5,22 @@ export const VERTICAL_LABEL: Record<Vertical, string> = {
   restaurant: 'Restaurant',
   gym: 'Gym / Fitness Studio',
   retail: 'Retail / Shop',
+  salon: 'Salon / Beauty',
 };
 
 export const VERTICAL_DESCRIPTION: Record<Vertical, string> = {
   restaurant: 'Dishes, tables, and a loyalty club - dining, takeaway, and reservations.',
   gym: 'Programs, classes, and memberships - browse-first, book a spot, manage members.',
   retail: 'Products, appointments, and a VIP club - shop online or book a fitting.',
+  salon: 'A service menu, online appointments, and a VIP membership - book a stylist in a few taps.',
 };
 
 export interface ModuleDefault {
   module: PlatformModule;
   navLabel: string;
   enabled: boolean;
+  /** Overrides the Vertical's default layout for this one module (e.g. a Salon's appointment booking). */
+  templateVariant?: TemplateVariant;
 }
 
 /** Plan §6 step 3 table - pre-checked and editable immediately; fixed module order per §7.1 (Items → Catalog → Booking → Membership). */
@@ -39,6 +43,12 @@ export const VERTICAL_MODULE_DEFAULTS: Record<Vertical, ModuleDefault[]> = {
     { module: 'booking', navLabel: 'Appointments', enabled: false },
     { module: 'membership', navLabel: 'Loyalty', enabled: true },
   ],
+  salon: [
+    { module: 'items', navLabel: 'Services', enabled: true, templateVariant: 'a' },
+    { module: 'catalog', navLabel: 'Shop', enabled: false, templateVariant: 'a' },
+    { module: 'booking', navLabel: 'Book Now', enabled: true, templateVariant: 'c' },
+    { module: 'membership', navLabel: 'Memberships', enabled: true, templateVariant: 'c' },
+  ],
 };
 
 /** Plan §8.6 - Vertical only pre-selects a layout at Site creation; owners can switch any module to any layout in Settings → Pages. */
@@ -46,4 +56,10 @@ export const VERTICAL_TEMPLATE_VARIANT: Record<Vertical, TemplateVariant> = {
   restaurant: 'a',
   gym: 'b',
   retail: 'c',
+  salon: 'a',
 };
+
+/** The layout a new Site's module starts on - the module's own override, else the Vertical's default. */
+export function defaultTemplateVariant(vertical: Vertical, module: PlatformModule): TemplateVariant {
+  return VERTICAL_MODULE_DEFAULTS[vertical].find((d) => d.module === module)?.templateVariant ?? VERTICAL_TEMPLATE_VARIANT[vertical];
+}

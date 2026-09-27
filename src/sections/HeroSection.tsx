@@ -48,7 +48,7 @@ export const HeroSection = ({ content, backgroundImageUrl, onNavigate }: HeroSec
             onClick={() => onNavigate(buttonLink)}
             className="px-8 py-3.5 rounded-xl bg-primary text-on-primary font-sans text-sm font-semibold hover:bg-primary-container shadow-xl transition-all active:scale-95 flex items-center justify-center gap-2.5"
           >
-            <span className="material-symbols-outlined text-xl">table_restaurant</span>
+            <span className="material-symbols-outlined text-xl">{c.text('heroButtonIcon')}</span>
             <span>{buttonText}</span>
           </button>
           {secondaryButtonText && secondaryButtonLink && (
@@ -56,7 +56,7 @@ export const HeroSection = ({ content, backgroundImageUrl, onNavigate }: HeroSec
               onClick={() => onNavigate(secondaryButtonLink)}
               className="px-8 py-3.5 rounded-xl bg-surface/20 text-white font-sans text-sm font-semibold hover:bg-surface/30 backdrop-blur-md shadow-xl transition-all active:scale-95 flex items-center justify-center gap-2.5 border border-white/30"
             >
-              <span className="material-symbols-outlined text-xl">restaurant_menu</span>
+              <span className="material-symbols-outlined text-xl">{c.text('heroSecondaryButtonIcon')}</span>
               <span>{secondaryButtonText}</span>
             </button>
           )}

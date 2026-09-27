@@ -212,5 +212,11 @@ export const checkoutContent: ContentPageDefinition = {
       addMoreItemsLabel: 'Add More Products',
       paymentSuccessToast: 'Payment successful. Order #{number} has been sent to the shop.',
     },
+    salon: {
+      backToMenuLabel: 'Back to Services',
+      addMoreItemsLabel: 'Add More Services',
+      instructionsPlaceholder: 'Hair goals, allergies or anything your stylist should know...',
+      paymentSuccessToast: 'Payment successful. Order #{number} has been sent to the salon.',
+    },
   },
 };

@@ -3,6 +3,7 @@ import { Header } from '../Header';
 import { Footer } from '../Footer';
 import { ALL_MENU_ITEMS, type MenuItem } from '../../data/menuItems';
 import { usePageContent } from '../../context/usePageContent';
+import { usePublicData } from '../../context/PublicDataContext';
 
 /** Internal sentinel for the "show everything" filter - its visible label comes from Page Content. */
 const ALL = '__all__';
@@ -26,6 +27,9 @@ export const ItemsVariantA = ({
   onOpenCart,
 }: ItemsViewProps) => {
   const c = usePageContent('items');
+  const { isModuleEnabled } = usePublicData();
+  // Service businesses often run without online ordering - send the intro link to booking instead of a disabled page.
+  const onIntroLink = isModuleEnabled('catalog') || !isModuleEnabled('booking') ? onNavigateMenu : onNavigateReservations;
   const [selectedFilter, setSelectedFilter] = useState(ALL);
 
   const categories = useMemo(() => [ALL, ...Array.from(new Set(ALL_MENU_ITEMS.map((item) => item.category)))], []);
@@ -56,7 +60,7 @@ export const ItemsVariantA = ({
           <h1 className="font-serif text-4xl md:text-6xl font-semibold text-on-surface mt-3">{c.text('a_title')}</h1>
           <p className="text-secondary mt-4 font-sans">
             {c.text('a_introBefore')}{' '}
-            <button onClick={onNavigateMenu} className="text-primary font-semibold hover:underline">
+            <button onClick={onIntroLink} className="text-primary font-semibold hover:underline">
               {c.text('a_introLink')}
             </button>{' '}
             {c.text('a_introAfter')}

@@ -2,7 +2,7 @@ import { http, HttpResponse } from 'msw';
 import { db, nextId, nowIso } from '../db';
 import { issueToken } from './auth';
 import { buildStarterSections } from '../seed';
-import { VERTICAL_TEMPLATE_VARIANT } from '../../data/onboardingDefaults';
+import { defaultTemplateVariant } from '../../data/onboardingDefaults';
 import type {
   BrandSettings,
   Homepage,
@@ -92,7 +92,7 @@ export const signupHandlers = [
         enabled: m.enabled,
         navLabel: m.navLabel,
         order,
-        templateVariant: VERTICAL_TEMPLATE_VARIANT[body.vertical] ?? 'a',
+        templateVariant: defaultTemplateVariant(body.vertical, m.module),
         createdAt: now,
         updatedAt: now,
       })),
