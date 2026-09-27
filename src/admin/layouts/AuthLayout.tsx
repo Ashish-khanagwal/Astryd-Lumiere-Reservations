@@ -2,8 +2,8 @@ import { Outlet, useLocation } from 'react-router-dom';
 import { Sparkles } from 'lucide-react';
 
 /** Heading per screen - this layout wraps login and both password screens, and serves every business type. */
-const SCREEN_HEADING: Record<string, { title: string; subtitle: string }> = {
-  '/login': { title: 'Login', subtitle: 'Sign in to manage your business website' },
+const SCREEN_HEADING: Record<string, { title: string; subtitle?: string }> = {
+  '/login': { title: 'Login' },
   '/forgot-password': { title: 'Forgot password', subtitle: "We'll email you a link to reset it" },
   '/reset-password': { title: 'Reset password', subtitle: 'Choose a new password for your account' },
 };
@@ -20,7 +20,7 @@ export function AuthLayout() {
             <Sparkles className="h-6 w-6" />
           </div>
           <h1 className="text-3xl font-bold text-on-surface mt-4 tracking-tight">{heading.title}</h1>
-          <p className="text-sm text-secondary mt-1">{heading.subtitle}</p>
+          {heading.subtitle && <p className="text-sm text-secondary mt-1">{heading.subtitle}</p>}
         </div>
         <div className="admin-card p-8">
           <Outlet />
