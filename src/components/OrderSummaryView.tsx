@@ -12,6 +12,7 @@ import { getPayment, retryPayment, submitCard, waitForPayment } from '../service
 import type { CheckoutSession } from '../types';
 import { FinixCardForm } from './FinixCardForm';
 import { usePageContent } from '../context/usePageContent';
+import { IS_EDITOR_PREVIEW } from '../preview/usePreviewBridge';
 
 const TAX_RATE = 0.085;
 const DELIVERY_FEE = 15;
@@ -136,7 +137,9 @@ export const OrderSummaryView = ({
   }, [cart]);
 
   useEffect(() => {
-    if (lineItems.length === 0 && submitState === 'idle') {
+    // Visitors with an empty cart go back to the menu - but not inside the Site Editor's preview, where the
+    // owner needs to see the checkout page they're editing.
+    if (lineItems.length === 0 && submitState === 'idle' && !IS_EDITOR_PREVIEW) {
       onNavigateMenu();
     }
   }, [lineItems.length, onNavigateMenu, submitState]);

@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useLayoutEffect, useRef } from 'react';
 import { Loader2 } from 'lucide-react';
 import { GalleryLightbox } from './components/GalleryLightbox';
 import { ChefStoryModal } from './components/ChefStoryModal';
@@ -97,6 +97,20 @@ function AppShell() {
     return () => window.removeEventListener('hashchange', onHashChange);
   }, []);
 
+  // Every page change (nav links, buttons, redirects, back/forward) starts at the top. Layout effect so
+  // the new page never paints at the old scroll position; 'instant' because <html> has scroll-smooth.
+  // The first render is skipped so a reload keeps the browser's restored scroll position.
+  const previousPageRef = useRef(currentPage);
+  useEffect(() => {
+    // Otherwise Back/Forward can restore the old page's position after we've already jumped to the top.
+    if ('scrollRestoration' in window.history) window.history.scrollRestoration = 'manual';
+  }, []);
+  useLayoutEffect(() => {
+    if (previousPageRef.current === currentPage) return;
+    previousPageRef.current = currentPage;
+    window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
+  }, [currentPage]);
+
   useEffect(() => {
     localStorage.setItem(`${CART_STORAGE_KEY}:${restaurantId}`, JSON.stringify(cart));
   }, [cart, restaurantId]);
@@ -147,7 +161,6 @@ function AppShell() {
     }
     setIsCartOpen(false);
     setCurrentPage('checkout');
-    window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
   const cartUniqueCount = getCartUniqueCount(cart);

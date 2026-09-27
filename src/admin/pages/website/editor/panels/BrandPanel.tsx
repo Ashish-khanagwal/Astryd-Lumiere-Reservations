@@ -13,6 +13,7 @@ import { HexColorField } from '../../../../components/forms/HexColorField';
 import { ColorTokenSelect } from '../../../../components/forms/ColorTokenSelect';
 import { FontSelect } from '../../../../components/forms/FontSelect';
 import { useReportAutoSave, type PanelCallbacks } from './panelTypes';
+import { PanelLoadError } from './PanelLoadError';
 import { FONT_WEIGHTS, type BrandSettings, type FontWeight, type NavPosition } from '../../../../../types';
 
 const NAV_POSITION_OPTIONS: { value: NavPosition; label: string; icon: typeof AlignRight }[] = [
@@ -25,7 +26,7 @@ const NAV_POSITION_OPTIONS: { value: NavPosition; label: string; icon: typeof Al
  * Header & Footer, and `style` (theme + fonts) under Colors & Fonts. One draft, auto-saved.
  */
 export function BrandPanel({ mode, ...callbacks }: { mode: 'header' | 'style' } & PanelCallbacks) {
-  const { data: brand } = useBrandDraft();
+  const { data: brand, isError, isFetching, refetch } = useBrandDraft();
   const updateBrand = useUpdateBrand();
   const { data: media } = useMedia();
   const [draft, setDraft] = useState<BrandSettings | null>(null);
@@ -41,7 +42,7 @@ export function BrandPanel({ mode, ...callbacks }: { mode: 'header' | 'style' } 
   const { status } = useAutoSave({ isDirty, value: draft, onSave: persist, enabled: Boolean(draft) });
   useReportAutoSave(status, callbacks);
 
-  if (!draft) return <FormSkeleton />;
+  if (!draft) return isError ? <PanelLoadError onRetry={() => void refetch()} isRetrying={isFetching} /> : <FormSkeleton />;
   const set = (patch: Partial<BrandSettings>) => setDraft({ ...draft, ...patch });
 
   if (mode === 'header') {

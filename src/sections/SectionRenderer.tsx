@@ -83,12 +83,15 @@ export const SectionRenderer = ({
           case 'featured_menu': {
             const configuredItemIds = section.content?.selectedItemIds;
             const selectedItemIds = Array.isArray(configuredItemIds) ? configuredItemIds : [];
-            const selected = selectedItemIds.length ? items.filter((i) => selectedItemIds.includes(i.id)) : [];
+            const selected = selectedItemIds.length
+              ? items.filter((i) => selectedItemIds.includes(i.id))
+              : items.filter((i) => i.isFeatured);
+            const featuredItems = (selected.length ? selected : items).slice(0, 4);
             return (
               <FeaturedMenuSection
                 key={section.id}
                 content={section.content}
-                items={selected.slice(0, 4).map((i) => ({
+                items={featuredItems.map((i) => ({
                   id: i.id,
                   name: i.name,
                   description: i.description,

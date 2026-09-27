@@ -1,11 +1,12 @@
 import { useState, type FormEvent } from 'react';
-import { Link, useLocation, useNavigate } from 'react-router-dom';
+import { Link, Navigate, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../../context/AuthContext';
+import { ApiError } from '../../../services/http';
 
 export function LoginPage() {
   const mocks = import.meta.env.VITE_USE_MOCKS === 'true';
   const demo = mocks || import.meta.env.MODE === 'staging';
-  const { login } = useAuth();
+  const { login, isAuthenticated, isLoading } = useAuth();
   const navigate = useNavigate();
   const location = useLocation() as { state?: { from?: string } };
   const [orgId, setOrgId] = useState(demo ? 'LUMIERE' : '');
@@ -19,14 +20,25 @@ export function LoginPage() {
     setError(null);
     setIsSubmitting(true);
     try {
-      await login(orgId, email, password);
+      await login(orgId.trim(), email.trim(), password);
       navigate(location.state?.from ?? '/admin', { replace: true });
-    } catch {
-      setError('Incorrect Organization ID, email, or password.');
+    } catch (err) {
+      if (err instanceof ApiError && (err.status === 401 || err.code === 'invalid_credentials' || err.code === 'invalid_org')) {
+        setError('Incorrect Organization ID, email, or password.');
+      } else if (err instanceof TypeError || (err instanceof ApiError && err.status >= 500)) {
+        setError('Could not reach the login service. Wait a moment and try again.');
+      } else {
+        setError(err instanceof Error ? err.message : 'Sign in failed. Please try again.');
+      }
     } finally {
       setIsSubmitting(false);
     }
   };
+
+  if (isLoading) return null;
+  if (isAuthenticated) {
+    return <Navigate to={location.state?.from ?? '/admin'} replace />;
+  }
 
   return (
     <form onSubmit={handleSubmit} className="space-y-5">

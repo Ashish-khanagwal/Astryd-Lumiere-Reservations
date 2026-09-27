@@ -8,6 +8,7 @@ import { Button } from '../../../../components/Button';
 import { ListSkeleton } from '../../../../components/Skeleton';
 import { SECTION_ICON, SECTION_LABEL } from '../../sectionMeta';
 import { SectionContentEditor } from './SectionContentEditor';
+import { PanelLoadError } from './PanelLoadError';
 import type { PanelCallbacks } from './panelTypes';
 import type { HomepageSection, HomepageSectionType } from '../../../../../types';
 
@@ -103,9 +104,10 @@ function SectionList({ sections, onOpenSection, onOpenExtras, onSaved }: { secti
 
 /** Home → Sections tab: reorder / show / hide, then drill into a section to edit it (Wix-style panel). */
 export function SectionsPanel({ openSection, onOpenSection, onOpenExtras, ...callbacks }: SectionsPanelProps) {
-  const { data: homepage, isLoading } = useHomepageDraft();
+  const { data: homepage, isLoading, isError, isFetching, refetch } = useHomepageDraft();
   const sections = useMemo(() => [...(homepage?.sections ?? [])].sort((a, b) => a.order - b.order), [homepage]);
 
+  if (!homepage && isError) return <PanelLoadError onRetry={() => void refetch()} isRetrying={isFetching} />;
   if (isLoading || !homepage) return <ListSkeleton rows={7} />;
 
   const active = openSection ? sections.find((s) => s.type === openSection) : undefined;
