@@ -9,7 +9,7 @@ import { setAuthToken } from './services/http';
 
 async function bootstrap() {
   setAuthToken(localStorage.getItem('lumiere-cms-token'));
-  if (import.meta.env.DEV && import.meta.env.VITE_USE_MOCKS === 'true') {
+  if (import.meta.env.VITE_USE_MOCKS === 'true') {
     const { worker } = await import('./mocks/browser');
     await worker.start({
       onUnhandledRequest: 'bypass',
