@@ -14,6 +14,7 @@ import { EDITOR_PAGES, EDITOR_PAGE_BY_KEY, TAB_LABEL, editorPageForHash, isEdito
 import { SectionsPanel } from './panels/SectionsPanel';
 import { PageContentPanel } from './panels/PageContentPanel';
 import { LayoutPanel } from './panels/LayoutPanel';
+import { ChromeLayoutPanel } from './panels/ChromeLayoutPanel';
 import { PageSettingsPanel } from './panels/PageSettingsPanel';
 import { BrandPanel } from './panels/BrandPanel';
 import type { HomepageSectionType, TemplateVariant } from '../../../../types';
@@ -73,11 +74,22 @@ export function SiteEditorPage() {
   const [mobilePane, setMobilePane] = useState<'edit' | 'preview'>('edit');
   const [status, setStatus] = useState<AutoSaveStatus>('idle');
   const [previewVariant, setPreviewVariant] = useState<TemplateVariant>('a');
+  // A section (Home) or header/footer (Header & Footer) layout mid-preview - only ever one at a time.
+  const [chromePreview, setChromePreview] = useState<{ kind: 'section' | 'chrome'; key: string; variant: TemplateVariant } | null>(null);
+  const setSectionPreview = useCallback(
+    (override: { key: HomepageSectionType; variant: TemplateVariant } | null) => setChromePreview(override ? { kind: 'section', ...override } : null),
+    [],
+  );
+  const setChromeLayoutPreview = useCallback(
+    (override: { key: 'header' | 'footer'; variant: TemplateVariant } | null) => setChromePreview(override ? { kind: 'chrome', ...override } : null),
+    [],
+  );
   const iframeRef = useRef<HTMLIFrameElement>(null);
 
   // Reset per-page state when switching pages.
   useEffect(() => {
     setStatus('idle');
+    setChromePreview(null);
     if (config) setPreviewVariant(config.templateVariant);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [def?.key, config?.templateVariant]);
@@ -93,7 +105,12 @@ export function SiteEditorPage() {
   const baseUrl = useMemo(() => `${draftPreviewUrl(restaurantId)}&editor=1`, [restaurantId]);
   const currentHashRef = useRef(def?.previewHash ?? '#/');
   currentHashRef.current = def?.previewHash ?? '#/';
-  const layoutParam = def?.module && tab === 'layout' && config && previewVariant !== config.templateVariant ? `&layout=${def.module}:${previewVariant}` : '';
+  const moduleLayoutParam = def?.module && tab === 'layout' && config && previewVariant !== config.templateVariant ? `module:${def.module}:${previewVariant}` : '';
+  const layoutParam = moduleLayoutParam
+    ? `&layout=${moduleLayoutParam}`
+    : chromePreview
+      ? `&layout=${chromePreview.kind}:${chromePreview.key}:${chromePreview.variant}`
+      : '';
   // eslint-disable-next-line react-hooks/exhaustive-deps
   const frameSrc = useMemo(() => `${baseUrl}${layoutParam}${currentHashRef.current}`, [baseUrl, layoutParam]);
 
@@ -157,6 +174,7 @@ export function SiteEditorPage() {
             openSection={openSection}
             onOpenSection={setOpenSection}
             onOpenExtras={() => setTab('content')}
+            onPreviewOverride={setSectionPreview}
             {...callbacks}
           />
         );
@@ -165,6 +183,9 @@ export function SiteEditorPage() {
           <PageContentPanel key={def.contentPage} page={def.contentPage} vertical={vertical} activeVariant={config?.templateVariant} {...callbacks} />
         ) : null;
       case 'layout':
+        if (def.key === 'header-footer') {
+          return <ChromeLayoutPanel onPreviewOverride={setChromeLayoutPreview} onApplied={refreshPreview} />;
+        }
         return config ? (
           <LayoutPanel config={config} previewVariant={previewVariant} onPreviewVariant={setPreviewVariant} onApplied={refreshPreview} />
         ) : null;

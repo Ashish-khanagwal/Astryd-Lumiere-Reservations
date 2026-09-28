@@ -155,7 +155,7 @@ export interface StarterSectionCopy {
  * gallery, offers - start hidden so nothing empty shows on the public page until the owner fills them in.
  */
 export function buildStarterSections(siteId: string, now: string, hero: HomepageSection | null, copy: StarterSectionCopy): HomepageSection[] {
-  const base = { restaurantId: siteId, updatedAt: now };
+  const base = { restaurantId: siteId, updatedAt: now, templateVariant: 'a' as const };
   return [
     hero ?? {
       ...base, id: `section_${siteId}_hero`, type: 'hero', order: 1, visible: true,
@@ -721,7 +721,7 @@ export function buildSeed(): MockDbShape {
 
   const homepageSections: HomepageSection[] = [
     {
-      id: 'section_hero', restaurantId: RESTAURANT_ID, type: 'hero', order: 1, visible: true, updatedAt: now,
+      id: 'section_hero', restaurantId: RESTAURANT_ID, type: 'hero', order: 1, visible: true, templateVariant: 'a', updatedAt: now,
       content: {
         eyebrow: 'Mayfair, London',
         heading: 'Lumière',
@@ -735,7 +735,7 @@ export function buildSeed(): MockDbShape {
       },
     },
     {
-      id: 'section_about', restaurantId: RESTAURANT_ID, type: 'about', order: 2, visible: true, updatedAt: now,
+      id: 'section_about', restaurantId: RESTAURANT_ID, type: 'about', order: 2, visible: true, templateVariant: 'a', updatedAt: now,
       content: {
         eyebrow: 'The Philosophy',
         heading: 'A sanctuary of light and culinary precision.',
@@ -752,7 +752,7 @@ export function buildSeed(): MockDbShape {
       },
     },
     {
-      id: 'section_featured_menu', restaurantId: RESTAURANT_ID, type: 'featured_menu', order: 3, visible: true, updatedAt: now,
+      id: 'section_featured_menu', restaurantId: RESTAURANT_ID, type: 'featured_menu', order: 3, visible: true, templateVariant: 'a', updatedAt: now,
       content: {
         eyebrow: 'Chef Selection',
         heading: 'Featured Dishes',
@@ -761,7 +761,7 @@ export function buildSeed(): MockDbShape {
       },
     },
     {
-      id: 'section_gallery', restaurantId: RESTAURANT_ID, type: 'gallery', order: 4, visible: true, updatedAt: now,
+      id: 'section_gallery', restaurantId: RESTAURANT_ID, type: 'gallery', order: 4, visible: true, templateVariant: 'a', updatedAt: now,
       content: {
         eyebrow: 'Visual Atmosphere',
         heading: 'The Lumière Gallery',
@@ -770,7 +770,7 @@ export function buildSeed(): MockDbShape {
       },
     },
     {
-      id: 'section_offers', restaurantId: RESTAURANT_ID, type: 'offers', order: 5, visible: true, updatedAt: now,
+      id: 'section_offers', restaurantId: RESTAURANT_ID, type: 'offers', order: 5, visible: true, templateVariant: 'a', updatedAt: now,
       content: {
         eyebrow: 'Limited Time',
         heading: 'Special Offers',
@@ -779,7 +779,7 @@ export function buildSeed(): MockDbShape {
       },
     },
     {
-      id: 'section_testimonials', restaurantId: RESTAURANT_ID, type: 'testimonials', order: 6, visible: true, updatedAt: now,
+      id: 'section_testimonials', restaurantId: RESTAURANT_ID, type: 'testimonials', order: 6, visible: true, templateVariant: 'a', updatedAt: now,
       content: {
         eyebrow: 'Guest Experiences',
         heading: 'What Our Guests Say',
@@ -791,7 +791,7 @@ export function buildSeed(): MockDbShape {
       },
     },
     {
-      id: 'section_location', restaurantId: RESTAURANT_ID, type: 'location', order: 7, visible: true, updatedAt: now,
+      id: 'section_location', restaurantId: RESTAURANT_ID, type: 'location', order: 7, visible: true, templateVariant: 'a', updatedAt: now,
       content: { heading: 'Find Us', showHoursTable: true },
     },
   ];
@@ -863,7 +863,7 @@ export function buildSeed(): MockDbShape {
     updatedAt: now,
   };
   const gymHeroSection: HomepageSection = {
-    id: 'section_pulsefit_hero', restaurantId: GYM_SITE_ID, type: 'hero', order: 1, visible: true, updatedAt: now,
+    id: 'section_pulsefit_hero', restaurantId: GYM_SITE_ID, type: 'hero', order: 1, visible: true, templateVariant: 'a', updatedAt: now,
     content: {
       eyebrow: 'Chicago, IL',
       heading: 'PulseFit Studios',
@@ -929,7 +929,7 @@ export function buildSeed(): MockDbShape {
     updatedAt: now,
   };
   const retailHeroSection: HomepageSection = {
-    id: 'section_novagoods_hero', restaurantId: RETAIL_SITE_ID, type: 'hero', order: 1, visible: true, updatedAt: now,
+    id: 'section_novagoods_hero', restaurantId: RETAIL_SITE_ID, type: 'hero', order: 1, visible: true, templateVariant: 'a', updatedAt: now,
     content: {
       eyebrow: 'San Francisco, CA',
       heading: 'Nova Goods',
@@ -994,7 +994,7 @@ export function buildSeed(): MockDbShape {
     updatedAt: now,
   };
   const salonHeroSection: HomepageSection = {
-    id: 'section_sloaneco_hero', restaurantId: SALON_SITE_ID, type: 'hero', order: 1, visible: true, updatedAt: now,
+    id: 'section_sloaneco_hero', restaurantId: SALON_SITE_ID, type: 'hero', order: 1, visible: true, templateVariant: 'a', updatedAt: now,
     content: {
       eyebrow: 'South Lamar · Austin, TX',
       heading: 'Sloane & Co. Salon',
@@ -1068,7 +1068,7 @@ export function buildSeed(): MockDbShape {
     updatedAt: now,
   };
   const coffeeHeroSection: HomepageSection = {
-    id: 'section_fernwood_hero', restaurantId: COFFEE_SITE_ID, type: 'hero', order: 1, visible: true, updatedAt: now,
+    id: 'section_fernwood_hero', restaurantId: COFFEE_SITE_ID, type: 'hero', order: 1, visible: true, templateVariant: 'a', updatedAt: now,
     content: {
       eyebrow: 'Fremont · Seattle, WA',
       heading: 'Fernwood Coffee Co.',

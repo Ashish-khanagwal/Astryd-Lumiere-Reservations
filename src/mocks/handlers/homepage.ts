@@ -41,7 +41,7 @@ export const homepageHandlers = [
     if (type === 'order') {
       return HttpResponse.json({ error: { code: 'not_found', message: 'Not found.' } }, { status: 404 });
     }
-    const body = (await request.json()) as { visible?: boolean; content?: Record<string, unknown> };
+    const body = (await request.json()) as { visible?: boolean; content?: Record<string, unknown>; templateVariant?: 'a' | 'b' | 'c' };
     const homepage = db.data.homepage[restaurantId];
     if (!homepage) return HttpResponse.json({ error: { code: 'not_found', message: 'Not found.' } }, { status: 404 });
     const current = homepage.draft.sections.find((s) => s.type === type);
@@ -49,6 +49,7 @@ export const homepageHandlers = [
     const section = {
       ...current,
       visible: body.visible ?? current.visible,
+      templateVariant: body.templateVariant ?? current.templateVariant,
       content: body.content ? { ...current.content, ...body.content } : current.content,
       updatedAt: nowIso(),
     } as typeof current;

@@ -19,6 +19,7 @@ import {
 import type {
   BrandSettings,
   HomepageSection,
+  HomepageSectionType,
   MediaAsset,
   MembershipPlan,
   MenuCategory,
@@ -46,6 +47,10 @@ interface PublicDataValue {
   getNavLabel: (module: PlatformModule, fallback: string) => string;
   /** Plan §8 - which of the 3 layouts this module should render as; defaults to Variant A. */
   getTemplateVariant: (module: PlatformModule) => TemplateVariant;
+  /** Which of the 3 layouts this homepage section should render as; defaults to Variant A (Classic). */
+  getSectionVariant: (type: HomepageSectionType) => TemplateVariant;
+  /** Which of the 3 layouts the site-wide header/footer should render as; defaults to Variant A (Classic). */
+  getChromeVariant: (part: "header" | "footer") => TemplateVariant;
   /** Whether this Site has turned a module on at all - a disabled module's nav link/page shouldn't appear. */
   isModuleEnabled: (module: PlatformModule) => boolean;
   /** Plan §3.2/§8.4 - active plans only; the public Membership page reads this. */
@@ -193,23 +198,32 @@ export function PublicDataProvider({ children }: { children: ReactNode }) {
   const pageConfigs = pageConfigsQuery.data ?? [];
   const getNavLabel = (module: PlatformModule, fallback: string) =>
     pageConfigs.find((p) => p.module === module)?.navLabel || fallback;
-  // Preview-only `?layout=<module>:<variant>` lets the admin layout picker show a layout before it's saved.
-  const [layoutOverrideModule, layoutOverrideVariant] = isPreview
+  // Preview-only `?layout=<kind>:<key>:<variant>` lets the admin layout picker show a layout before it's
+  // saved - `kind` is 'module' (Items/Catalog/Booking/Membership), 'section' (a homepage section) or
+  // 'chrome' (header/footer). Only one thing is ever being previewed at a time.
+  const [layoutOverrideKind, layoutOverrideKey, layoutOverrideVariant] = isPreview
     ? (new URLSearchParams(window.location.search).get("layout") ?? "").split(":")
     : [];
-  const getTemplateVariant = (module: PlatformModule): TemplateVariant => {
-    if (module === layoutOverrideModule && ["a", "b", "c"].includes(layoutOverrideVariant)) {
+  const resolveVariantOverride = (kind: string, key: string, fallback: TemplateVariant): TemplateVariant => {
+    if (kind === layoutOverrideKind && key === layoutOverrideKey && ["a", "b", "c"].includes(layoutOverrideVariant)) {
       return layoutOverrideVariant as TemplateVariant;
     }
-    return pageConfigs.find((p) => p.module === module)?.templateVariant ?? "a";
+    return fallback;
   };
+  const getTemplateVariant = (module: PlatformModule): TemplateVariant =>
+    resolveVariantOverride("module", module, pageConfigs.find((p) => p.module === module)?.templateVariant ?? "a");
+  const sections = homepageQuery.data?.sections ?? [];
+  const getSectionVariant = (type: HomepageSectionType): TemplateVariant =>
+    resolveVariantOverride("section", type, sections.find((s) => s.type === type)?.templateVariant ?? "a");
+  const getChromeVariant = (part: "header" | "footer"): TemplateVariant =>
+    resolveVariantOverride("chrome", part, (part === "header" ? brandQuery.data?.headerVariant : brandQuery.data?.footerVariant) ?? "a");
   const isModuleEnabled = (module: PlatformModule) =>
     pageConfigs.find((p) => p.module === module)?.enabled ?? true;
 
   const value: PublicDataValue = {
     isLoading,
     brand: brandQuery.data,
-    sections: homepageQuery.data?.sections ?? [],
+    sections,
     mediaMap,
     categories,
     items,
@@ -218,6 +232,8 @@ export function PublicDataProvider({ children }: { children: ReactNode }) {
     pageConfigs,
     getNavLabel,
     getTemplateVariant,
+    getSectionVariant,
+    getChromeVariant,
     isModuleEnabled,
     membershipPlans: (membershipPlansQuery.data ?? []).filter((p) => p.isActive),
     brandingBadgeEnabled: brandingBadgeQuery.data?.enabled ?? true,

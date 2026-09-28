@@ -44,6 +44,26 @@ export const VARIANT_INFO: Record<PlatformModule, Record<TemplateVariant, Varian
   },
 };
 
+export interface ChromeVariantInfo {
+  name: string;
+  description: string;
+}
+
+/** 3 layout choices for the site-wide header and footer - same style story as the section layouts:
+ * A Classic (today's design, unchanged), B Editorial (bolder), C Minimal (denser/quieter). */
+export const CHROME_VARIANT_INFO: Record<'header' | 'footer', Record<TemplateVariant, ChromeVariantInfo>> = {
+  header: {
+    a: { name: 'Classic', description: 'One row - logo and nav links side by side.' },
+    b: { name: 'Editorial', description: 'Two rows - a centered logo above centered nav links.' },
+    c: { name: 'Minimal', description: 'A slim bar - nav links collapse behind a single Menu button.' },
+  },
+  footer: {
+    a: { name: 'Classic', description: 'A 4-column layout - brand, navigation and contact side by side.' },
+    b: { name: 'Editorial', description: 'Centered and single-column - everything stacked in the middle.' },
+    c: { name: 'Minimal', description: 'A bold split - a large wordmark beside two compact columns.' },
+  },
+};
+
 /** Which public page each module renders on, so a layout preview opens straight to it. */
 export const MODULE_PREVIEW_HASH: Record<PlatformModule, string> = {
   items: '#/items',

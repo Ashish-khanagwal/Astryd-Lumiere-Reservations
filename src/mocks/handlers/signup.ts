@@ -136,6 +136,7 @@ export const signupHandlers = [
       type: 'hero',
       order: 0,
       visible: true,
+      templateVariant: 'a',
       content: {
         heading: siteName,
         description: body.branding.tagline || 'Welcome to our new site - built in minutes.',

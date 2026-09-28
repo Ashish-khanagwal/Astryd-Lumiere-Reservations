@@ -1,5 +1,6 @@
 import type { Id, ISODateString, PublishStatus } from './common';
 import type { HeadingSize } from './restaurant';
+import type { TemplateVariant } from './pageConfig';
 
 export type HomepageSectionType =
   | 'hero'
@@ -108,6 +109,8 @@ export type HomepageSection = {
     type: K;
     order: number;
     visible: boolean;
+    /** Plan §8-style layout choice, scoped per section instead of per module; defaults to Layout A (Classic). */
+    templateVariant: TemplateVariant;
     content: HomepageSectionContentMap[K];
     updatedAt: ISODateString;
   };

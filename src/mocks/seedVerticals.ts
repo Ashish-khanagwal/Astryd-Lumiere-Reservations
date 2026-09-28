@@ -119,7 +119,7 @@ export function buildGymSeed(siteId: string, now: string, hero: HomepageSection)
     { id: 'offer_pf_friend', restaurantId: siteId, name: 'Bring a Friend Fridays', type: 'bogo', startDate: now, endDate: inDays(60), isActive: true, appliesToItemIds: ['pf_ropes', 'pf_spin'], appliesToCategoryIds: [], cta: 'Book Together', imageMediaId: 'media_pf_g3', createdAt: now, updatedAt: now },
   ];
 
-  const base = { restaurantId: siteId, updatedAt: now };
+  const base = { restaurantId: siteId, updatedAt: now, templateVariant: 'a' as const };
   const sections: HomepageSection[] = [
     { ...hero, content: { ...(hero.type === 'hero' ? hero.content : {}), backgroundMediaId: 'media_pf_hero' } } as HomepageSection,
     {
@@ -200,7 +200,7 @@ export function buildRetailSeed(siteId: string, now: string, hero: HomepageSecti
     { id: 'offer_ng_welcome', restaurantId: siteId, name: 'Welcome Gift', type: 'fixed', discountValue: 10, startDate: now, endDate: inDays(90), isActive: true, appliesToItemIds: [], appliesToCategoryIds: [], cta: 'Start Shopping', imageMediaId: 'media_ng_g1', createdAt: now, updatedAt: now },
   ];
 
-  const base = { restaurantId: siteId, updatedAt: now };
+  const base = { restaurantId: siteId, updatedAt: now, templateVariant: 'a' as const };
   const sections: HomepageSection[] = [
     { ...hero, content: { ...(hero.type === 'hero' ? hero.content : {}), backgroundMediaId: 'media_ng_hero' } } as HomepageSection,
     {
@@ -292,7 +292,7 @@ export function buildSalonSeed(siteId: string, now: string, hero: HomepageSectio
     { id: 'offer_sc_blowout', restaurantId: siteId, name: 'Blowout Wednesdays', type: 'fixed', discountValue: 10, startDate: now, endDate: inDays(45), isActive: true, appliesToItemIds: ['sc_blowout'], appliesToCategoryIds: [], cta: 'Book a Blowout', imageMediaId: 'media_sc_offer', createdAt: now, updatedAt: now },
   ];
 
-  const base = { restaurantId: siteId, updatedAt: now };
+  const base = { restaurantId: siteId, updatedAt: now, templateVariant: 'a' as const };
   const sections: HomepageSection[] = [
     { ...hero, content: { ...(hero.type === 'hero' ? hero.content : {}), backgroundMediaId: 'media_sc_hero' } } as HomepageSection,
     {
@@ -379,7 +379,7 @@ export function buildCoffeeSeed(siteId: string, now: string, hero: HomepageSecti
     { id: 'offer_fw_pastry', restaurantId: siteId, name: 'Pastry with Any Drink', type: 'fixed', discountValue: 1, startDate: now, endDate: inDays(30), isActive: true, appliesToItemIds: [], appliesToCategoryIds: ['cat_fw_pastries_bakery'], cta: 'Grab a Pastry', imageMediaId: 'media_fw_offer2', createdAt: now, updatedAt: now },
   ];
 
-  const base = { restaurantId: siteId, updatedAt: now };
+  const base = { restaurantId: siteId, updatedAt: now, templateVariant: 'a' as const };
   const sections: HomepageSection[] = [
     { ...hero, content: { ...(hero.type === 'hero' ? hero.content : {}), backgroundMediaId: 'media_fw_hero' } } as HomepageSection,
     {
