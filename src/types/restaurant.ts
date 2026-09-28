@@ -3,7 +3,7 @@ import type { Id, ISODateString, Tenant, Timestamps, PublishStatus } from './com
 export type WeekDay = 'mon' | 'tue' | 'wed' | 'thu' | 'fri' | 'sat' | 'sun';
 
 /** Multi-Vertical Platform Plan §2/§3.1/§6 - seeds sensible defaults at onboarding only, never gates functionality. */
-export const VERTICALS = ['restaurant', 'gym', 'retail', 'salon'] as const;
+export const VERTICALS = ['restaurant', 'gym', 'retail', 'salon', 'coffee'] as const;
 export type Vertical = (typeof VERTICALS)[number];
 
 export interface BusinessHoursEntry {
@@ -147,6 +147,20 @@ export const THEME_PRESETS: ThemePreset[] = [
       onPrimaryFixed: '#3a0716',
       onPrimaryFixedVariant: '#6e3242',
       tertiary: '#8a6a3a',
+    },
+  },
+  {
+    id: 'espresso',
+    name: 'Espresso',
+    colors: {
+      primary: '#6f4e37',
+      onPrimary: '#ffffff',
+      primaryContainer: '#8a6446',
+      primaryFixed: '#f5deb3',
+      primaryFixedDim: '#e8c39e',
+      onPrimaryFixed: '#2b1b0e',
+      onPrimaryFixedVariant: '#4a2e1a',
+      tertiary: '#a47148',
     },
   },
 ];

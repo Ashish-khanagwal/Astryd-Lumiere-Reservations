@@ -233,5 +233,17 @@ export const catalogContent: ContentPageDefinition = {
       c_emptyText: 'No services match your search.',
       c_colProduct: 'Service',
     },
+    coffee: {
+      a_eyebrow: 'Order Ahead',
+      a_prepTime: 'Ready in ~10 min',
+      a_prepTimeIcon: 'schedule',
+      a_pickup: 'Pickup at the counter',
+      a_pickupIcon: 'storefront',
+      a_popularSubheading: 'What our regulars order most',
+      a_searchPlaceholder: 'Search coffee, pastries or bakery...',
+      a_emptyTitle: 'No items found',
+      a_cartTitle: 'Your Order',
+      a_shareToast: 'Link copied to clipboard!',
+    },
   },
 };

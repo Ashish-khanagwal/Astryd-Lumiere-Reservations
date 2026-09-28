@@ -1,8 +1,8 @@
 import type { HomepageSection, MediaAsset, MenuCategory, MenuItem, Offer } from '../types';
-import { GYM_IMAGES as GYM, RETAIL_IMAGES as RETAIL, SALON_IMAGES as SALON } from '../content/verticalImages';
+import { GYM_IMAGES as GYM, RETAIL_IMAGES as RETAIL, SALON_IMAGES as SALON, COFFEE_IMAGES as COFFEE } from '../content/verticalImages';
 
 /**
- * Full demo content for the Gym (PulseFit), Retail (Nova Goods) and Salon (Sloane & Co.) tenants - media, catalog, offers and
+ * Full demo content for the Gym (PulseFit), Retail (Nova Goods), Salon (Sloane & Co.) and Coffee Shop (Fernwood) tenants - media, catalog, offers and
  * all 7 homepage sections filled in and visible - so each vertical's public site is as complete as Lumière's.
  */
 
@@ -333,6 +333,93 @@ export function buildSalonSeed(siteId: string, now: string, hero: HomepageSectio
       },
     },
     { ...base, id: `section_${siteId}_location`, type: 'location', order: 7, visible: true, content: { heading: 'Visit the Salon', showHoursTable: true } },
+  ];
+
+  return { media, categories, items, offers, sections };
+}
+
+// -------------------------------------------------------------------------------------- Coffee Shop
+
+export function buildCoffeeSeed(siteId: string, now: string, hero: HomepageSection): VerticalSeed {
+  const media = buildMedia(siteId, now, [
+    ['media_fw_hero', COFFEE.hero, 'The Fernwood Coffee Co. counter and dining room'],
+    ['media_fw_about', COFFEE.interior, 'Inside Fernwood Coffee Co.'],
+    ['media_fw_founder', COFFEE.founder, 'Founder Owen Castillo'],
+    ['media_fw_offer', COFFEE.cheers, 'Friends sharing a round of lattes'],
+    ['media_fw_offer2', COFFEE.cinnamonRoll, 'Fresh-baked cinnamon rolls'],
+    ['media_fw_g1', COFFEE.laptops, 'Regulars working from the community table'],
+    ['media_fw_g2', COFFEE.milkPour, 'Steamed milk poured into a latte'],
+    ['media_fw_g3', COFFEE.readingNook, 'The window reading nook'],
+    ['media_fw_g4', COFFEE.interiorGreen, 'The plant-filled dining room'],
+    ['media_fw_g5', COFFEE.peopleAtTable, 'Regulars catching up over coffee'],
+    ['media_fw_g6', COFFEE.pourOver, 'A single-origin pour-over in progress'],
+  ]);
+
+  const { categories, items } = buildCatalog(siteId, now, 'fw', ['Espresso Bar', 'Drip & Pour-Over', 'Cold & Iced', 'Pastries & Bakery', 'Breakfast', 'Beans & Merch'], [
+    { id: 'fw_cappuccino', category: 'Espresso Bar', name: 'Cappuccino', description: 'Double shot with steamed milk and a deep layer of microfoam.', price: 4.75, image: COFFEE.cappuccino, tag: 'Popular', rating: 4.8, reviews: 312 },
+    { id: 'fw_latte', category: 'Espresso Bar', name: 'Cafe Latte', description: 'Espresso with steamed milk, poured with a little latte art.', price: 5.25, image: COFFEE.latte, rating: 4.8, reviews: 289 },
+    { id: 'fw_oat_latte', category: 'Espresso Bar', name: 'Oat Milk Latte', description: 'Our house latte made with creamy, barista-blend oat milk.', price: 5.75, image: COFFEE.oatLatte, tag: 'New', rating: 4.9, reviews: 104 },
+    { id: 'fw_espresso', category: 'Espresso Bar', name: 'Espresso Shot', description: 'A double shot of our house blend, pulled to order.', price: 3.25, image: COFFEE.espresso, rating: 4.7, reviews: 96 },
+    { id: 'fw_seasonal_latte', category: 'Espresso Bar', name: 'Seasonal Spice Latte', description: 'A rotating seasonal syrup with espresso, steamed milk and a dusting of spice.', price: 6.25, image: COFFEE.seasonalLatte, tag: 'New', rating: 4.9, reviews: 61 },
+    { id: 'fw_drip', category: 'Drip & Pour-Over', name: 'House Drip Coffee', description: 'Our house blend, brewed fresh throughout the day. Ask what is on.', price: 3.25, image: COFFEE.drip, rating: 4.6, reviews: 218 },
+    { id: 'fw_pourover', category: 'Drip & Pour-Over', name: 'Single-Origin Pour-Over', description: 'A rotating single-origin, brewed by hand, one cup at a time.', price: 5.5, image: COFFEE.pourOver, tag: 'Popular', rating: 4.9, reviews: 133 },
+    { id: 'fw_iced_coffee', category: 'Cold & Iced', name: 'Iced Coffee', description: 'Our house blend, brewed double-strength and served over ice.', price: 4.25, image: COFFEE.icedCoffee, rating: 4.7, reviews: 176 },
+    { id: 'fw_iced_latte', category: 'Cold & Iced', name: 'Iced Latte', description: 'Espresso and cold milk over ice, poured in layers.', price: 5.5, image: COFFEE.icedLatte, tag: 'Bestseller', rating: 4.9, reviews: 244 },
+    { id: 'fw_croissant', category: 'Pastries & Bakery', name: 'Butter Croissant', description: 'Baked fresh each morning, all-butter and flaky.', price: 4.25, image: COFFEE.croissant, tag: 'Popular', rating: 4.8, reviews: 157 },
+    { id: 'fw_cinnamon_roll', category: 'Pastries & Bakery', name: 'Cinnamon Roll', description: 'A warm, oversized roll with brown-butter icing.', price: 4.75, image: COFFEE.cinnamonRoll, tag: 'Bestseller', rating: 4.9, reviews: 201 },
+    { id: 'fw_cookie', category: 'Pastries & Bakery', name: 'Chocolate Chip Cookie', description: 'Thick, chewy and baked in small batches every day.', price: 3.25, image: COFFEE.cookie, rating: 4.7, reviews: 142 },
+    { id: 'fw_chocolate_box', category: 'Pastries & Bakery', name: 'Chocolate Truffle Box (6pc)', description: 'A gift box of hand-rolled truffles from a Seattle chocolatier.', price: 14, image: COFFEE.chocolateBox, rating: 4.8, reviews: 39 },
+    { id: 'fw_avocado_toast', category: 'Breakfast', name: 'Avocado Toast', description: 'Sourdough, smashed avocado, a fried egg and chili flake.', price: 9.5, image: COFFEE.avocadoToast, tag: 'Popular', rating: 4.8, reviews: 118 },
+    { id: 'fw_beans_whole', category: 'Beans & Merch', name: 'Whole Bean Coffee, 12oz Bag', description: 'Our house blend, roasted weekly - take the shop home with you.', price: 16, image: COFFEE.beansSack, rating: 4.9, reviews: 84 },
+    { id: 'fw_beans_ground', category: 'Beans & Merch', name: 'Ground Coffee, 12oz Bag', description: 'Same house blend, ground for drip - ready to brew at home.', price: 16, image: COFFEE.beansJar, rating: 4.8, reviews: 52 },
+  ]);
+
+  const offers: Offer[] = [
+    { id: 'offer_fw_newcustomer', restaurantId: siteId, name: 'New Customer Welcome', type: 'percentage', discountValue: 15, startDate: now, endDate: inDays(60), isActive: true, appliesToItemIds: [], appliesToCategoryIds: ['cat_fw_espresso_bar'], cta: 'Order Now', imageMediaId: 'media_fw_offer', createdAt: now, updatedAt: now },
+    { id: 'offer_fw_pastry', restaurantId: siteId, name: 'Pastry with Any Drink', type: 'fixed', discountValue: 1, startDate: now, endDate: inDays(30), isActive: true, appliesToItemIds: [], appliesToCategoryIds: ['cat_fw_pastries_bakery'], cta: 'Grab a Pastry', imageMediaId: 'media_fw_offer2', createdAt: now, updatedAt: now },
+  ];
+
+  const base = { restaurantId: siteId, updatedAt: now };
+  const sections: HomepageSection[] = [
+    { ...hero, content: { ...(hero.type === 'hero' ? hero.content : {}), backgroundMediaId: 'media_fw_hero' } } as HomepageSection,
+    {
+      ...base, id: `section_${siteId}_about`, type: 'about', order: 2, visible: true,
+      content: {
+        eyebrow: 'Our Story',
+        heading: 'Good coffee, made for staying a while.',
+        description: 'Fernwood Coffee Co. roasts small batches every week and pours them in a room built for lingering - laptops, book clubs and long catch-ups all welcome.',
+        imageMediaId: 'media_fw_about',
+        quote: 'A great cup starts with the beans, but a great cafe is built on the room around it.',
+        chefName: 'Owen Castillo, Founder',
+        chefQuote: 'I wanted a shop where the barista remembers your order and nobody rushes you out the door.',
+        chefBio: 'A former line cook turned coffee obsessive, Owen opened Fernwood in Fremont in 2017 after two years of pulling shots on weekends to learn the craft. The shop now roasts its own house blend on-site every week.',
+        chefImageMediaId: 'media_fw_founder',
+      },
+    },
+    { ...base, id: `section_${siteId}_featured_menu`, type: 'featured_menu', order: 3, visible: true, content: { eyebrow: 'Most Ordered', heading: 'Customer Favorites', description: 'What our regulars order on repeat.', selectedItemIds: ['fw_latte', 'fw_iced_latte', 'fw_pourover', 'fw_cinnamon_roll'] } },
+    {
+      ...base, id: `section_${siteId}_gallery`, type: 'gallery', order: 4, visible: true,
+      content: {
+        eyebrow: 'The Shop',
+        heading: 'Life at Fernwood',
+        description: 'Regulars, laptops, and a lot of coffee - every day of the week.',
+        images: ['media_fw_g1', 'media_fw_g2', 'media_fw_g3', 'media_fw_g4', 'media_fw_g5', 'media_fw_g6'].map((mediaId, order) => ({ mediaId, order })),
+      },
+    },
+    { ...base, id: `section_${siteId}_offers`, type: 'offers', order: 5, visible: true, content: { eyebrow: 'This Week', heading: 'Current Offers', description: 'A little something extra for new and regular faces.', selectedOfferIds: ['offer_fw_newcustomer', 'offer_fw_pastry'] } },
+    {
+      ...base, id: `section_${siteId}_testimonials`, type: 'testimonials', order: 6, visible: true,
+      content: {
+        eyebrow: 'Regulars Say',
+        heading: 'What Our Customers Say',
+        testimonials: [
+          { id: 'testimonial_fw_1', customerName: 'Grace L.', quote: 'My order is ready by the time I get to the counter. Best mobile ordering of any shop in the neighborhood.', rating: 5, order: 0 },
+          { id: 'testimonial_fw_2', customerName: 'Marcus T.', quote: 'The pour-over program is legit - always a different, well-explained single-origin on the board.', rating: 5, order: 1 },
+          { id: 'testimonial_fw_3', customerName: 'Ines P.', quote: 'I work from here twice a week. Good wifi, better cinnamon rolls, and nobody ever rushes you out.', rating: 4, order: 2 },
+        ],
+      },
+    },
+    { ...base, id: `section_${siteId}_location`, type: 'location', order: 7, visible: true, content: { heading: 'Find the Shop', showHoursTable: true } },
   ];
 
   return { media, categories, items, offers, sections };

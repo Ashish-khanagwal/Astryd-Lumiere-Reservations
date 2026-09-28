@@ -294,5 +294,12 @@ export const globalContent: ContentPageDefinition = {
         { id: 'accessibility', label: 'Accessibility', url: '#' },
       ],
     },
+    coffee: {
+      footerExtraNavLabel: 'Gift Cards',
+      cartEmptyBody: 'Add a coffee or a pastry to get started.',
+      chefEyebrow: 'Founder & Roaster',
+      chefNameFallback: 'Our Founder',
+      footerDescription: 'A small-batch coffee roaster and neighborhood cafe in {city} - order ahead, or stay a while.',
+    },
   },
 };

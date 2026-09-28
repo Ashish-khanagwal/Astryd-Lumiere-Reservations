@@ -1,6 +1,6 @@
 import { db, nowIso, type MockDbShape } from './db';
 import { VERTICAL_MODULE_DEFAULTS, defaultTemplateVariant } from '../data/onboardingDefaults';
-import { buildGymSeed, buildRetailSeed, buildSalonSeed } from './seedVerticals';
+import { buildGymSeed, buildRetailSeed, buildSalonSeed, buildCoffeeSeed } from './seedVerticals';
 import type {
   Addon,
   BrandSettings,
@@ -58,6 +58,12 @@ export const SALON_SITE_ID = 'site_sloaneco';
 export const SALON_SITE_SLUG = 'sloane-and-co';
 export const SALON_ORGANIZATION_ID = 'org_sloaneco';
 export const SALON_ORGANIZATION_CODE = 'SLOANECO';
+
+/** Plan §2/§6 - a Coffee Shop demo Org/Site (own login), the fifth vertical - a US specialty coffee shop. */
+export const COFFEE_SITE_ID = 'site_fernwood';
+export const COFFEE_SITE_SLUG = 'fernwood-coffee';
+export const COFFEE_ORGANIZATION_ID = 'org_fernwood';
+export const COFFEE_ORGANIZATION_CODE = 'FERNWOOD';
 /** Demo password accepted for every seeded account - mock auth only, never real. */
 export const DEMO_PASSWORD = 'password123';
 
@@ -1022,16 +1028,90 @@ export function buildSeed(): MockDbShape {
     blockedDates: [],
   };
 
+  // --- Coffee Shop demo tenant (own Org/login) - Plan §2/§6, the fifth Vertical. ---
+  const coffeeOrganization: Organization = { id: COFFEE_ORGANIZATION_ID, code: COFFEE_ORGANIZATION_CODE, name: 'Fernwood Coffee Co.', createdAt: now, updatedAt: now };
+  const coffeeOwner: User = {
+    id: 'user_fernwood_owner', organizationId: COFFEE_ORGANIZATION_ID, email: 'owner@fernwoodcoffee.com', name: 'Owen Castillo',
+    role: 'owner', restaurantId: COFFEE_SITE_ID, siteAccess: 'all', isActive: true, createdAt: now, updatedAt: now,
+  };
+  const coffeeSite: Restaurant = {
+    id: COFFEE_SITE_ID, organizationId: COFFEE_ORGANIZATION_ID, slug: COFFEE_SITE_SLUG, name: 'Fernwood Coffee Co.',
+    ownerUserId: coffeeOwner.id, status: 'active', vertical: 'coffee', brandingBadgeEnabled: true, createdAt: now, updatedAt: now,
+  };
+  const coffeeBrand: BrandSettings = {
+    restaurantId: COFFEE_SITE_ID,
+    restaurantName: 'Fernwood Coffee Co.',
+    tagline: 'Small-batch roasted. Big enough to linger.',
+    logoMediaId: null,
+    faviconMediaId: null,
+    themePresetId: 'espresso',
+    primaryFont: 'Roboto',
+    headingFont: 'DM Sans',
+    fontWeight: 'medium',
+    buttonStyle: 'rounded',
+    borderRadius: 'md',
+    navPosition: 'right',
+    socialLinks: { instagram: 'https://instagram.com/fernwoodcoffeeco', facebook: '' },
+    contact: { phone: '+1 (206) 555-0139', email: 'hello@fernwoodcoffee.com', address: '3512 Fremont Ave N, Seattle, WA 98103' },
+    description: 'Fernwood Coffee Co. is a small-batch roaster and neighborhood cafe in Fremont, Seattle - order ahead, or stay a while.',
+    cuisineType: '',
+    businessHours: [
+      { day: 'mon', isClosed: false, openTime: '06:00', closeTime: '18:00' },
+      { day: 'tue', isClosed: false, openTime: '06:00', closeTime: '18:00' },
+      { day: 'wed', isClosed: false, openTime: '06:00', closeTime: '18:00' },
+      { day: 'thu', isClosed: false, openTime: '06:00', closeTime: '18:00' },
+      { day: 'fri', isClosed: false, openTime: '06:00', closeTime: '19:00' },
+      { day: 'sat', isClosed: false, openTime: '07:00', closeTime: '19:00' },
+      { day: 'sun', isClosed: false, openTime: '07:00', closeTime: '17:00' },
+    ],
+    createdAt: now,
+    updatedAt: now,
+  };
+  const coffeeHeroSection: HomepageSection = {
+    id: 'section_fernwood_hero', restaurantId: COFFEE_SITE_ID, type: 'hero', order: 1, visible: true, updatedAt: now,
+    content: {
+      eyebrow: 'Fremont · Seattle, WA',
+      heading: 'Fernwood Coffee Co.',
+      description: 'Small-batch roasted coffee, fresh-baked pastries and a room built for staying a while - order ahead for pickup.',
+      buttonText: 'Order Ahead',
+      buttonLink: '#/menu',
+      secondaryButtonText: 'View Menu',
+      secondaryButtonLink: '#/items',
+      backgroundMediaId: null,
+      overlayOpacity: 45,
+    },
+  };
+  const coffeeSeed = buildCoffeeSeed(COFFEE_SITE_ID, now, coffeeHeroSection);
+  const coffeeHomepage: Homepage = { restaurantId: COFFEE_SITE_ID, status: 'published', sections: coffeeSeed.sections };
+  const coffeeMembershipPlans: MembershipPlan[] = [
+    { id: 'plan_fernwood_rewards', restaurantId: COFFEE_SITE_ID, name: 'Fernwood Rewards', description: 'Free to join - earn a point on every order.', priceCents: 0, billingInterval: 'one_time', benefits: ['1 point per $1 spent', 'Free drink at 100 points', 'Birthday drink on us'], isActive: true, order: 0, createdAt: now, updatedAt: now },
+    { id: 'plan_fernwood_subscriber', restaurantId: COFFEE_SITE_ID, name: 'Coffee Subscriber', description: 'A bag of house-roast beans, delivered monthly, plus in-shop perks.', priceCents: 1800, billingInterval: 'monthly', benefits: ['12oz bag of beans every month', '10% off in-shop orders', 'Early access to seasonal roasts'], isActive: true, order: 1, createdAt: now, updatedAt: now },
+  ];
+  const coffeeAvailability: ReservationAvailabilitySettings = {
+    restaurantId: COFFEE_SITE_ID,
+    days: WEEK_DAYS.map((day) => ({
+      day,
+      isClosed: false,
+      openTime: day === 'sat' || day === 'sun' ? '07:00' : '06:00',
+      closeTime: day === 'fri' || day === 'sat' ? '19:00' : day === 'sun' ? '17:00' : '18:00',
+      slotDurationMins: 30,
+      maxPerSlot: 6,
+      slots: [],
+    })),
+    blockedDates: [],
+  };
+
   return {
-    organizations: [...organizations, gymOrganization, retailOrganization, salonOrganization],
-    users: [...users, gymOwner, retailOwner, salonOwner],
-    restaurants: [restaurant, secondSite, gymSite, retailSite, salonSite],
+    organizations: [...organizations, gymOrganization, retailOrganization, salonOrganization, coffeeOrganization],
+    users: [...users, gymOwner, retailOwner, salonOwner, coffeeOwner],
+    restaurants: [restaurant, secondSite, gymSite, retailSite, salonSite, coffeeSite],
     brand: {
       [RESTAURANT_ID]: { draft: { ...brandSettings }, published: { ...brandSettings } },
       [SECOND_SITE_ID]: { draft: { ...secondSiteBrand }, published: { ...secondSiteBrand } },
       [GYM_SITE_ID]: { draft: { ...gymBrand }, published: { ...gymBrand } },
       [RETAIL_SITE_ID]: { draft: { ...retailBrand }, published: { ...retailBrand } },
       [SALON_SITE_ID]: { draft: { ...salonBrand }, published: { ...salonBrand } },
+      [COFFEE_SITE_ID]: { draft: { ...coffeeBrand }, published: { ...coffeeBrand } },
     },
     website: {
       [RESTAURANT_ID]: {
@@ -1079,6 +1159,15 @@ export function buildSeed(): MockDbShape {
         createdAt: now,
         updatedAt: now,
       },
+      [COFFEE_SITE_ID]: {
+        restaurantId: COFFEE_SITE_ID,
+        publishStatus: 'published',
+        publishedAt: now,
+        seoTitle: 'Fernwood Coffee Co. | Coffee Shop in Fremont, Seattle',
+        seoDescription: 'Small-batch roasted coffee, pastries and order-ahead pickup in Fremont, Seattle, WA.',
+        createdAt: now,
+        updatedAt: now,
+      },
     },
     homepage: {
       [RESTAURANT_ID]: { draft: homepageDraft, published: homepagePublished },
@@ -1086,12 +1175,13 @@ export function buildSeed(): MockDbShape {
       [GYM_SITE_ID]: { draft: { ...gymHomepage }, published: { ...gymHomepage } },
       [RETAIL_SITE_ID]: { draft: { ...retailHomepage }, published: { ...retailHomepage } },
       [SALON_SITE_ID]: { draft: { ...salonHomepage }, published: { ...salonHomepage } },
+      [COFFEE_SITE_ID]: { draft: { ...coffeeHomepage }, published: { ...coffeeHomepage } },
     },
-    media: [...media, ...gymSeed.media, ...retailSeed.media, ...salonSeed.media],
-    categories: [...categories, ...gymSeed.categories, ...retailSeed.categories, ...salonSeed.categories],
-    items: [...items, ...gymSeed.items, ...retailSeed.items, ...salonSeed.items],
+    media: [...media, ...gymSeed.media, ...retailSeed.media, ...salonSeed.media, ...coffeeSeed.media],
+    categories: [...categories, ...gymSeed.categories, ...retailSeed.categories, ...salonSeed.categories, ...coffeeSeed.categories],
+    items: [...items, ...gymSeed.items, ...retailSeed.items, ...salonSeed.items, ...coffeeSeed.items],
     addons,
-    offers: [...offers, ...gymSeed.offers, ...retailSeed.offers, ...salonSeed.offers],
+    offers: [...offers, ...gymSeed.offers, ...retailSeed.offers, ...salonSeed.offers, ...coffeeSeed.offers],
     orders,
     reservations,
     reservationAvailability: {
@@ -1100,6 +1190,7 @@ export function buildSeed(): MockDbShape {
       [GYM_SITE_ID]: gymAvailability,
       [RETAIL_SITE_ID]: retailAvailability,
       [SALON_SITE_ID]: salonAvailability,
+      [COFFEE_SITE_ID]: coffeeAvailability,
     },
     pageConfigs: [
       ...buildDefaultPageConfigs(RESTAURANT_ID, true),
@@ -1107,8 +1198,9 @@ export function buildSeed(): MockDbShape {
       ...buildPageConfigsForVertical(GYM_SITE_ID, 'gym'),
       ...buildPageConfigsForVertical(RETAIL_SITE_ID, 'retail'),
       ...buildPageConfigsForVertical(SALON_SITE_ID, 'salon'),
+      ...buildPageConfigsForVertical(COFFEE_SITE_ID, 'coffee'),
     ],
-    membershipPlans: [...membershipPlans, ...gymMembershipPlans, ...retailMembershipPlans, ...salonMembershipPlans],
+    membershipPlans: [...membershipPlans, ...gymMembershipPlans, ...retailMembershipPlans, ...salonMembershipPlans, ...coffeeMembershipPlans],
     members,
     memberCheckIns,
     domainMappings: [
@@ -1117,10 +1209,11 @@ export function buildSeed(): MockDbShape {
       ...buildDefaultDomainMappings(GYM_SITE_ID, GYM_SITE_SLUG),
       ...buildDefaultDomainMappings(RETAIL_SITE_ID, RETAIL_SITE_SLUG),
       ...buildDefaultDomainMappings(SALON_SITE_ID, SALON_SITE_SLUG),
+      ...buildDefaultDomainMappings(COFFEE_SITE_ID, COFFEE_SITE_SLUG),
     ],
     // Every Site starts on the code defaults for its Vertical; owners only store what they change.
     pageContent: Object.fromEntries(
-      [RESTAURANT_ID, SECOND_SITE_ID, GYM_SITE_ID, RETAIL_SITE_ID, SALON_SITE_ID].map((id) => [id, { draft: {}, published: {} }]),
+      [RESTAURANT_ID, SECOND_SITE_ID, GYM_SITE_ID, RETAIL_SITE_ID, SALON_SITE_ID, COFFEE_SITE_ID].map((id) => [id, { draft: {}, published: {} }]),
     ),
   };
 }

@@ -63,6 +63,16 @@ const FOOTER_THEME: Record<Vertical, FooterTheme> = {
     borderTop: 'border-[#F2B8C6]/20',
     extraNavTarget: 'reservations',
   },
+  coffee: {
+    bg: 'bg-[#2B1B12]',
+    glow: 'bg-gradient-to-b from-[#C99A62]/10 via-transparent to-black/40',
+    text: 'text-[#E8D5BE]',
+    accent: 'text-[#C99A62]',
+    mutedText: 'text-[#CBB49B]',
+    hoverText: 'hover:text-white',
+    borderTop: 'border-[#C99A62]/20',
+    extraNavTarget: 'menu',
+  },
 };
 
 export const Footer: React.FC<FooterProps> = ({

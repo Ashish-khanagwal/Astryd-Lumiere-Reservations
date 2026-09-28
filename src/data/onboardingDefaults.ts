@@ -6,6 +6,7 @@ export const VERTICAL_LABEL: Record<Vertical, string> = {
   gym: 'Gym / Fitness Studio',
   retail: 'Retail / Shop',
   salon: 'Salon / Beauty',
+  coffee: 'Coffee Shop / Café',
 };
 
 export const VERTICAL_DESCRIPTION: Record<Vertical, string> = {
@@ -13,6 +14,7 @@ export const VERTICAL_DESCRIPTION: Record<Vertical, string> = {
   gym: 'Programs, classes, and memberships - browse-first, book a spot, manage members.',
   retail: 'Products, appointments, and a VIP club - shop online or book a fitting.',
   salon: 'A service menu, online appointments, and a VIP membership - book a stylist in a few taps.',
+  coffee: 'A menu, order-ahead pickup, and a rewards card - order online and skip the line.',
 };
 
 export interface ModuleDefault {
@@ -49,6 +51,12 @@ export const VERTICAL_MODULE_DEFAULTS: Record<Vertical, ModuleDefault[]> = {
     { module: 'booking', navLabel: 'Book Now', enabled: true, templateVariant: 'c' },
     { module: 'membership', navLabel: 'Memberships', enabled: true, templateVariant: 'c' },
   ],
+  coffee: [
+    { module: 'items', navLabel: 'Menu', enabled: true, templateVariant: 'a' },
+    { module: 'catalog', navLabel: 'Order Ahead', enabled: true, templateVariant: 'a' },
+    { module: 'booking', navLabel: 'Reserve a Table', enabled: false, templateVariant: 'a' },
+    { module: 'membership', navLabel: 'Rewards', enabled: true, templateVariant: 'a' },
+  ],
 };
 
 /** Plan §8.6 - Vertical only pre-selects a layout at Site creation; owners can switch any module to any layout in Settings → Pages. */
@@ -57,6 +65,7 @@ export const VERTICAL_TEMPLATE_VARIANT: Record<Vertical, TemplateVariant> = {
   gym: 'b',
   retail: 'c',
   salon: 'a',
+  coffee: 'a',
 };
 
 /** The layout a new Site's module starts on - the module's own override, else the Vertical's default. */

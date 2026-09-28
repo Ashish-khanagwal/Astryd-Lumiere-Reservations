@@ -53,6 +53,14 @@ const STYLE: Record<Vertical, VerticalStyle> = {
     secondaryButtonClassName: 'bg-[#F2B8C6] text-[#2B1D22] hover:bg-[#f7c9d4]',
     cardsSectionClassName: 'bg-[#FBF4F2]',
   },
+  coffee: {
+    stickyBarClassName: 'bg-[#2B1B12] border-b border-[#C99A62]/25',
+    stickyBarTextClassName: 'text-[#E8D5BE]',
+    stickyPillClassName: 'text-[#C99A62]',
+    primaryButtonClassName: 'border border-[#C99A62]/40 text-[#F0E2CE] hover:bg-[#C99A62]/15 hover:text-white',
+    secondaryButtonClassName: 'bg-[#C99A62] text-[#2B1B12] hover:bg-[#dcae79]',
+    cardsSectionClassName: 'bg-[#FBF3E7]',
+  },
 };
 
 interface LandingChromeProps {

@@ -110,5 +110,12 @@ export const itemsContent: ContentPageDefinition = {
       c_eyebrow: 'Lookbook',
       c_title: 'Our Services',
     },
+    coffee: {
+      a_eyebrow: 'The Full Menu',
+      a_title: 'Our Menu',
+      a_introBefore: 'Take a look through everything we pour and bake.',
+      a_introLink: 'Order ahead',
+      a_introAfter: 'for pickup, or come find a seat.',
+    },
   },
 };

@@ -1,4 +1,4 @@
-/** Unsplash photos (checked to load and to show their subject) used as Gym/Retail/Salon defaults for page images and demo content. */
+/** Unsplash photos (checked to load and to show their subject) used as Gym/Retail/Salon/Coffee defaults for page images and demo content. */
 const photo = (id: string, w = 1200) => `https://images.unsplash.com/${id}?w=${w}&q=80&auto=format&fit=crop`;
 
 export const GYM_IMAGES = {
@@ -60,4 +60,32 @@ export const SALON_IMAGES = {
   brows: photo('photo-1552693673-1bf958298935'),
   hairMask: photo('photo-1608248597279-f99d160bfcbc'),
   tools: photo('photo-1527799820374-dcf8d9d4a388'),
+};
+
+export const COFFEE_IMAGES = {
+  hero: photo('photo-1554118811-1e0d58224f24', 1800),
+  interior: photo('photo-1521017432531-fbd92d768814', 1600),
+  interiorGreen: photo('photo-1600093463592-8e36ae95ef56'),
+  founder: photo('photo-1507003211169-0a1dd7228f2d', 800),
+  cheers: photo('photo-1495474472287-4d71bcdd2085'),
+  laptops: photo('photo-1521737604893-d14cc237f11d'),
+  milkPour: photo('photo-1541167760496-1628856ab772'),
+  readingNook: photo('photo-1445116572660-236099ec97a0'),
+  peopleAtTable: photo('photo-1544148103-0773bf10d330'),
+  cappuccino: photo('photo-1512568400610-62da28bc8a13'),
+  latte: photo('photo-1497636577773-f1231844b336'),
+  oatLatte: photo('photo-1495774856032-8b90bbb32b32'),
+  espresso: photo('photo-1506372023823-741c83b836fe'),
+  seasonalLatte: photo('photo-1518057111178-44a106bad636'),
+  drip: photo('photo-1503481766315-7a586b20f66d'),
+  pourOver: photo('photo-1442512595331-e89e73853f31'),
+  icedCoffee: photo('photo-1461023058943-07fcbe16d735'),
+  icedLatte: photo('photo-1517701550927-30cf4ba1dba5'),
+  croissant: photo('photo-1483695028939-5bb13f8648b0'),
+  cinnamonRoll: photo('photo-1509365465985-25d11c17e812'),
+  cookie: photo('photo-1558961363-fa8fdf82db35'),
+  chocolateBox: photo('photo-1481391319762-47dff72954d9'),
+  avocadoToast: photo('photo-1525351484163-7529414344d8'),
+  beansJar: photo('photo-1509785307050-d4066910ec1e'),
+  beansSack: photo('photo-1524350876685-274059332603'),
 };

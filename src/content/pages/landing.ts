@@ -1,6 +1,7 @@
 import type { ContentFields, ContentPageDefinition } from '../../types';
 import heroFallback from '../../assets/hero.png';
 import { SALON_IMAGES } from '../verticalImages';
+import { COFFEE_IMAGES } from '../verticalImages';
 
 const rowFields = [
   { key: 'label', label: 'Label', type: 'text' as const },
@@ -267,6 +268,44 @@ export const landingContent: ContentPageDefinition = {
         { id: 'r2', label: 'Late Arrivals', value: '15-min grace period' },
         { id: 'r3', label: 'Payment', value: 'Visa, MC, AMEX, Apple Pay' },
         { id: 'r4', label: 'Gift Cards', value: 'Available in salon' },
+      ],
+    },
+    coffee: {
+      locationFallback: 'Fremont, Seattle',
+      openStatus: 'Open Now',
+      primaryButton: 'View Menu',
+      secondaryButton: 'Reserve a Table',
+      heroEyebrow: '{city}',
+      heroDescription: 'Small-batch roasted coffee, fresh-baked pastries and a room built for staying a while - order ahead for pickup.',
+      heroButtonText: 'Order Ahead',
+      heroButtonIcon: 'local_cafe',
+      heroSecondaryButtonIcon: 'restaurant_menu',
+      heroFallbackImage: COFFEE_IMAGES.hero,
+      aboutEyebrow: 'Our Story',
+      aboutHeading: 'Good coffee, made for staying a while.',
+      aboutDescription: '{brand} roasts small batches every week and pours them in a room built for lingering - laptops and long catch-ups welcome.',
+      aboutStoryLink: 'Meet our founder',
+      featuredViewAll: 'View Full Menu',
+      offerCtaFallback: 'Order Now',
+      hoursTitle: 'Shop Hours',
+      hoursRange: '{open} – {close}',
+      clockFormat: '12h',
+      locationHoursTitle: 'Shop Hours',
+      card1Icon: 'wifi',
+      card1Title: 'In the Shop',
+      card1Rows: [
+        { id: 'r1', label: 'Wi-Fi', value: 'Complimentary' },
+        { id: 'r2', label: 'Seating', value: 'Indoor & patio' },
+        { id: 'r3', label: 'Order Ahead Pickup', value: 'Ready in ~10 min' },
+        { id: 'r4', label: 'Dog-Friendly Patio', value: 'Yes' },
+      ],
+      card2Icon: 'loyalty',
+      card2Title: 'Rewards & Payment',
+      card2Rows: [
+        { id: 'r1', label: 'Rewards Card', value: 'Free to join' },
+        { id: 'r2', label: 'Payment', value: 'Visa, MC, AMEX, Apple Pay' },
+        { id: 'r3', label: 'Gift Cards', value: 'Available in-store' },
+        { id: 'r4', label: 'Bean Refills', value: '$1 with any rewards visit' },
       ],
     },
   },
