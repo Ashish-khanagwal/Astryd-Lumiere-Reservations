@@ -4,7 +4,7 @@ import { useDraftSave } from '../../context/DraftSaveContext';
 import { useAdminToast } from '../../context/AdminToastContext';
 import * as homepageService from '../../../services/homepage';
 import * as websiteService from '../../../services/website';
-import type { BrandSettings, Homepage, HomepageSectionType } from '../../../types';
+import type { BrandSettings, Homepage, HomepageSectionType, TemplateVariant } from '../../../types';
 
 export function useHomepageDraft() {
   const { restaurantId } = useRestaurant();
@@ -49,7 +49,7 @@ export function useUpdateSection() {
   const queryClient = useQueryClient();
   const queryKey = ['admin-homepage-draft', restaurantId] as const;
   return useMutation({
-    mutationFn: ({ type, payload }: { type: HomepageSectionType; payload: { visible?: boolean; content?: Record<string, unknown> } }) =>
+    mutationFn: ({ type, payload }: { type: HomepageSectionType; payload: { visible?: boolean; content?: Record<string, unknown>; templateVariant?: TemplateVariant } }) =>
       homepageService.updateHomepageSection(restaurantId, type, payload),
     onMutate: async ({ type, payload }) => {
       await queryClient.cancelQueries({ queryKey });
@@ -62,6 +62,7 @@ export function useUpdateSection() {
             return {
               ...section,
               visible: payload.visible ?? section.visible,
+              templateVariant: payload.templateVariant ?? section.templateVariant,
               content: payload.content ? { ...section.content, ...payload.content } : section.content,
             } as typeof section;
           }),

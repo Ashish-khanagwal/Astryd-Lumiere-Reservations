@@ -8,6 +8,7 @@ import { OffersSection } from './OffersSection';
 import { TestimonialsSection } from './TestimonialsSection';
 import { LocationSection } from './LocationSection';
 import { usePageContent } from '../context/usePageContent';
+import { usePublicData } from '../context/PublicDataContext';
 
 interface SectionRendererProps {
   sections: HomepageSection[];
@@ -36,6 +37,7 @@ export const SectionRenderer = ({
   onOfferClick,
 }: SectionRendererProps) => {
   const c = usePageContent('landing');
+  const { getSectionVariant } = usePublicData();
   const offerBadge: Record<Offer['type'], (o: Offer) => string> = {
     percentage: (o) => c.text('offerBadgePercent', { value: o.discountValue }),
     fixed: (o) => c.text('offerBadgeFixed', { value: o.discountValue }),
@@ -56,6 +58,7 @@ export const SectionRenderer = ({
             return (
               <HeroSection
                 key={section.id}
+                variant={getSectionVariant('hero')}
                 content={section.content}
                 backgroundImageUrl={backgroundMediaId ? mediaMap.get(backgroundMediaId)?.fileUrl : undefined}
                 onNavigate={onNavigate}
@@ -70,6 +73,7 @@ export const SectionRenderer = ({
             return (
               <AboutSection
                 key={section.id}
+                variant={getSectionVariant('about')}
                 content={section.content}
                 imageUrl={
                   (chefImageMediaId && mediaMap.get(chefImageMediaId)?.fileUrl) ||
@@ -90,6 +94,7 @@ export const SectionRenderer = ({
             return (
               <FeaturedMenuSection
                 key={section.id}
+                variant={getSectionVariant('featured_menu')}
                 content={section.content}
                 items={featuredItems.map((i) => ({
                   id: i.id,
@@ -108,6 +113,7 @@ export const SectionRenderer = ({
             return (
               <GallerySection
                 key={section.id}
+                variant={getSectionVariant('gallery')}
                 content={section.content}
                 images={resolveGalleryImages(sections, mediaMap)}
                 onImageClick={onGalleryImageClick}
@@ -123,6 +129,7 @@ export const SectionRenderer = ({
             return (
               <OffersSection
                 key={section.id}
+                variant={getSectionVariant('offers')}
                 content={section.content}
                 offers={selectedOffers.map((o) => ({
                   id: o.id,
@@ -138,7 +145,7 @@ export const SectionRenderer = ({
           }
 
           case 'testimonials':
-            return <TestimonialsSection key={section.id} content={section.content} />;
+            return <TestimonialsSection key={section.id} variant={getSectionVariant('testimonials')} content={section.content} />;
 
           case 'location':
             {
@@ -147,6 +154,7 @@ export const SectionRenderer = ({
             return (
               <LocationSection
                 key={section.id}
+                variant={getSectionVariant('location')}
                 content={section.content}
                 address={addressOverride || brand?.contact?.address || ''}
                 phone={brand?.contact?.phone ?? ''}

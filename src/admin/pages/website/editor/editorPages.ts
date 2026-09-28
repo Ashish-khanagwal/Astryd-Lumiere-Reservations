@@ -24,7 +24,7 @@ export const EDITOR_PAGES: EditorPageDef[] = [
   { key: 'booking', title: 'Reservations', description: 'Tables, classes or appointments.', icon: CalendarDays, group: 'pages', module: 'booking', contentPage: 'booking', previewHash: '#/reservations', tabs: ['content', 'layout', 'settings'] },
   { key: 'membership', title: 'Membership', description: 'Plans, sign-up and member perks.', icon: Crown, group: 'pages', module: 'membership', contentPage: 'membership', previewHash: '#/membership', tabs: ['content', 'layout', 'settings'] },
   { key: 'checkout', title: 'Checkout', description: 'The order summary and payment page, opened from the cart.', icon: ShoppingCart, group: 'pages', contentPage: 'checkout', previewHash: '#/checkout', tabs: ['content'] },
-  { key: 'header-footer', title: 'Header & Footer', description: 'Logo, name, navigation, footer and shared labels - shown on every page.', icon: PanelTop, group: 'site', contentPage: 'global', previewHash: '#/', tabs: ['header', 'content'] },
+  { key: 'header-footer', title: 'Header & Footer', description: 'Logo, name, navigation, footer and shared labels - shown on every page.', icon: PanelTop, group: 'site', contentPage: 'global', previewHash: '#/', tabs: ['header', 'layout', 'content'] },
   { key: 'theme', title: 'Colors & Fonts', description: 'Your site-wide color theme and typography.', icon: Paintbrush, group: 'site', previewHash: '#/', tabs: ['style'] },
 ];
 

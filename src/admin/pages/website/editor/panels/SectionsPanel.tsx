@@ -8,14 +8,19 @@ import { Button } from '../../../../components/Button';
 import { ListSkeleton } from '../../../../components/Skeleton';
 import { SECTION_ICON, SECTION_LABEL } from '../../sectionMeta';
 import { SectionContentEditor } from './SectionContentEditor';
+import { SectionLayoutPanel } from './SectionLayoutPanel';
 import { PanelLoadError } from './PanelLoadError';
 import type { PanelCallbacks } from './panelTypes';
-import type { HomepageSection, HomepageSectionType } from '../../../../../types';
+import type { HomepageSection, HomepageSectionType, TemplateVariant } from '../../../../../types';
+
+type SectionTab = 'content' | 'layout';
 
 interface SectionsPanelProps extends PanelCallbacks {
   openSection: HomepageSectionType | null;
   onOpenSection: (type: HomepageSectionType | null) => void;
   onOpenExtras: () => void;
+  /** Lets the editor shell build the live-preview URL while a layout is being previewed but not yet applied. */
+  onPreviewOverride: (override: { key: HomepageSectionType; variant: TemplateVariant } | null) => void;
 }
 
 const orderKey = (sections: HomepageSection[]) => sections.map((s) => s.id).join(',');
@@ -102,8 +107,59 @@ function SectionList({ sections, onOpenSection, onOpenExtras, onSaved }: { secti
   );
 }
 
+const SUB_TAB_LABEL: Record<SectionTab, string> = { content: 'Content', layout: 'Layout' };
+
+function SectionDetail({ section, onPreviewOverride, ...callbacks }: { section: HomepageSection; onPreviewOverride: SectionsPanelProps['onPreviewOverride'] } & PanelCallbacks) {
+  const [sub, setSub] = useState<SectionTab>('content');
+  const [previewVariant, setPreviewVariant] = useState<TemplateVariant>(section.templateVariant);
+
+  // Reset per section switch, and pick up the saved variant once it changes (e.g. right after Apply).
+  useEffect(() => {
+    setSub('content');
+    setPreviewVariant(section.templateVariant);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [section.id, section.templateVariant]);
+
+  // Only the editor shell needs to know a layout is mid-preview, to build the iframe URL - clear it
+  // whenever we leave the Layout tab, the preview matches what's already saved, or this section closes.
+  useEffect(() => {
+    onPreviewOverride(sub === 'layout' && previewVariant !== section.templateVariant ? { key: section.type, variant: previewVariant } : null);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [sub, previewVariant, section.type, section.templateVariant]);
+  useEffect(() => () => onPreviewOverride(null), [onPreviewOverride]);
+
+  return (
+    <>
+      <div role="tablist" className="flex gap-1 rounded-xl bg-surface-container-low p-1">
+        {(['content', 'layout'] as SectionTab[]).map((t) => (
+          <button
+            key={t}
+            role="tab"
+            aria-selected={t === sub}
+            type="button"
+            onClick={() => setSub(t)}
+            className={`flex-1 rounded-lg px-2 py-1.5 text-xs font-semibold transition-colors ${t === sub ? 'bg-surface text-primary shadow-sm' : 'text-secondary hover:text-on-surface'}`}
+          >
+            {SUB_TAB_LABEL[t]}
+          </button>
+        ))}
+      </div>
+      {sub === 'content' ? (
+        <SectionContentEditor key={section.id} section={section} {...callbacks} />
+      ) : (
+        <SectionLayoutPanel
+          section={section}
+          previewVariant={previewVariant}
+          onPreviewVariant={setPreviewVariant}
+          onApplied={callbacks.onSaved}
+        />
+      )}
+    </>
+  );
+}
+
 /** Home → Sections tab: reorder / show / hide, then drill into a section to edit it (Wix-style panel). */
-export function SectionsPanel({ openSection, onOpenSection, onOpenExtras, ...callbacks }: SectionsPanelProps) {
+export function SectionsPanel({ openSection, onOpenSection, onOpenExtras, onPreviewOverride, ...callbacks }: SectionsPanelProps) {
   const { data: homepage, isLoading, isError, isFetching, refetch } = useHomepageDraft();
   const sections = useMemo(() => [...(homepage?.sections ?? [])].sort((a, b) => a.order - b.order), [homepage]);
 
@@ -131,7 +187,7 @@ export function SectionsPanel({ openSection, onOpenSection, onOpenExtras, ...cal
             <p className="text-xs text-secondary">{active.visible ? 'Shown on your homepage' : 'Hidden - turn it on from the section list'}</p>
           </div>
         </div>
-        <SectionContentEditor key={active.id} section={active} {...callbacks} />
+        <SectionDetail key={active.id} section={active} onPreviewOverride={onPreviewOverride} {...callbacks} />
       </div>
     );
   }

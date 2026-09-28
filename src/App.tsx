@@ -63,7 +63,7 @@ function loadCart(siteId: string): CartState {
 
 function AppShell() {
   const { restaurantId } = useRestaurant();
-  const { brand, sections, mediaMap, items, offers, isLoading, vertical, isModuleEnabled } = usePublicData();
+  const { brand, sections, mediaMap, items, offers, isLoading, vertical, isModuleEnabled, getSectionVariant } = usePublicData();
   // With online ordering switched off (e.g. a Salon), homepage "browse" buttons show the Items page and offers lead to booking.
   const browsePage: AppPage = isModuleEnabled('catalog') || !isModuleEnabled('items') ? 'menu' : 'items';
   const offerPage: AppPage = isModuleEnabled('catalog') || !isModuleEnabled('booking') ? browsePage : 'reservations';
@@ -326,6 +326,7 @@ function AppShell() {
         {heroSection?.type === 'hero' && (
           <div data-section="hero">
             <HeroSection
+              variant={getSectionVariant('hero')}
               content={heroSection.content}
               backgroundImageUrl={
                 heroBackgroundMediaId ? mediaMap.get(heroBackgroundMediaId)?.fileUrl : undefined

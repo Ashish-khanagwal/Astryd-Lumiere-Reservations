@@ -1,4 +1,5 @@
 import type { Id, ISODateString, Tenant, Timestamps, PublishStatus } from './common';
+import type { TemplateVariant } from './pageConfig';
 
 export type WeekDay = 'mon' | 'tue' | 'wed' | 'thu' | 'fri' | 'sat' | 'sun';
 
@@ -183,6 +184,9 @@ export interface BrandSettings extends Tenant, Timestamps {
   headerTextHoverColor?: string;
   /** Whether the cart icon can appear in the public header at all; owners without online ordering may still want it hidden entirely. */
   showCart?: boolean;
+  /** Site-wide layout choice for the header/footer chrome; defaults to Layout A (Classic) when absent. */
+  headerVariant?: TemplateVariant;
+  footerVariant?: TemplateVariant;
   socialLinks: SocialLinks;
   contact: ContactInfo;
   description: string;
