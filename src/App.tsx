@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useLayoutEffect, useRef } from 'react';
 import { Loader2 } from 'lucide-react';
 import { GalleryLightbox } from './components/GalleryLightbox';
 import { ChefStoryModal } from './components/ChefStoryModal';
@@ -63,7 +63,10 @@ function loadCart(siteId: string): CartState {
 
 function AppShell() {
   const { restaurantId } = useRestaurant();
-  const { brand, sections, mediaMap, items, offers, isLoading, vertical } = usePublicData();
+  const { brand, sections, mediaMap, items, offers, isLoading, vertical, isModuleEnabled } = usePublicData();
+  // With online ordering switched off (e.g. a Salon), homepage "browse" buttons show the Items page and offers lead to booking.
+  const browsePage: AppPage = isModuleEnabled('catalog') || !isModuleEnabled('items') ? 'menu' : 'items';
+  const offerPage: AppPage = isModuleEnabled('catalog') || !isModuleEnabled('booking') ? browsePage : 'reservations';
   useEffect(() => {
     if (brand?.restaurantName) document.title = brand.restaurantName;
   }, [brand?.restaurantName]);
@@ -93,6 +96,20 @@ function AppShell() {
     window.addEventListener('hashchange', onHashChange);
     return () => window.removeEventListener('hashchange', onHashChange);
   }, []);
+
+  // Every page change (nav links, buttons, redirects, back/forward) starts at the top. Layout effect so
+  // the new page never paints at the old scroll position; 'instant' because <html> has scroll-smooth.
+  // The first render is skipped so a reload keeps the browser's restored scroll position.
+  const previousPageRef = useRef(currentPage);
+  useEffect(() => {
+    // Otherwise Back/Forward can restore the old page's position after we've already jumped to the top.
+    if ('scrollRestoration' in window.history) window.history.scrollRestoration = 'manual';
+  }, []);
+  useLayoutEffect(() => {
+    if (previousPageRef.current === currentPage) return;
+    previousPageRef.current = currentPage;
+    window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
+  }, [currentPage]);
 
   useEffect(() => {
     localStorage.setItem(`${CART_STORAGE_KEY}:${restaurantId}`, JSON.stringify(cart));
@@ -144,7 +161,6 @@ function AppShell() {
     }
     setIsCartOpen(false);
     setCurrentPage('checkout');
-    window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
   const cartUniqueCount = getCartUniqueCount(cart);
@@ -324,7 +340,7 @@ function AppShell() {
           address={brand?.contact?.address}
           businessHours={brand?.businessHours ?? []}
           isStickyShadowed={isStickyShadowed}
-          onPrimaryAction={() => setCurrentPage('menu')}
+          onPrimaryAction={() => setCurrentPage(browsePage)}
           onSecondaryAction={() => setCurrentPage('reservations')}
         />
 
@@ -337,7 +353,8 @@ function AppShell() {
           onNavigate={navigateFromLink}
           onAboutImageClick={() => setIsChefStoryOpen(true)}
           onGalleryImageClick={(idx) => setLightboxIndex(idx)}
-          onViewMenu={() => setCurrentPage('menu')}
+          onViewMenu={() => setCurrentPage(browsePage)}
+          onOfferClick={() => setCurrentPage(offerPage)}
         />
       </main>
 

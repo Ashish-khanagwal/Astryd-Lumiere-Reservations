@@ -117,6 +117,9 @@ export function SiteEditorPage() {
         post({ type: 'navigate', hash: currentHashRef.current });
         if (focusTarget) window.setTimeout(() => post({ type: 'scrollTo', section: focusTarget }), 400);
       } else if (msg.type === 'navigated') {
+        // Ignore the echo of our own "navigate" (e.g. Header & Footer / Colors & Fonts show the homepage, whose
+        // hash maps to Home) - only follow the preview when the visitor-side navigation went somewhere else.
+        if (msg.hash === currentHashRef.current) return;
         const key = editorPageForHash(msg.hash);
         if (key && key !== def?.key) navigate(`/admin/website/pages/${key}`);
       } else if (msg.type === 'selectSection') {

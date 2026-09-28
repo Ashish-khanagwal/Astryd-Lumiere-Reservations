@@ -1,16 +1,19 @@
 import { useState, type FormEvent } from 'react';
-import { Link, useLocation, useNavigate } from 'react-router-dom';
+import { Link, Navigate, useLocation, useNavigate } from 'react-router-dom';
+import { Eye, EyeOff } from 'lucide-react';
 import { useAuth } from '../../../context/AuthContext';
+import { ApiError } from '../../../services/http';
 
 export function LoginPage() {
   const mocks = import.meta.env.VITE_USE_MOCKS === 'true';
   const demo = mocks || import.meta.env.MODE === 'staging';
-  const { login } = useAuth();
+  const { login, isAuthenticated, isLoading } = useAuth();
   const navigate = useNavigate();
   const location = useLocation() as { state?: { from?: string } };
   const [orgId, setOrgId] = useState(demo ? 'LUMIERE' : '');
   const [email, setEmail] = useState(demo ? mocks ? 'owner@lumiere.com' : 'admin@lumiere.com' : '');
   const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -19,14 +22,25 @@ export function LoginPage() {
     setError(null);
     setIsSubmitting(true);
     try {
-      await login(orgId, email, password);
+      await login(orgId.trim(), email.trim(), password);
       navigate(location.state?.from ?? '/admin', { replace: true });
-    } catch {
-      setError('Incorrect Organization ID, email, or password.');
+    } catch (err) {
+      if (err instanceof ApiError && (err.status === 401 || err.code === 'invalid_credentials' || err.code === 'invalid_org')) {
+        setError('Incorrect Organization ID, email, or password.');
+      } else if (err instanceof TypeError || (err instanceof ApiError && err.status >= 500)) {
+        setError('Could not reach the login service. Wait a moment and try again.');
+      } else {
+        setError(err instanceof Error ? err.message : 'Sign in failed. Please try again.');
+      }
     } finally {
       setIsSubmitting(false);
     }
   };
+
+  if (isLoading) return null;
+  if (isAuthenticated) {
+    return <Navigate to={location.state?.from ?? '/admin'} replace />;
+  }
 
   return (
     <form onSubmit={handleSubmit} className="space-y-5">
@@ -53,15 +67,24 @@ export function LoginPage() {
       </div>
       <div>
         <label className="block text-sm font-semibold text-on-surface mb-1.5">Password</label>
-        <input
-          type="password"
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-          required
-          placeholder="Your password"
-          className="w-full px-3 py-2.5 text-sm rounded-xl border border-outline-variant/40 bg-surface-container-low focus:border-primary outline-none"
-        />
-        {demo && <p className="text-xs text-secondary mt-1">Staging demo password: {mocks ? 'password123' : 'admin123'}</p>}
+        <div className="relative">
+          <input
+            type={showPassword ? 'text' : 'password'}
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            required
+            placeholder="Your password"
+            className="w-full px-3 py-2.5 pr-10 text-sm rounded-xl border border-outline-variant/40 bg-surface-container-low focus:border-primary outline-none"
+          />
+          <button
+            type="button"
+            onClick={() => setShowPassword((v) => !v)}
+            aria-label={showPassword ? 'Hide password' : 'Show password'}
+            className="absolute inset-y-0 right-0 flex items-center px-3 text-secondary hover:text-on-surface"
+          >
+            {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+          </button>
+        </div>
       </div>
 
       {error && <p className="text-sm text-error font-medium">{error}</p>}
@@ -79,21 +102,6 @@ export function LoginPage() {
           Forgot password?
         </Link>
       </div>
-
-      {demo && <div className="pt-4 border-t border-outline-variant/20 text-xs text-secondary space-y-2">
-        <div>
-          <p className="font-semibold">LUMIERE (Restaurant)</p>
-          <p>{mocks ? 'owner' : 'admin'}@lumiere.com (Owner) · staff@lumiere.com (Staff)</p>
-        </div>
-        <div>
-          <p className="font-semibold">PULSEFIT (Gym)</p>
-          <p>{mocks ? 'owner' : 'admin'}@pulsefit.com (Owner)</p>
-        </div>
-        <div>
-          <p className="font-semibold">NOVAGOODS (Retail)</p>
-          <p>{mocks ? 'owner' : 'admin'}@novagoods.com (Owner)</p>
-        </div>
-      </div>}
 
       <div className="text-center">
         <Link to="/signup" className="text-sm text-primary font-medium hover:underline">

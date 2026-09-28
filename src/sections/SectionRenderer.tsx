@@ -19,6 +19,8 @@ interface SectionRendererProps {
   onAboutImageClick: () => void;
   onGalleryImageClick: (index: number) => void;
   onViewMenu: () => void;
+  /** Where an offer's button leads; defaults to onViewMenu. */
+  onOfferClick?: () => void;
 }
 
 export const SectionRenderer = ({
@@ -31,6 +33,7 @@ export const SectionRenderer = ({
   onAboutImageClick,
   onGalleryImageClick,
   onViewMenu,
+  onOfferClick,
 }: SectionRendererProps) => {
   const c = usePageContent('landing');
   const offerBadge: Record<Offer['type'], (o: Offer) => string> = {
@@ -80,12 +83,15 @@ export const SectionRenderer = ({
           case 'featured_menu': {
             const configuredItemIds = section.content?.selectedItemIds;
             const selectedItemIds = Array.isArray(configuredItemIds) ? configuredItemIds : [];
-            const selected = selectedItemIds.length ? items.filter((i) => selectedItemIds.includes(i.id)) : [];
+            const selected = selectedItemIds.length
+              ? items.filter((i) => selectedItemIds.includes(i.id))
+              : items.filter((i) => i.isFeatured);
+            const featuredItems = (selected.length ? selected : items).slice(0, 4);
             return (
               <FeaturedMenuSection
                 key={section.id}
                 content={section.content}
-                items={selected.slice(0, 4).map((i) => ({
+                items={featuredItems.map((i) => ({
                   id: i.id,
                   name: i.name,
                   description: i.description,
@@ -126,7 +132,7 @@ export const SectionRenderer = ({
                   imageUrl: o.imageMediaId ? mediaMap.get(o.imageMediaId)?.fileUrl : undefined,
                   cta: o.cta,
                 }))}
-                onCtaClick={onViewMenu}
+                onCtaClick={onOfferClick ?? onViewMenu}
               />
             );
           }

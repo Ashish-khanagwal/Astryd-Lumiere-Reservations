@@ -1,5 +1,6 @@
 import type { BusinessHoursEntry, LocationSectionContent } from '../types';
 import { usePageContent } from '../context/usePageContent';
+import { formatClockTime } from '../content/formatTime';
 
 interface LocationSectionProps {
   content?: Partial<LocationSectionContent> | null;
@@ -51,7 +52,7 @@ export const LocationSection = ({ content, address, phone, mapEmbedUrl, business
                     <li key={h.day} className="flex justify-between border-b border-outline-variant/10 pb-2">
                       <span className="text-secondary">{dayLabel.get(h.day)}</span>
                       <span className="text-on-surface font-semibold">
-                        {h.isClosed ? c.text('closedLabel') : c.text('hoursRange', { open: h.openTime ?? '', close: h.closeTime ?? '' })}
+                        {h.isClosed ? c.text('closedLabel') : c.text('hoursRange', { open: formatClockTime(h.openTime, c.text('clockFormat')), close: formatClockTime(h.closeTime, c.text('clockFormat')) })}
                       </span>
                     </li>
                   ))}

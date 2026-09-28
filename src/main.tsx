@@ -9,9 +9,17 @@ import { setAuthToken } from './services/http';
 
 async function bootstrap() {
   setAuthToken(localStorage.getItem('lumiere-cms-token'));
-  if (import.meta.env.DEV && import.meta.env.VITE_USE_MOCKS === 'true') {
+  if (import.meta.env.VITE_USE_MOCKS === 'true') {
     const { worker } = await import('./mocks/browser');
-    await worker.start({ onUnhandledRequest: 'bypass' });
+    await worker.start({
+      onUnhandledRequest: 'bypass',
+      serviceWorker: { url: '/mockServiceWorker.js' },
+    });
+    // MSW's service worker loses its connected-tabs list whenever Chrome stops it as idle; re-attach on
+    // demand instead of leaving the tab on skeletons until a reload.
+    const { keepMockWorkerAttached } = await import('./mocks/keepAttached');
+    const { setMockRecovery } = await import('./services/mockRecovery');
+    setMockRecovery(keepMockWorkerAttached());
   } else if ('serviceWorker' in navigator) {
     // Retire only MSW registrations when switching a local mock preview to real APIs.
     const registrations = await navigator.serviceWorker.getRegistrations();

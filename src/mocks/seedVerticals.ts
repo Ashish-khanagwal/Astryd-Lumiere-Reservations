@@ -1,8 +1,8 @@
 import type { HomepageSection, MediaAsset, MenuCategory, MenuItem, Offer } from '../types';
-import { GYM_IMAGES as GYM, RETAIL_IMAGES as RETAIL } from '../content/verticalImages';
+import { GYM_IMAGES as GYM, RETAIL_IMAGES as RETAIL, SALON_IMAGES as SALON, COFFEE_IMAGES as COFFEE } from '../content/verticalImages';
 
 /**
- * Full demo content for the Gym (PulseFit) and Retail (Nova Goods) tenants - media, catalog, offers and
+ * Full demo content for the Gym (PulseFit), Retail (Nova Goods), Salon (Sloane & Co.) and Coffee Shop (Fernwood) tenants - media, catalog, offers and
  * all 7 homepage sections filled in and visible - so each vertical's public site is as complete as Lumière's.
  */
 
@@ -241,6 +241,185 @@ export function buildRetailSeed(siteId: string, now: string, hero: HomepageSecti
       },
     },
     { ...base, id: `section_${siteId}_location`, type: 'location', order: 7, visible: true, content: { heading: 'Visit the Shop', showHoursTable: true } },
+  ];
+
+  return { media, categories, items, offers, sections };
+}
+
+// -------------------------------------------------------------------------------------------- Salon
+
+export function buildSalonSeed(siteId: string, now: string, hero: HomepageSection): VerticalSeed {
+  const media = buildMedia(siteId, now, [
+    ['media_sc_hero', SALON.hero, 'The Sloane & Co. salon floor'],
+    ['media_sc_about', SALON.interior, 'Inside Sloane & Co. on South Lamar'],
+    ['media_sc_founder', SALON.founder, 'Founder Sloane Mitchell'],
+    ['media_sc_offer', SALON.blowout, 'A signature blowout'],
+    ['media_sc_offer2', SALON.team, 'The Sloane & Co. stylists'],
+    ['media_sc_g1', SALON.longHair, 'Sun-kissed balayage'],
+    ['media_sc_g2', SALON.colorFoils, 'Foil highlights in progress'],
+    ['media_sc_g3', SALON.tortoiseNails, 'Tortoiseshell gel nails'],
+    ['media_sc_g4', SALON.updo, 'Bridal updo'],
+    ['media_sc_g5', SALON.vividColor, 'Lavender vivid color'],
+    ['media_sc_g6', SALON.facial, 'Signature facial'],
+  ]);
+
+  const { categories, items } = buildCatalog(siteId, now, 'sc', ['Cut & Style', 'Color', 'Treatments', 'Nails', 'Skin & Brows'], [
+    { id: 'sc_womens_cut', category: 'Cut & Style', name: "Women's Cut & Style", description: 'A consultation, relaxing shampoo, precision cut and a finished blowout tailored to your texture.', price: 85, image: SALON.blowDry, minutes: 60, tag: 'Popular', rating: 4.9, reviews: 412 },
+    { id: 'sc_blowout', category: 'Cut & Style', name: 'Signature Blowout', description: 'Wash, scalp massage and a smooth, bouncy blowout that lasts for days. Straight, waves or volume - your call.', price: 55, image: SALON.blowout, minutes: 45, tag: 'Bestseller', rating: 4.9, reviews: 538 },
+    { id: 'sc_mens_cut', category: 'Cut & Style', name: "Men's Cut", description: 'Clipper or scissor cut with a hot-towel finish and styling advice for at home.', price: 45, image: SALON.mensCut, minutes: 30, rating: 4.8, reviews: 267 },
+    { id: 'sc_event_style', category: 'Cut & Style', name: 'Bridal & Event Styling', description: 'Updos, polished waves or a sleek pony for weddings, proms and big nights. Trials available.', price: 150, image: SALON.updo, minutes: 90, tag: 'Premium', rating: 5, reviews: 76 },
+    { id: 'sc_fade', category: 'Cut & Style', name: 'Skin Fade & Beard Trim', description: 'A crisp fade, sharp line-up and a sculpted beard - finished with a straight-razor edge.', price: 55, image: SALON.fade, minutes: 45, rating: 4.9, reviews: 189 },
+    { id: 'sc_curl_cut', category: 'Cut & Style', name: 'Curl Cut & Define', description: 'A dry, curl-by-curl cut for waves, curls and coils, finished with a hydrating define routine.', price: 110, image: SALON.naturalCurls, minutes: 75, tag: 'New', rating: 5, reviews: 94 },
+    { id: 'sc_balayage', category: 'Color', name: 'Balayage', description: 'Hand-painted, sun-kissed dimension with a toning gloss - soft grow-out, low maintenance.', price: 250, image: SALON.longHair, minutes: 180, tag: 'Popular', rating: 4.9, reviews: 321 },
+    { id: 'sc_highlights', category: 'Color', name: 'Full Highlights', description: 'Foil highlights from root to ends for bright, even dimension, finished with a blowout.', price: 185, image: SALON.colorFoils, minutes: 150, rating: 4.8, reviews: 204 },
+    { id: 'sc_vivid', category: 'Color', name: 'Vivid Fashion Color', description: 'Lavender, rose gold, copper or teal - bold, custom color with bond protection built in.', price: 220, image: SALON.vividColor, minutes: 180, rating: 4.9, reviews: 58 },
+    { id: 'sc_gloss', category: 'Color', name: 'Root Touch-Up & Gloss', description: 'Single-process color at the root plus a shine-boosting gloss to refresh your ends.', price: 95, image: SALON.curlingIron, minutes: 90, rating: 4.8, reviews: 176 },
+    { id: 'sc_bond_repair', category: 'Treatments', name: 'Bond-Repair Treatment', description: 'A deep-conditioning ritual that rebuilds strength in color-treated or heat-styled hair.', price: 45, image: SALON.shampoo, minutes: 30, rating: 4.7, reviews: 143 },
+    { id: 'sc_keratin', category: 'Treatments', name: 'Keratin Smoothing Treatment', description: 'Cuts frizz and blow-dry time for up to 12 weeks - made for humid Texas summers.', price: 300, image: SALON.hairMask, minutes: 150, rating: 4.8, reviews: 112 },
+    { id: 'sc_gel_mani', category: 'Nails', name: 'Gel Manicure', description: 'Shaping, cuticle care and a chip-resistant gel color that stays glossy for two weeks.', price: 50, image: SALON.gelManicure, minutes: 45, tag: 'Popular', rating: 4.9, reviews: 298 },
+    { id: 'sc_classic_mani', category: 'Nails', name: 'Classic Manicure', description: 'Soak, shape, cuticle care, a hand massage and your choice of polish.', price: 35, image: SALON.manicure, minutes: 30, rating: 4.7, reviews: 187 },
+    { id: 'sc_dip', category: 'Nails', name: 'Dip Powder Manicure', description: 'Lightweight, long-wearing dip color in a natural finish - no UV lamp needed.', price: 55, image: SALON.nudeNails, minutes: 50, rating: 4.8, reviews: 121 },
+    { id: 'sc_pedicure', category: 'Nails', name: 'Spa Pedicure', description: 'A warm soak, sugar scrub, callus care, massage and polish - pure relaxation.', price: 65, image: SALON.pedicure, minutes: 60, rating: 4.9, reviews: 233 },
+    { id: 'sc_nail_art', category: 'Nails', name: 'Custom Nail Art', description: 'Hand-painted designs, chrome, French tips or accents - add it to any manicure.', price: 20, image: SALON.nailArt, minutes: 20, rating: 4.8, reviews: 88 },
+    { id: 'sc_facial', category: 'Skin & Brows', name: 'Signature Facial', description: 'Cleanse, exfoliation, extractions and a custom mask, matched to your skin by a licensed esthetician.', price: 120, image: SALON.facial, minutes: 60, tag: 'Popular', rating: 4.9, reviews: 164 },
+    { id: 'sc_glow_facial', category: 'Skin & Brows', name: 'Hydrating Glow Facial', description: 'Deep hydration and a gentle peel for red-carpet radiance - zero downtime.', price: 165, image: SALON.hydrafacial, minutes: 75, rating: 5, reviews: 71 },
+    { id: 'sc_brows', category: 'Skin & Brows', name: 'Brow Shape & Tint', description: 'Custom mapping, wax and tweeze, then a tint to frame your face.', price: 40, image: SALON.brows, minutes: 30, rating: 4.8, reviews: 209 },
+    { id: 'sc_makeup', category: 'Skin & Brows', name: 'Event Makeup', description: 'Soft glam or full glam for photos, parties and weddings, lashes included.', price: 95, image: SALON.makeup, minutes: 60, rating: 4.9, reviews: 97 },
+  ]);
+
+  const offers: Offer[] = [
+    { id: 'offer_sc_newclient', restaurantId: siteId, name: 'New Client Welcome', type: 'percentage', discountValue: 20, startDate: now, endDate: inDays(60), isActive: true, appliesToItemIds: [], appliesToCategoryIds: ['cat_sc_cut_style', 'cat_sc_color'], cta: 'Book Your First Visit', imageMediaId: 'media_sc_offer2', createdAt: now, updatedAt: now },
+    { id: 'offer_sc_blowout', restaurantId: siteId, name: 'Blowout Wednesdays', type: 'fixed', discountValue: 10, startDate: now, endDate: inDays(45), isActive: true, appliesToItemIds: ['sc_blowout'], appliesToCategoryIds: [], cta: 'Book a Blowout', imageMediaId: 'media_sc_offer', createdAt: now, updatedAt: now },
+  ];
+
+  const base = { restaurantId: siteId, updatedAt: now };
+  const sections: HomepageSection[] = [
+    { ...hero, content: { ...(hero.type === 'hero' ? hero.content : {}), backgroundMediaId: 'media_sc_hero' } } as HomepageSection,
+    {
+      ...base, id: `section_${siteId}_about`, type: 'about', order: 2, visible: true,
+      content: {
+        eyebrow: 'Our Story',
+        heading: 'Great hair, zero attitude.',
+        description: 'Sloane & Co. is a full-service salon on South Lamar - hair, color, nails and skin under one roof. Every visit starts with a real consultation, so you leave with a look that fits your life, not just your feed.',
+        imageMediaId: 'media_sc_about',
+        quote: 'You should feel like the best version of you when you walk out our door.',
+        chefName: 'Sloane Mitchell, Founder',
+        chefQuote: 'I opened Sloane & Co. to build the salon I always wanted to work in - warm, inclusive and obsessed with the details.',
+        chefBio: 'A licensed cosmetologist with 15 years behind the chair in Dallas and Los Angeles, Sloane opened her Austin studio in 2018. Today her team of 12 stylists, nail artists and estheticians looks after more than 4,000 guests a year.',
+        chefImageMediaId: 'media_sc_founder',
+      },
+    },
+    { ...base, id: `section_${siteId}_featured_menu`, type: 'featured_menu', order: 3, visible: true, content: { eyebrow: 'Most Booked', heading: 'Signature Services', description: 'The appointments our guests book again and again.', selectedItemIds: ['sc_balayage', 'sc_blowout', 'sc_womens_cut', 'sc_gel_mani'] } },
+    {
+      ...base, id: `section_${siteId}_gallery`, type: 'gallery', order: 4, visible: true,
+      content: {
+        eyebrow: 'The Lookbook',
+        heading: 'Fresh From the Chair',
+        description: 'Real guests, real results - follow along @sloaneandco.',
+        images: ['media_sc_g1', 'media_sc_g2', 'media_sc_g3', 'media_sc_g4', 'media_sc_g5', 'media_sc_g6'].map((mediaId, order) => ({ mediaId, order })),
+      },
+    },
+    { ...base, id: `section_${siteId}_offers`, type: 'offers', order: 5, visible: true, content: { eyebrow: 'Limited Time', heading: 'Salon Specials', description: 'A little extra for new and returning guests.', selectedOfferIds: ['offer_sc_newclient', 'offer_sc_blowout'] } },
+    {
+      ...base, id: `section_${siteId}_testimonials`, type: 'testimonials', order: 6, visible: true,
+      content: {
+        eyebrow: '5-Star Reviews',
+        heading: 'What Our Guests Say',
+        testimonials: [
+          { id: 'testimonial_sc_1', customerName: 'Madison T.', quote: 'Best balayage I have ever had - soft, natural and it grew out beautifully. I drive in from Round Rock for it.', rating: 5, order: 0 },
+          { id: 'testimonial_sc_2', customerName: 'Jasmine W.', quote: 'Finally a salon that really knows curly hair. My curl cut was life-changing.', rating: 5, order: 1 },
+          { id: 'testimonial_sc_3', customerName: 'Ashley R.', quote: 'Booked online in two minutes, got a mimosa and the cutest gel mani. Obsessed.', rating: 5, order: 2 },
+        ],
+      },
+    },
+    { ...base, id: `section_${siteId}_location`, type: 'location', order: 7, visible: true, content: { heading: 'Visit the Salon', showHoursTable: true } },
+  ];
+
+  return { media, categories, items, offers, sections };
+}
+
+// -------------------------------------------------------------------------------------- Coffee Shop
+
+export function buildCoffeeSeed(siteId: string, now: string, hero: HomepageSection): VerticalSeed {
+  const media = buildMedia(siteId, now, [
+    ['media_fw_hero', COFFEE.hero, 'The Fernwood Coffee Co. counter and dining room'],
+    ['media_fw_about', COFFEE.interior, 'Inside Fernwood Coffee Co.'],
+    ['media_fw_founder', COFFEE.founder, 'Founder Owen Castillo'],
+    ['media_fw_offer', COFFEE.cheers, 'Friends sharing a round of lattes'],
+    ['media_fw_offer2', COFFEE.cinnamonRoll, 'Fresh-baked cinnamon rolls'],
+    ['media_fw_g1', COFFEE.laptops, 'Regulars working from the community table'],
+    ['media_fw_g2', COFFEE.milkPour, 'Steamed milk poured into a latte'],
+    ['media_fw_g3', COFFEE.readingNook, 'The window reading nook'],
+    ['media_fw_g4', COFFEE.interiorGreen, 'The plant-filled dining room'],
+    ['media_fw_g5', COFFEE.peopleAtTable, 'Regulars catching up over coffee'],
+    ['media_fw_g6', COFFEE.pourOver, 'A single-origin pour-over in progress'],
+  ]);
+
+  const { categories, items } = buildCatalog(siteId, now, 'fw', ['Espresso Bar', 'Drip & Pour-Over', 'Cold & Iced', 'Pastries & Bakery', 'Breakfast', 'Beans & Merch'], [
+    { id: 'fw_cappuccino', category: 'Espresso Bar', name: 'Cappuccino', description: 'Double shot with steamed milk and a deep layer of microfoam.', price: 4.75, image: COFFEE.cappuccino, tag: 'Popular', rating: 4.8, reviews: 312 },
+    { id: 'fw_latte', category: 'Espresso Bar', name: 'Cafe Latte', description: 'Espresso with steamed milk, poured with a little latte art.', price: 5.25, image: COFFEE.latte, rating: 4.8, reviews: 289 },
+    { id: 'fw_oat_latte', category: 'Espresso Bar', name: 'Oat Milk Latte', description: 'Our house latte made with creamy, barista-blend oat milk.', price: 5.75, image: COFFEE.oatLatte, tag: 'New', rating: 4.9, reviews: 104 },
+    { id: 'fw_espresso', category: 'Espresso Bar', name: 'Espresso Shot', description: 'A double shot of our house blend, pulled to order.', price: 3.25, image: COFFEE.espresso, rating: 4.7, reviews: 96 },
+    { id: 'fw_seasonal_latte', category: 'Espresso Bar', name: 'Seasonal Spice Latte', description: 'A rotating seasonal syrup with espresso, steamed milk and a dusting of spice.', price: 6.25, image: COFFEE.seasonalLatte, tag: 'New', rating: 4.9, reviews: 61 },
+    { id: 'fw_drip', category: 'Drip & Pour-Over', name: 'House Drip Coffee', description: 'Our house blend, brewed fresh throughout the day. Ask what is on.', price: 3.25, image: COFFEE.drip, rating: 4.6, reviews: 218 },
+    { id: 'fw_pourover', category: 'Drip & Pour-Over', name: 'Single-Origin Pour-Over', description: 'A rotating single-origin, brewed by hand, one cup at a time.', price: 5.5, image: COFFEE.pourOver, tag: 'Popular', rating: 4.9, reviews: 133 },
+    { id: 'fw_iced_coffee', category: 'Cold & Iced', name: 'Iced Coffee', description: 'Our house blend, brewed double-strength and served over ice.', price: 4.25, image: COFFEE.icedCoffee, rating: 4.7, reviews: 176 },
+    { id: 'fw_iced_latte', category: 'Cold & Iced', name: 'Iced Latte', description: 'Espresso and cold milk over ice, poured in layers.', price: 5.5, image: COFFEE.icedLatte, tag: 'Bestseller', rating: 4.9, reviews: 244 },
+    { id: 'fw_croissant', category: 'Pastries & Bakery', name: 'Butter Croissant', description: 'Baked fresh each morning, all-butter and flaky.', price: 4.25, image: COFFEE.croissant, tag: 'Popular', rating: 4.8, reviews: 157 },
+    { id: 'fw_cinnamon_roll', category: 'Pastries & Bakery', name: 'Cinnamon Roll', description: 'A warm, oversized roll with brown-butter icing.', price: 4.75, image: COFFEE.cinnamonRoll, tag: 'Bestseller', rating: 4.9, reviews: 201 },
+    { id: 'fw_cookie', category: 'Pastries & Bakery', name: 'Chocolate Chip Cookie', description: 'Thick, chewy and baked in small batches every day.', price: 3.25, image: COFFEE.cookie, rating: 4.7, reviews: 142 },
+    { id: 'fw_chocolate_box', category: 'Pastries & Bakery', name: 'Chocolate Truffle Box (6pc)', description: 'A gift box of hand-rolled truffles from a Seattle chocolatier.', price: 14, image: COFFEE.chocolateBox, rating: 4.8, reviews: 39 },
+    { id: 'fw_avocado_toast', category: 'Breakfast', name: 'Avocado Toast', description: 'Sourdough, smashed avocado, a fried egg and chili flake.', price: 9.5, image: COFFEE.avocadoToast, tag: 'Popular', rating: 4.8, reviews: 118 },
+    { id: 'fw_beans_whole', category: 'Beans & Merch', name: 'Whole Bean Coffee, 12oz Bag', description: 'Our house blend, roasted weekly - take the shop home with you.', price: 16, image: COFFEE.beansSack, rating: 4.9, reviews: 84 },
+    { id: 'fw_beans_ground', category: 'Beans & Merch', name: 'Ground Coffee, 12oz Bag', description: 'Same house blend, ground for drip - ready to brew at home.', price: 16, image: COFFEE.beansJar, rating: 4.8, reviews: 52 },
+  ]);
+
+  const offers: Offer[] = [
+    { id: 'offer_fw_newcustomer', restaurantId: siteId, name: 'New Customer Welcome', type: 'percentage', discountValue: 15, startDate: now, endDate: inDays(60), isActive: true, appliesToItemIds: [], appliesToCategoryIds: ['cat_fw_espresso_bar'], cta: 'Order Now', imageMediaId: 'media_fw_offer', createdAt: now, updatedAt: now },
+    { id: 'offer_fw_pastry', restaurantId: siteId, name: 'Pastry with Any Drink', type: 'fixed', discountValue: 1, startDate: now, endDate: inDays(30), isActive: true, appliesToItemIds: [], appliesToCategoryIds: ['cat_fw_pastries_bakery'], cta: 'Grab a Pastry', imageMediaId: 'media_fw_offer2', createdAt: now, updatedAt: now },
+  ];
+
+  const base = { restaurantId: siteId, updatedAt: now };
+  const sections: HomepageSection[] = [
+    { ...hero, content: { ...(hero.type === 'hero' ? hero.content : {}), backgroundMediaId: 'media_fw_hero' } } as HomepageSection,
+    {
+      ...base, id: `section_${siteId}_about`, type: 'about', order: 2, visible: true,
+      content: {
+        eyebrow: 'Our Story',
+        heading: 'Good coffee, made for staying a while.',
+        description: 'Fernwood Coffee Co. roasts small batches every week and pours them in a room built for lingering - laptops, book clubs and long catch-ups all welcome.',
+        imageMediaId: 'media_fw_about',
+        quote: 'A great cup starts with the beans, but a great cafe is built on the room around it.',
+        chefName: 'Owen Castillo, Founder',
+        chefQuote: 'I wanted a shop where the barista remembers your order and nobody rushes you out the door.',
+        chefBio: 'A former line cook turned coffee obsessive, Owen opened Fernwood in Fremont in 2017 after two years of pulling shots on weekends to learn the craft. The shop now roasts its own house blend on-site every week.',
+        chefImageMediaId: 'media_fw_founder',
+      },
+    },
+    { ...base, id: `section_${siteId}_featured_menu`, type: 'featured_menu', order: 3, visible: true, content: { eyebrow: 'Most Ordered', heading: 'Customer Favorites', description: 'What our regulars order on repeat.', selectedItemIds: ['fw_latte', 'fw_iced_latte', 'fw_pourover', 'fw_cinnamon_roll'] } },
+    {
+      ...base, id: `section_${siteId}_gallery`, type: 'gallery', order: 4, visible: true,
+      content: {
+        eyebrow: 'The Shop',
+        heading: 'Life at Fernwood',
+        description: 'Regulars, laptops, and a lot of coffee - every day of the week.',
+        images: ['media_fw_g1', 'media_fw_g2', 'media_fw_g3', 'media_fw_g4', 'media_fw_g5', 'media_fw_g6'].map((mediaId, order) => ({ mediaId, order })),
+      },
+    },
+    { ...base, id: `section_${siteId}_offers`, type: 'offers', order: 5, visible: true, content: { eyebrow: 'This Week', heading: 'Current Offers', description: 'A little something extra for new and regular faces.', selectedOfferIds: ['offer_fw_newcustomer', 'offer_fw_pastry'] } },
+    {
+      ...base, id: `section_${siteId}_testimonials`, type: 'testimonials', order: 6, visible: true,
+      content: {
+        eyebrow: 'Regulars Say',
+        heading: 'What Our Customers Say',
+        testimonials: [
+          { id: 'testimonial_fw_1', customerName: 'Grace L.', quote: 'My order is ready by the time I get to the counter. Best mobile ordering of any shop in the neighborhood.', rating: 5, order: 0 },
+          { id: 'testimonial_fw_2', customerName: 'Marcus T.', quote: 'The pour-over program is legit - always a different, well-explained single-origin on the board.', rating: 5, order: 1 },
+          { id: 'testimonial_fw_3', customerName: 'Ines P.', quote: 'I work from here twice a week. Good wifi, better cinnamon rolls, and nobody ever rushes you out.', rating: 4, order: 2 },
+        ],
+      },
+    },
+    { ...base, id: `section_${siteId}_location`, type: 'location', order: 7, visible: true, content: { heading: 'Find the Shop', showHoursTable: true } },
   ];
 
   return { media, categories, items, offers, sections };

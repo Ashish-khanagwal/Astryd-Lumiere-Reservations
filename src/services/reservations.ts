@@ -1,4 +1,5 @@
 import { ApiError, http } from './http';
+import { fetchWithMockRecovery } from './mockRecovery';
 import type {
   CheckoutSession,
   PublicAvailability,
@@ -56,7 +57,7 @@ interface PublicAvailabilityResponse {
 async function requestPublicApi<T>(path: string, init: RequestInit = {}): Promise<T> {
   let response: Response;
   try {
-    response = await fetch(`${PUBLIC_API_BASE_URL}/api/v1${path}`, {
+    response = await fetchWithMockRecovery(`${PUBLIC_API_BASE_URL}/api/v1${path}`, {
       ...init,
       headers: { 'Content-Type': 'application/json', ...init.headers },
     });

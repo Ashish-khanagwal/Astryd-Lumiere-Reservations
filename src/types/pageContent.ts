@@ -1,4 +1,5 @@
 import type { PlatformModule, TemplateVariant } from './pageConfig';
+import type { Vertical } from './restaurant';
 
 /** Every public page whose text/images can be edited from Admin → Website → Page Content. `global` = header, footer, cart drawer and shared modals. */
 export const CONTENT_PAGE_KEYS = ['landing', 'items', 'catalog', 'booking', 'membership', 'checkout', 'global'] as const;
@@ -44,5 +45,5 @@ export interface ContentPageDefinition {
   module?: PlatformModule;
   groups: ContentGroupDef[];
   defaults: ContentFields;
-  verticalDefaults?: Partial<Record<'restaurant' | 'gym' | 'retail', ContentFields>>;
+  verticalDefaults?: Partial<Record<Vertical, ContentFields>>;
 }

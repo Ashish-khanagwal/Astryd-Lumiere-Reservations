@@ -133,7 +133,10 @@ export function Sidebar() {
   const [isCollapsed, setIsCollapsed] = useState<boolean>(() => localStorage.getItem(COLLAPSED_STORAGE_KEY) === 'true');
 
   const { data: pageConfigs } = usePageConfigs();
-  const catalogLabel = pageConfigs?.find((p) => p.module === 'catalog')?.navLabel || 'Menu';
+  const catalogConfig = pageConfigs?.find((p) => p.module === 'catalog');
+  const itemsConfig = pageConfigs?.find((p) => p.module === 'items');
+  // The same items back both pages; name them after whichever page the Site actually shows (a Salon's "Services", not its switched-off "Shop").
+  const catalogLabel = (catalogConfig?.enabled === false && itemsConfig?.enabled ? itemsConfig.navLabel : catalogConfig?.navLabel) || 'Menu';
   const bookingLabel = pageConfigs?.find((p) => p.module === 'booking')?.navLabel || 'Reservations';
   const membershipConfig = pageConfigs?.find((p) => p.module === 'membership');
   const membershipLabel = membershipConfig?.navLabel || 'Membership';
@@ -176,7 +179,7 @@ export function Sidebar() {
       },
       {
         key: 'restaurant',
-        title: 'Restaurant',
+        title: 'Business',
         visible: perms.canManageBranding,
         items: [
           { to: '/admin/restaurant/information', label: 'Information', icon: Store },

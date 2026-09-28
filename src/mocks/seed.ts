@@ -1,6 +1,6 @@
 import { db, nowIso, type MockDbShape } from './db';
-import { VERTICAL_MODULE_DEFAULTS, VERTICAL_TEMPLATE_VARIANT } from '../data/onboardingDefaults';
-import { buildGymSeed, buildRetailSeed } from './seedVerticals';
+import { VERTICAL_MODULE_DEFAULTS, defaultTemplateVariant } from '../data/onboardingDefaults';
+import { buildGymSeed, buildRetailSeed, buildSalonSeed, buildCoffeeSeed } from './seedVerticals';
 import type {
   Addon,
   BrandSettings,
@@ -28,6 +28,7 @@ import type {
   ReservationStatus,
   Restaurant,
   User,
+  Vertical,
   WeekDay,
 } from '../types';
 
@@ -51,6 +52,18 @@ export const RETAIL_SITE_ID = 'site_novagoods';
 export const RETAIL_SITE_SLUG = 'nova-goods';
 export const RETAIL_ORGANIZATION_ID = 'org_novagoods';
 export const RETAIL_ORGANIZATION_CODE = 'NOVAGOODS';
+
+/** Plan §2/§6 - a Salon demo Org/Site (own login), the fourth vertical - a US hair, nails & skin salon. */
+export const SALON_SITE_ID = 'site_sloaneco';
+export const SALON_SITE_SLUG = 'sloane-and-co';
+export const SALON_ORGANIZATION_ID = 'org_sloaneco';
+export const SALON_ORGANIZATION_CODE = 'SLOANECO';
+
+/** Plan §2/§6 - a Coffee Shop demo Org/Site (own login), the fifth vertical - a US specialty coffee shop. */
+export const COFFEE_SITE_ID = 'site_fernwood';
+export const COFFEE_SITE_SLUG = 'fernwood-coffee';
+export const COFFEE_ORGANIZATION_ID = 'org_fernwood';
+export const COFFEE_ORGANIZATION_CODE = 'FERNWOOD';
 /** Demo password accepted for every seeded account - mock auth only, never real. */
 export const DEMO_PASSWORD = 'password123';
 
@@ -550,7 +563,7 @@ export function buildSeed(): MockDbShape {
   }
 
   /** Plan §6 step 3 - a brand-new demo Org/Site takes its module defaults straight from the same table the onboarding wizard uses (Phase 6). */
-  function buildPageConfigsForVertical(siteId: string, vertical: 'gym' | 'retail'): PageConfig[] {
+  function buildPageConfigsForVertical(siteId: string, vertical: Vertical): PageConfig[] {
     return VERTICAL_MODULE_DEFAULTS[vertical].map((d, order) => ({
       id: `pageconfig_${siteId}_${d.module}`,
       restaurantId: siteId,
@@ -558,7 +571,7 @@ export function buildSeed(): MockDbShape {
       enabled: d.enabled,
       navLabel: d.navLabel,
       order,
-      templateVariant: VERTICAL_TEMPLATE_VARIANT[vertical],
+      templateVariant: defaultTemplateVariant(vertical, d.module),
       createdAt: now,
       updatedAt: now,
     }));
@@ -744,7 +757,7 @@ export function buildSeed(): MockDbShape {
         eyebrow: 'Chef Selection',
         heading: 'Featured Dishes',
         description: 'A curated selection from our kitchen, chosen by Chef Vignon.',
-        selectedItemIds: [],
+        selectedItemIds: ['1', '2', '5', '7'],
       },
     },
     {
@@ -941,15 +954,164 @@ export function buildSeed(): MockDbShape {
     blockedDates: [],
   };
 
+  // --- Salon demo tenant (own Org/login) - Plan §2/§6, the fourth Vertical. ---
+  const salonOrganization: Organization = { id: SALON_ORGANIZATION_ID, code: SALON_ORGANIZATION_CODE, name: 'Sloane & Co. Salon', createdAt: now, updatedAt: now };
+  const salonOwner: User = {
+    id: 'user_sloaneco_owner', organizationId: SALON_ORGANIZATION_ID, email: 'owner@sloaneandco.com', name: 'Sloane Mitchell',
+    role: 'owner', restaurantId: SALON_SITE_ID, siteAccess: 'all', isActive: true, createdAt: now, updatedAt: now,
+  };
+  const salonSite: Restaurant = {
+    id: SALON_SITE_ID, organizationId: SALON_ORGANIZATION_ID, slug: SALON_SITE_SLUG, name: 'Sloane & Co. Salon',
+    ownerUserId: salonOwner.id, status: 'active', vertical: 'salon', brandingBadgeEnabled: true, createdAt: now, updatedAt: now,
+  };
+  const salonBrand: BrandSettings = {
+    restaurantId: SALON_SITE_ID,
+    restaurantName: 'Sloane & Co. Salon',
+    tagline: 'Hair, nails & skin - beautifully done.',
+    logoMediaId: null,
+    faviconMediaId: null,
+    themePresetId: 'rosewood',
+    primaryFont: 'Lato',
+    headingFont: 'Playfair Display',
+    fontWeight: 'regular',
+    buttonStyle: 'pill',
+    borderRadius: 'lg',
+    navPosition: 'center',
+    socialLinks: { instagram: 'https://instagram.com/sloaneandco', facebook: '' },
+    contact: { phone: '+1 (512) 555-0176', email: 'hello@sloaneandco.com', address: '2201 S Lamar Blvd, Austin, TX 78704' },
+    description: 'Sloane & Co. is a full-service Austin salon - expert cuts, color, nails and skin care, with easy online booking.',
+    cuisineType: '',
+    businessHours: [
+      { day: 'mon', isClosed: true, openTime: null, closeTime: null },
+      { day: 'tue', isClosed: false, openTime: '09:00', closeTime: '20:00' },
+      { day: 'wed', isClosed: false, openTime: '09:00', closeTime: '20:00' },
+      { day: 'thu', isClosed: false, openTime: '09:00', closeTime: '20:00' },
+      { day: 'fri', isClosed: false, openTime: '09:00', closeTime: '19:00' },
+      { day: 'sat', isClosed: false, openTime: '08:00', closeTime: '18:00' },
+      { day: 'sun', isClosed: false, openTime: '10:00', closeTime: '16:00' },
+    ],
+    createdAt: now,
+    updatedAt: now,
+  };
+  const salonHeroSection: HomepageSection = {
+    id: 'section_sloaneco_hero', restaurantId: SALON_SITE_ID, type: 'hero', order: 1, visible: true, updatedAt: now,
+    content: {
+      eyebrow: 'South Lamar · Austin, TX',
+      heading: 'Sloane & Co. Salon',
+      description: 'Expert cuts, lived-in color, flawless nails and glowing skin - book your stylist online in under a minute.',
+      buttonText: 'Book an Appointment',
+      buttonLink: '#/reservations',
+      secondaryButtonText: 'View Services',
+      secondaryButtonLink: '#/items',
+      backgroundMediaId: null,
+      overlayOpacity: 45,
+    },
+  };
+  const salonSeed = buildSalonSeed(SALON_SITE_ID, now, salonHeroSection);
+  const salonHomepage: Homepage = { restaurantId: SALON_SITE_ID, status: 'published', sections: salonSeed.sections };
+  const salonMembershipPlans: MembershipPlan[] = [
+    { id: 'plan_sloaneco_blowout', restaurantId: SALON_SITE_ID, name: 'Blowout Club', description: 'Salon-fresh hair, every single week.', priceCents: 16900, billingInterval: 'monthly', benefits: ['4 signature blowouts a month', 'Priority weekend booking', '10% off take-home haircare'], isActive: true, order: 0, createdAt: now, updatedAt: now },
+    { id: 'plan_sloaneco_glow', restaurantId: SALON_SITE_ID, name: 'Glow Membership', description: 'A monthly facial and a little extra for your skin.', priceCents: 11900, billingInterval: 'monthly', benefits: ['1 signature facial a month', 'Complimentary brow tidy', '15% off add-on services'], isActive: true, order: 1, createdAt: now, updatedAt: now },
+    { id: 'plan_sloaneco_vip', restaurantId: SALON_SITE_ID, name: 'Sloane VIP', description: 'Our best perks, all year long.', priceCents: 29900, billingInterval: 'yearly', benefits: ['$25 birthday credit', 'Early access to new stylists & services', 'Free bond-repair add-on with every color'], isActive: true, order: 2, createdAt: now, updatedAt: now },
+  ];
+  const salonAvailability: ReservationAvailabilitySettings = {
+    restaurantId: SALON_SITE_ID,
+    days: WEEK_DAYS.map((day) => ({
+      day,
+      isClosed: day === 'mon',
+      openTime: day === 'sun' ? '10:00' : '09:00',
+      closeTime: day === 'sun' ? '16:00' : day === 'sat' ? '18:00' : '19:00',
+      slotDurationMins: 30,
+      maxPerSlot: 3,
+      slots: [],
+    })),
+    blockedDates: [],
+  };
+
+  // --- Coffee Shop demo tenant (own Org/login) - Plan §2/§6, the fifth Vertical. ---
+  const coffeeOrganization: Organization = { id: COFFEE_ORGANIZATION_ID, code: COFFEE_ORGANIZATION_CODE, name: 'Fernwood Coffee Co.', createdAt: now, updatedAt: now };
+  const coffeeOwner: User = {
+    id: 'user_fernwood_owner', organizationId: COFFEE_ORGANIZATION_ID, email: 'owner@fernwoodcoffee.com', name: 'Owen Castillo',
+    role: 'owner', restaurantId: COFFEE_SITE_ID, siteAccess: 'all', isActive: true, createdAt: now, updatedAt: now,
+  };
+  const coffeeSite: Restaurant = {
+    id: COFFEE_SITE_ID, organizationId: COFFEE_ORGANIZATION_ID, slug: COFFEE_SITE_SLUG, name: 'Fernwood Coffee Co.',
+    ownerUserId: coffeeOwner.id, status: 'active', vertical: 'coffee', brandingBadgeEnabled: true, createdAt: now, updatedAt: now,
+  };
+  const coffeeBrand: BrandSettings = {
+    restaurantId: COFFEE_SITE_ID,
+    restaurantName: 'Fernwood Coffee Co.',
+    tagline: 'Small-batch roasted. Big enough to linger.',
+    logoMediaId: null,
+    faviconMediaId: null,
+    themePresetId: 'espresso',
+    primaryFont: 'Roboto',
+    headingFont: 'DM Sans',
+    fontWeight: 'medium',
+    buttonStyle: 'rounded',
+    borderRadius: 'md',
+    navPosition: 'right',
+    socialLinks: { instagram: 'https://instagram.com/fernwoodcoffeeco', facebook: '' },
+    contact: { phone: '+1 (206) 555-0139', email: 'hello@fernwoodcoffee.com', address: '3512 Fremont Ave N, Seattle, WA 98103' },
+    description: 'Fernwood Coffee Co. is a small-batch roaster and neighborhood cafe in Fremont, Seattle - order ahead, or stay a while.',
+    cuisineType: '',
+    businessHours: [
+      { day: 'mon', isClosed: false, openTime: '06:00', closeTime: '18:00' },
+      { day: 'tue', isClosed: false, openTime: '06:00', closeTime: '18:00' },
+      { day: 'wed', isClosed: false, openTime: '06:00', closeTime: '18:00' },
+      { day: 'thu', isClosed: false, openTime: '06:00', closeTime: '18:00' },
+      { day: 'fri', isClosed: false, openTime: '06:00', closeTime: '19:00' },
+      { day: 'sat', isClosed: false, openTime: '07:00', closeTime: '19:00' },
+      { day: 'sun', isClosed: false, openTime: '07:00', closeTime: '17:00' },
+    ],
+    createdAt: now,
+    updatedAt: now,
+  };
+  const coffeeHeroSection: HomepageSection = {
+    id: 'section_fernwood_hero', restaurantId: COFFEE_SITE_ID, type: 'hero', order: 1, visible: true, updatedAt: now,
+    content: {
+      eyebrow: 'Fremont · Seattle, WA',
+      heading: 'Fernwood Coffee Co.',
+      description: 'Small-batch roasted coffee, fresh-baked pastries and a room built for staying a while - order ahead for pickup.',
+      buttonText: 'Order Ahead',
+      buttonLink: '#/menu',
+      secondaryButtonText: 'View Menu',
+      secondaryButtonLink: '#/items',
+      backgroundMediaId: null,
+      overlayOpacity: 45,
+    },
+  };
+  const coffeeSeed = buildCoffeeSeed(COFFEE_SITE_ID, now, coffeeHeroSection);
+  const coffeeHomepage: Homepage = { restaurantId: COFFEE_SITE_ID, status: 'published', sections: coffeeSeed.sections };
+  const coffeeMembershipPlans: MembershipPlan[] = [
+    { id: 'plan_fernwood_rewards', restaurantId: COFFEE_SITE_ID, name: 'Fernwood Rewards', description: 'Free to join - earn a point on every order.', priceCents: 0, billingInterval: 'one_time', benefits: ['1 point per $1 spent', 'Free drink at 100 points', 'Birthday drink on us'], isActive: true, order: 0, createdAt: now, updatedAt: now },
+    { id: 'plan_fernwood_subscriber', restaurantId: COFFEE_SITE_ID, name: 'Coffee Subscriber', description: 'A bag of house-roast beans, delivered monthly, plus in-shop perks.', priceCents: 1800, billingInterval: 'monthly', benefits: ['12oz bag of beans every month', '10% off in-shop orders', 'Early access to seasonal roasts'], isActive: true, order: 1, createdAt: now, updatedAt: now },
+  ];
+  const coffeeAvailability: ReservationAvailabilitySettings = {
+    restaurantId: COFFEE_SITE_ID,
+    days: WEEK_DAYS.map((day) => ({
+      day,
+      isClosed: false,
+      openTime: day === 'sat' || day === 'sun' ? '07:00' : '06:00',
+      closeTime: day === 'fri' || day === 'sat' ? '19:00' : day === 'sun' ? '17:00' : '18:00',
+      slotDurationMins: 30,
+      maxPerSlot: 6,
+      slots: [],
+    })),
+    blockedDates: [],
+  };
+
   return {
-    organizations: [...organizations, gymOrganization, retailOrganization],
-    users: [...users, gymOwner, retailOwner],
-    restaurants: [restaurant, secondSite, gymSite, retailSite],
+    organizations: [...organizations, gymOrganization, retailOrganization, salonOrganization, coffeeOrganization],
+    users: [...users, gymOwner, retailOwner, salonOwner, coffeeOwner],
+    restaurants: [restaurant, secondSite, gymSite, retailSite, salonSite, coffeeSite],
     brand: {
       [RESTAURANT_ID]: { draft: { ...brandSettings }, published: { ...brandSettings } },
       [SECOND_SITE_ID]: { draft: { ...secondSiteBrand }, published: { ...secondSiteBrand } },
       [GYM_SITE_ID]: { draft: { ...gymBrand }, published: { ...gymBrand } },
       [RETAIL_SITE_ID]: { draft: { ...retailBrand }, published: { ...retailBrand } },
+      [SALON_SITE_ID]: { draft: { ...salonBrand }, published: { ...salonBrand } },
+      [COFFEE_SITE_ID]: { draft: { ...coffeeBrand }, published: { ...coffeeBrand } },
     },
     website: {
       [RESTAURANT_ID]: {
@@ -988,18 +1150,38 @@ export function buildSeed(): MockDbShape {
         createdAt: now,
         updatedAt: now,
       },
+      [SALON_SITE_ID]: {
+        restaurantId: SALON_SITE_ID,
+        publishStatus: 'published',
+        publishedAt: now,
+        seoTitle: 'Sloane & Co. Salon | Hair, Nails & Skin in Austin, TX',
+        seoDescription: 'Full-service hair salon on South Lamar in Austin, TX - cuts, balayage, blowouts, nails and facials. Book online.',
+        createdAt: now,
+        updatedAt: now,
+      },
+      [COFFEE_SITE_ID]: {
+        restaurantId: COFFEE_SITE_ID,
+        publishStatus: 'published',
+        publishedAt: now,
+        seoTitle: 'Fernwood Coffee Co. | Coffee Shop in Fremont, Seattle',
+        seoDescription: 'Small-batch roasted coffee, pastries and order-ahead pickup in Fremont, Seattle, WA.',
+        createdAt: now,
+        updatedAt: now,
+      },
     },
     homepage: {
       [RESTAURANT_ID]: { draft: homepageDraft, published: homepagePublished },
       [SECOND_SITE_ID]: { draft: { ...secondSiteHomepage }, published: { ...secondSiteHomepage } },
       [GYM_SITE_ID]: { draft: { ...gymHomepage }, published: { ...gymHomepage } },
       [RETAIL_SITE_ID]: { draft: { ...retailHomepage }, published: { ...retailHomepage } },
+      [SALON_SITE_ID]: { draft: { ...salonHomepage }, published: { ...salonHomepage } },
+      [COFFEE_SITE_ID]: { draft: { ...coffeeHomepage }, published: { ...coffeeHomepage } },
     },
-    media: [...media, ...gymSeed.media, ...retailSeed.media],
-    categories: [...categories, ...gymSeed.categories, ...retailSeed.categories],
-    items: [...items, ...gymSeed.items, ...retailSeed.items],
+    media: [...media, ...gymSeed.media, ...retailSeed.media, ...salonSeed.media, ...coffeeSeed.media],
+    categories: [...categories, ...gymSeed.categories, ...retailSeed.categories, ...salonSeed.categories, ...coffeeSeed.categories],
+    items: [...items, ...gymSeed.items, ...retailSeed.items, ...salonSeed.items, ...coffeeSeed.items],
     addons,
-    offers: [...offers, ...gymSeed.offers, ...retailSeed.offers],
+    offers: [...offers, ...gymSeed.offers, ...retailSeed.offers, ...salonSeed.offers, ...coffeeSeed.offers],
     orders,
     reservations,
     reservationAvailability: {
@@ -1007,14 +1189,18 @@ export function buildSeed(): MockDbShape {
       [SECOND_SITE_ID]: { ...reservationAvailabilitySettings, restaurantId: SECOND_SITE_ID },
       [GYM_SITE_ID]: gymAvailability,
       [RETAIL_SITE_ID]: retailAvailability,
+      [SALON_SITE_ID]: salonAvailability,
+      [COFFEE_SITE_ID]: coffeeAvailability,
     },
     pageConfigs: [
       ...buildDefaultPageConfigs(RESTAURANT_ID, true),
       ...buildDefaultPageConfigs(SECOND_SITE_ID),
       ...buildPageConfigsForVertical(GYM_SITE_ID, 'gym'),
       ...buildPageConfigsForVertical(RETAIL_SITE_ID, 'retail'),
+      ...buildPageConfigsForVertical(SALON_SITE_ID, 'salon'),
+      ...buildPageConfigsForVertical(COFFEE_SITE_ID, 'coffee'),
     ],
-    membershipPlans: [...membershipPlans, ...gymMembershipPlans, ...retailMembershipPlans],
+    membershipPlans: [...membershipPlans, ...gymMembershipPlans, ...retailMembershipPlans, ...salonMembershipPlans, ...coffeeMembershipPlans],
     members,
     memberCheckIns,
     domainMappings: [
@@ -1022,18 +1208,36 @@ export function buildSeed(): MockDbShape {
       ...buildDefaultDomainMappings(SECOND_SITE_ID, SECOND_SITE_SLUG),
       ...buildDefaultDomainMappings(GYM_SITE_ID, GYM_SITE_SLUG),
       ...buildDefaultDomainMappings(RETAIL_SITE_ID, RETAIL_SITE_SLUG),
+      ...buildDefaultDomainMappings(SALON_SITE_ID, SALON_SITE_SLUG),
+      ...buildDefaultDomainMappings(COFFEE_SITE_ID, COFFEE_SITE_SLUG),
     ],
     // Every Site starts on the code defaults for its Vertical; owners only store what they change.
     pageContent: Object.fromEntries(
-      [RESTAURANT_ID, SECOND_SITE_ID, GYM_SITE_ID, RETAIL_SITE_ID].map((id) => [id, { draft: {}, published: {} }]),
+      [RESTAURANT_ID, SECOND_SITE_ID, GYM_SITE_ID, RETAIL_SITE_ID, SALON_SITE_ID, COFFEE_SITE_ID].map((id) => [id, { draft: {}, published: {} }]),
     ),
   };
+}
+
+const DEMO_EMAILS = ['owner@lumiere.com', 'staff@lumiere.com', 'admin@platform.com'];
+
+function hasDemoUsers() {
+  const emails = new Set(db.data.users.map((u) => u.email.toLowerCase()));
+  return DEMO_EMAILS.every((email) => emails.has(email));
 }
 
 export function ensureSeeded() {
   if (db.isEmpty()) {
     db.reset(buildSeed());
+    return;
   }
+  if (hasDemoUsers()) return;
+  const seeded = buildSeed().users;
+  for (const user of seeded) {
+    if (!db.data.users.some((u) => u.email.toLowerCase() === user.email.toLowerCase())) {
+      db.data.users.push(user);
+    }
+  }
+  db.save();
 }
 
 export function resetSeed() {

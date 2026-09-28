@@ -3,7 +3,7 @@ import type { Id, ISODateString, Tenant, Timestamps, PublishStatus } from './com
 export type WeekDay = 'mon' | 'tue' | 'wed' | 'thu' | 'fri' | 'sat' | 'sun';
 
 /** Multi-Vertical Platform Plan §2/§3.1/§6 - seeds sensible defaults at onboarding only, never gates functionality. */
-export const VERTICALS = ['restaurant', 'gym', 'retail'] as const;
+export const VERTICALS = ['restaurant', 'gym', 'retail', 'salon', 'coffee'] as const;
 export type Vertical = (typeof VERTICALS)[number];
 
 export interface BusinessHoursEntry {
@@ -135,6 +135,34 @@ export const THEME_PRESETS: ThemePreset[] = [
       tertiary: '#6a4d8f',
     },
   },
+  {
+    id: 'rosewood',
+    name: 'Rosewood',
+    colors: {
+      primary: '#8c4a5a',
+      onPrimary: '#ffffff',
+      primaryContainer: '#a45d6d',
+      primaryFixed: '#ffd9df',
+      primaryFixedDim: '#f5b3c0',
+      onPrimaryFixed: '#3a0716',
+      onPrimaryFixedVariant: '#6e3242',
+      tertiary: '#8a6a3a',
+    },
+  },
+  {
+    id: 'espresso',
+    name: 'Espresso',
+    colors: {
+      primary: '#6f4e37',
+      onPrimary: '#ffffff',
+      primaryContainer: '#8a6446',
+      primaryFixed: '#f5deb3',
+      primaryFixedDim: '#e8c39e',
+      onPrimaryFixed: '#2b1b0e',
+      onPrimaryFixedVariant: '#4a2e1a',
+      tertiary: '#a47148',
+    },
+  },
 ];
 
 export interface BrandSettings extends Tenant, Timestamps {
@@ -153,6 +181,8 @@ export interface BrandSettings extends Tenant, Timestamps {
   headerBackgroundColor?: string;
   headerTextColor?: string;
   headerTextHoverColor?: string;
+  /** Whether the cart icon can appear in the public header at all; owners without online ordering may still want it hidden entirely. */
+  showCart?: boolean;
   socialLinks: SocialLinks;
   contact: ContactInfo;
   description: string;

@@ -5,6 +5,7 @@ import { FormSkeleton } from '../../../../components/Skeleton';
 import { CONTENT_PAGES, contentDefaults } from '../../../../../content/registry';
 import { ContentGroupsEditor } from '../../content/ContentGroupsEditor';
 import { useReportAutoSave, type PanelCallbacks } from './panelTypes';
+import { PanelLoadError } from './PanelLoadError';
 import type { ContentFields, ContentPageKey, TemplateVariant, Vertical } from '../../../../../types';
 
 interface PageContentPanelProps extends PanelCallbacks {
@@ -15,7 +16,7 @@ interface PageContentPanelProps extends PanelCallbacks {
 
 /** Text & images for one page (Admin → Page Content), with auto-save into the draft. Remount per page. */
 export function PageContentPanel({ page, vertical, activeVariant, ...callbacks }: PageContentPanelProps) {
-  const { data: stored } = usePageContentDraft();
+  const { data: stored, isError, isFetching, refetch } = usePageContentDraft();
   const updateContent = useUpdatePageContent();
   const serverFields = useMemo(() => (stored ? (stored[page] ?? {}) : undefined), [stored, page]);
   const [draft, setDraft] = useState<ContentFields | null>(null);
@@ -33,7 +34,7 @@ export function PageContentPanel({ page, vertical, activeVariant, ...callbacks }
   const { status } = useAutoSave({ isDirty, value: draft, onSave: persist, enabled: Boolean(draft) });
   useReportAutoSave(status, callbacks);
 
-  if (!draft) return <FormSkeleton />;
+  if (!draft) return isError ? <PanelLoadError onRetry={() => void refetch()} isRetrying={isFetching} /> : <FormSkeleton />;
 
   return (
     <ContentGroupsEditor

@@ -263,4 +263,28 @@ export const membershipContent: ContentPageDefinition = {
     c_joinSuccessToast: "You're on the list!",
     c_joinErrorToast: 'Unable to sign you up right now.',
   },
+  verticalDefaults: {
+    salon: {
+      a_eyebrow: 'Salon Rewards',
+      a_heading: 'Look good, feel good, get rewarded.',
+      a_subheading: 'Join for free perks, or pick a membership for monthly services at member pricing.',
+      a_steps: [
+        { id: 'pick', number: '1', title: 'Pick a membership', description: 'Choose the plan that fits your beauty routine.' },
+        { id: 'signup', number: '2', title: 'Sign up', description: 'Tell us who you are - it takes under a minute.' },
+        { id: 'enjoy', number: '3', title: 'Book & glow', description: 'Your perks apply automatically at every visit.' },
+      ],
+      b_eyebrow: 'Memberships',
+      b_heading: 'Choose your membership',
+      c_eyebrow: 'Memberships',
+      c_heading: 'Salon-fresh, all month long',
+      c_badge: 'MEMBER',
+      c_perksHeading: 'What you get',
+      c_planButton: 'Join now',
+      c_successHeading: "Welcome to the club!",
+      c_successMessage: 'A confirmation has been sent to {email}. Book your first member visit anytime.',
+      c_lookupHeading: 'Already a member?',
+      c_lookupButton: 'Check status',
+      c_joinSuccessToast: 'Welcome to the club!',
+    },
+  },
 };

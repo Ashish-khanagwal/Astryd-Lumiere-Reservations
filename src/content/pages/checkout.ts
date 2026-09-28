@@ -212,5 +212,17 @@ export const checkoutContent: ContentPageDefinition = {
       addMoreItemsLabel: 'Add More Products',
       paymentSuccessToast: 'Payment successful. Order #{number} has been sent to the shop.',
     },
+    salon: {
+      backToMenuLabel: 'Back to Services',
+      addMoreItemsLabel: 'Add More Services',
+      instructionsPlaceholder: 'Hair goals, allergies or anything your stylist should know...',
+      paymentSuccessToast: 'Payment successful. Order #{number} has been sent to the salon.',
+    },
+    coffee: {
+      backToMenuLabel: 'Back to Menu',
+      addMoreItemsLabel: 'Add More Items',
+      instructionsPlaceholder: 'Oat milk, extra hot, or any other notes for your order...',
+      paymentSuccessToast: 'Payment successful. Order #{number} has been sent to the shop.',
+    },
   },
 };
