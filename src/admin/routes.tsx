@@ -3,6 +3,7 @@ import { AuthLayout } from './layouts/AuthLayout';
 import { AdminLayout } from './layouts/AdminLayout';
 import { RequireAuth } from './guards/RequireAuth';
 import { RequireRole } from './guards/RequireRole';
+import { useAuth } from '../context/AuthContext';
 import { LoginPage } from './pages/auth/LoginPage';
 import { SignupPage } from './pages/auth/SignupPage';
 import { SuperAdminLoginPage } from './pages/auth/SuperAdminLoginPage';
@@ -30,6 +31,13 @@ import { DomainsPage } from './pages/settings/DomainsPage';
 import { SuperAdminSitesPage } from './pages/superadmin/SitesPage';
 import { MembershipPage } from './pages/membership/MembershipPage';
 
+/** `/admin`'s index route - a Super Admin has no Site of its own, so it lands on the Platform area
+ * instead of a Dashboard scoped to whichever Site happened to be the fallback (Plan §4/§5.1). */
+function AdminIndex() {
+  const { isSuperAdmin } = useAuth();
+  return isSuperAdmin ? <Navigate to="/admin/superadmin/sites" replace /> : <DashboardPage />;
+}
+
 export function AdminRoutes() {
   return (
     <Routes>
@@ -47,37 +55,44 @@ export function AdminRoutes() {
 
       <Route path="/admin" element={<RequireAuth />}>
         <Route element={<AdminLayout />}>
-          <Route index element={<DashboardPage />} />
-          <Route path="orders" element={<OrdersPage />} />
-          <Route path="reservations" element={<ReservationsPage />} />
-          <Route path="membership" element={<MembershipPage />} />
+          <Route index element={<AdminIndex />} />
 
-          <Route path="website" element={<Navigate to="/admin/website/pages" replace />} />
-          <Route path="website/pages" element={<PagesHubPage />} />
-          <Route path="website/pages/:page" element={<SiteEditorPage />} />
-          <Route path="website/media" element={<MediaLibraryPage />} />
-          {/* Old addresses from before the Site Editor - kept so bookmarks and links still land in the right place. */}
-          <Route path="website/homepage" element={<Navigate to="/admin/website/pages/home" replace />} />
-          <Route path="website/homepage/:type" element={<LegacySectionRedirect />} />
-          <Route path="website/header" element={<Navigate to="/admin/website/pages/header-footer" replace />} />
-          <Route path="website/branding" element={<Navigate to="/admin/website/pages/theme" replace />} />
-          <Route path="website/content" element={<Navigate to="/admin/website/pages/home?tab=content" replace />} />
-          <Route path="website/content/:page" element={<LegacyContentRedirect />} />
+          {/* Everything below is scoped to one Site/Org and belongs to an Owner or Staff - a Super Admin
+              isn't a member of any Org, so none of these apply to it (Plan §4/§5.1); it's redirected back
+              to the Platform area above. */}
+          <Route element={<RequireRole allow={['owner', 'staff']} />}>
+            <Route path="orders" element={<OrdersPage />} />
+            <Route path="reservations" element={<ReservationsPage />} />
+            <Route path="membership" element={<MembershipPage />} />
 
-          <Route path="menu/categories" element={<CategoriesPage />} />
-          <Route path="menu/items" element={<MenuItemsPage />} />
-          <Route path="menu/items/:itemId" element={<MenuItemFormPage />} />
-          <Route path="menu/addons" element={<AddonsPage />} />
-          <Route path="menu/offers" element={<OffersPage />} />
+            <Route path="website" element={<Navigate to="/admin/website/pages" replace />} />
+            <Route path="website/pages" element={<PagesHubPage />} />
+            <Route path="website/pages/:page" element={<SiteEditorPage />} />
+            <Route path="website/media" element={<MediaLibraryPage />} />
+            {/* Old addresses from before the Site Editor - kept so bookmarks and links still land in the right place. */}
+            <Route path="website/homepage" element={<Navigate to="/admin/website/pages/home" replace />} />
+            <Route path="website/homepage/:type" element={<LegacySectionRedirect />} />
+            <Route path="website/header" element={<Navigate to="/admin/website/pages/header-footer" replace />} />
+            <Route path="website/branding" element={<Navigate to="/admin/website/pages/theme" replace />} />
+            <Route path="website/content" element={<Navigate to="/admin/website/pages/home?tab=content" replace />} />
+            <Route path="website/content/:page" element={<LegacyContentRedirect />} />
 
-          <Route path="restaurant/information" element={<InformationPage />} />
-          <Route path="restaurant/contact" element={<ContactPage />} />
-          <Route path="restaurant/hours" element={<HoursPage />} />
-          <Route path="restaurant/social" element={<SocialMediaPage />} />
+            <Route path="menu/categories" element={<CategoriesPage />} />
+            <Route path="menu/items" element={<MenuItemsPage />} />
+            <Route path="menu/items/:itemId" element={<MenuItemFormPage />} />
+            <Route path="menu/addons" element={<AddonsPage />} />
+            <Route path="menu/offers" element={<OffersPage />} />
 
+            <Route path="restaurant/information" element={<InformationPage />} />
+            <Route path="restaurant/contact" element={<ContactPage />} />
+            <Route path="restaurant/hours" element={<HoursPage />} />
+            <Route path="restaurant/social" element={<SocialMediaPage />} />
+
+            <Route path="settings/pages" element={<Navigate to="/admin/website/pages" replace />} />
+          </Route>
+          {/* Account is the one screen every role reaches - it's the signed-in user's own profile, not a Site's. */}
           <Route path="settings/account" element={<AccountPage />} />
-          <Route path="settings/pages" element={<Navigate to="/admin/website/pages" replace />} />
-          <Route element={<RequireRole allow={['owner', 'super_admin']} />}>
+          <Route element={<RequireRole allow={['owner']} />}>
             <Route path="settings/users" element={<UsersPage />} />
             <Route path="settings/domains" element={import.meta.env.VITE_USE_MOCKS === 'true' ? <DomainsPage /> : <p>Custom domains are not enabled yet. Use your platform site address.</p>} />
           </Route>

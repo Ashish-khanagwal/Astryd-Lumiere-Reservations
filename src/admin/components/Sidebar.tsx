@@ -141,78 +141,91 @@ export function Sidebar() {
   const membershipConfig = pageConfigs?.find((p) => p.module === 'membership');
   const membershipLabel = membershipConfig?.navLabel || 'Membership';
 
+  // Super Admin isn't scoped to any one Organization/Site (Multi-Vertical Platform Plan §4/§5.1), so none of
+  // the per-Site management screens below apply to it - it only ever sees the Platform area and its own
+  // Account page, never a stray owner-style sidebar for whichever Site happens to be its fallback.
   const groups: NavGroup[] = useMemo(
-    () => [
-      {
-        key: 'main',
-        title: '',
-        visible: true,
-        items: [
-          { to: '/admin', label: 'Dashboard', icon: LayoutDashboard, end: true },
-          { to: '/admin/orders', label: 'Orders', icon: ShoppingBag },
-          { to: '/admin/reservations', label: bookingLabel, icon: CalendarDays },
-          ...(membershipConfig?.enabled && perms.canManageMembership
-            ? [{ to: '/admin/membership', label: membershipLabel, icon: Crown }]
-            : []),
-        ],
-      },
-      {
-        key: 'website',
-        title: 'Website',
-        visible: perms.canManageWebsite,
-        items: [
-          // Every page, its sections, text, layout and settings, plus header/footer and theme, live in the Site Editor.
-          { to: '/admin/website/pages', label: 'Site Editor', icon: PanelsTopLeft },
-          { to: '/admin/website/media', label: 'Media Library', icon: Image },
-        ],
-      },
-      {
-        key: 'menu',
-        title: catalogLabel,
-        visible: perms.canManageMenu,
-        items: [
-          { to: '/admin/menu/categories', label: 'Categories', icon: LayoutGrid },
-          { to: '/admin/menu/items', label: `${catalogLabel} Items`, icon: UtensilsCrossed },
-          { to: '/admin/menu/addons', label: 'Add-ons', icon: PlusCircle },
-          { to: '/admin/menu/offers', label: 'Offers', icon: Tag },
-        ],
-      },
-      {
-        key: 'restaurant',
-        title: 'Business',
-        visible: perms.canManageBranding,
-        items: [
-          { to: '/admin/restaurant/information', label: 'Information', icon: Store },
-          { to: '/admin/restaurant/contact', label: 'Contact', icon: Phone },
-          { to: '/admin/restaurant/hours', label: 'Opening Hours', icon: Clock },
-          { to: '/admin/restaurant/social', label: 'Social Media', icon: Share2 },
-        ],
-      },
-      {
-        key: 'settings',
-        title: 'Settings',
-        visible: true,
-        items: [
-          { to: '/admin/settings/account', label: 'Account', icon: User },
-          ...(perms.canManageSettings && import.meta.env.VITE_USE_MOCKS === 'true' ? [{ to: '/admin/settings/domains', label: 'Domains', icon: Globe }] : []),
-          ...(perms.canManageUsers ? [{ to: '/admin/settings/users', label: 'Users', icon: Users }] : []),
-        ],
-      },
-      {
-        key: 'platform',
-        title: 'Platform',
-        visible: perms.isSuperAdmin,
-        items: [{ to: '/admin/superadmin/sites', label: 'All Sites', icon: Building2 }],
-      },
-    ],
+    () =>
+      perms.isSuperAdmin
+        ? [
+            {
+              key: 'platform',
+              title: 'Platform',
+              visible: true,
+              items: [{ to: '/admin/superadmin/sites', label: 'All Sites', icon: Building2, end: true }],
+            },
+            {
+              key: 'settings',
+              title: 'Settings',
+              visible: true,
+              items: [{ to: '/admin/settings/account', label: 'Account', icon: User }],
+            },
+          ]
+        : [
+            {
+              key: 'main',
+              title: '',
+              visible: true,
+              items: [
+                { to: '/admin', label: 'Dashboard', icon: LayoutDashboard, end: true },
+                { to: '/admin/orders', label: 'Orders', icon: ShoppingBag },
+                { to: '/admin/reservations', label: bookingLabel, icon: CalendarDays },
+                ...(membershipConfig?.enabled && perms.canManageMembership
+                  ? [{ to: '/admin/membership', label: membershipLabel, icon: Crown }]
+                  : []),
+              ],
+            },
+            {
+              key: 'website',
+              title: 'Website',
+              visible: perms.canManageWebsite,
+              items: [
+                // Every page, its sections, text, layout and settings, plus header/footer and theme, live in the Site Editor.
+                { to: '/admin/website/pages', label: 'Site Editor', icon: PanelsTopLeft },
+                { to: '/admin/website/media', label: 'Media Library', icon: Image },
+              ],
+            },
+            {
+              key: 'menu',
+              title: catalogLabel,
+              visible: perms.canManageMenu,
+              items: [
+                { to: '/admin/menu/categories', label: 'Categories', icon: LayoutGrid },
+                { to: '/admin/menu/items', label: `${catalogLabel} Items`, icon: UtensilsCrossed },
+                { to: '/admin/menu/addons', label: 'Add-ons', icon: PlusCircle },
+                { to: '/admin/menu/offers', label: 'Offers', icon: Tag },
+              ],
+            },
+            {
+              key: 'restaurant',
+              title: 'Business',
+              visible: perms.canManageBranding,
+              items: [
+                { to: '/admin/restaurant/information', label: 'Information', icon: Store },
+                { to: '/admin/restaurant/contact', label: 'Contact', icon: Phone },
+                { to: '/admin/restaurant/hours', label: 'Opening Hours', icon: Clock },
+                { to: '/admin/restaurant/social', label: 'Social Media', icon: Share2 },
+              ],
+            },
+            {
+              key: 'settings',
+              title: 'Settings',
+              visible: true,
+              items: [
+                { to: '/admin/settings/account', label: 'Account', icon: User },
+                ...(perms.canManageSettings && import.meta.env.VITE_USE_MOCKS === 'true' ? [{ to: '/admin/settings/domains', label: 'Domains', icon: Globe }] : []),
+                ...(perms.canManageUsers ? [{ to: '/admin/settings/users', label: 'Users', icon: Users }] : []),
+              ],
+            },
+          ],
     [
+      perms.isSuperAdmin,
       perms.canManageWebsite,
       perms.canManageMenu,
       perms.canManageBranding,
       perms.canManageUsers,
       perms.canManageSettings,
       perms.canManageMembership,
-      perms.isSuperAdmin,
       catalogLabel,
       bookingLabel,
       membershipConfig?.enabled,
@@ -333,6 +346,14 @@ export function Sidebar() {
                 <Sparkles className="h-6 w-6" />
               </button>
             </Tooltip>
+          ) : perms.isSuperAdmin ? (
+            // Not scoped to any Site, so no Site name/switcher - just the platform brand mark.
+            <div className="flex items-center gap-2.5 min-w-0">
+              <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-primary text-on-primary shadow-md shadow-primary/20">
+                <Building2 className="h-4 w-4" />
+              </div>
+              <span className="text-lg font-bold text-on-surface truncate tracking-tight">Platform</span>
+            </div>
           ) : (
             <SiteSwitcher />
           )}
@@ -356,6 +377,7 @@ export function Sidebar() {
 
         {renderNav(effectiveCollapsed)}
 
+        {!perms.isSuperAdmin && (
         <div className="shrink-0 p-3 space-y-2">
           {effectiveCollapsed ? (
             <div className="flex flex-col items-center gap-2">
@@ -389,6 +411,7 @@ export function Sidebar() {
             </button>
           )}
         </div>
+        )}
       </aside>
 
       <PreviewModal isOpen={isPreviewOpen} onClose={() => setIsPreviewOpen(false)} url={draftPreviewUrl(restaurantId)} />
