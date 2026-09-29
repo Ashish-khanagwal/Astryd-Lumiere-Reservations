@@ -1,4 +1,4 @@
-/** Unsplash photos (checked to load and to show their subject) used as Gym/Retail/Salon/Coffee defaults for page images and demo content. */
+/** Unsplash photos (checked to load and to show their subject) used as Gym/Retail/Salon/Coffee/Laundry defaults for page images and demo content. */
 const photo = (id: string, w = 1200) => `https://images.unsplash.com/${id}?w=${w}&q=80&auto=format&fit=crop`;
 
 export const GYM_IMAGES = {
@@ -88,4 +88,16 @@ export const COFFEE_IMAGES = {
   avocadoToast: photo('photo-1525351484163-7529414344d8'),
   beansJar: photo('photo-1509785307050-d4066910ec1e'),
   beansSack: photo('photo-1524350876685-274059332603'),
+};
+
+export const LAUNDRY_IMAGES = {
+  hero: photo('photo-1521656693074-0ef32e80a5d5', 1800),
+  interior: photo('photo-1626806787461-102c1bfaaea1', 1600),
+  washers: photo('photo-1545173168-9f1947eebb7f'),
+  founder: photo('photo-1573497019940-1c28c88b4f3e', 800),
+  ironing: photo('photo-1489274495757-95c7c837b101'),
+  folding: photo('photo-1567113463300-102a7eb3cb26'),
+  basket: photo('photo-1582735689369-4fe89db7114c'),
+  foldedFlat: photo('photo-1544441893-675973e31985'),
+  hangers: photo('photo-1523381294911-8d3cead13475'),
 };

@@ -1,6 +1,6 @@
 import { db, nowIso, type MockDbShape } from './db';
 import { VERTICAL_MODULE_DEFAULTS, defaultTemplateVariant } from '../data/onboardingDefaults';
-import { buildGymSeed, buildRetailSeed, buildSalonSeed, buildCoffeeSeed } from './seedVerticals';
+import { buildGymSeed, buildRetailSeed, buildSalonSeed, buildCoffeeSeed, buildLaundrySeed } from './seedVerticals';
 import type {
   Addon,
   BrandSettings,
@@ -64,6 +64,12 @@ export const COFFEE_SITE_ID = 'site_fernwood';
 export const COFFEE_SITE_SLUG = 'fernwood-coffee';
 export const COFFEE_ORGANIZATION_ID = 'org_fernwood';
 export const COFFEE_ORGANIZATION_CODE = 'FERNWOOD';
+
+/** Plan §2/§6 - a Laundry demo Org/Site (own login), the sixth vertical - a US family-owned laundry & dry cleaner. */
+export const LAUNDRY_SITE_ID = 'site_brightside';
+export const LAUNDRY_SITE_SLUG = 'brightside-laundry';
+export const LAUNDRY_ORGANIZATION_ID = 'org_brightside';
+export const LAUNDRY_ORGANIZATION_CODE = 'BRIGHTSIDE';
 /** Demo password accepted for every seeded account - mock auth only, never real. */
 export const DEMO_PASSWORD = 'password123';
 
@@ -1101,10 +1107,83 @@ export function buildSeed(): MockDbShape {
     blockedDates: [],
   };
 
+  // --- Laundry demo tenant (own Org/login) - Plan §2/§6, the sixth Vertical. ---
+  const laundryOrganization: Organization = { id: LAUNDRY_ORGANIZATION_ID, code: LAUNDRY_ORGANIZATION_CODE, name: 'Brightside Laundry Co.', createdAt: now, updatedAt: now };
+  const laundryOwner: User = {
+    id: 'user_brightside_owner', organizationId: LAUNDRY_ORGANIZATION_ID, email: 'owner@brightsidelaundry.com', name: 'Maria Delgado',
+    role: 'owner', restaurantId: LAUNDRY_SITE_ID, siteAccess: 'all', isActive: true, createdAt: now, updatedAt: now,
+  };
+  const laundrySite: Restaurant = {
+    id: LAUNDRY_SITE_ID, organizationId: LAUNDRY_ORGANIZATION_ID, slug: LAUNDRY_SITE_SLUG, name: 'Brightside Laundry Co.',
+    ownerUserId: laundryOwner.id, status: 'active', vertical: 'laundry', brandingBadgeEnabled: true, createdAt: now, updatedAt: now,
+  };
+  const laundryBrand: BrandSettings = {
+    restaurantId: LAUNDRY_SITE_ID,
+    restaurantName: 'Brightside Laundry Co.',
+    tagline: 'Laundry day, handled with care.',
+    logoMediaId: null,
+    faviconMediaId: null,
+    themePresetId: 'aqua',
+    primaryFont: 'Inter',
+    headingFont: 'DM Sans',
+    fontWeight: 'medium',
+    buttonStyle: 'rounded',
+    borderRadius: 'lg',
+    navPosition: 'right',
+    socialLinks: { instagram: 'https://instagram.com/brightsidelaundry', facebook: '' },
+    contact: { phone: '+1 (718) 555-0148', email: 'hello@brightsidelaundry.com', address: '215 5th Ave, Park Slope, Brooklyn, NY 11217' },
+    description: 'Brightside Laundry Co. is a family-owned laundry and dry cleaner in Park Slope, Brooklyn - everything cleaned in-house, with free pickup and delivery.',
+    cuisineType: '',
+    businessHours: [
+      { day: 'mon', isClosed: false, openTime: '07:00', closeTime: '20:00' },
+      { day: 'tue', isClosed: false, openTime: '07:00', closeTime: '20:00' },
+      { day: 'wed', isClosed: false, openTime: '07:00', closeTime: '20:00' },
+      { day: 'thu', isClosed: false, openTime: '07:00', closeTime: '20:00' },
+      { day: 'fri', isClosed: false, openTime: '07:00', closeTime: '20:00' },
+      { day: 'sat', isClosed: false, openTime: '08:00', closeTime: '18:00' },
+      { day: 'sun', isClosed: false, openTime: '09:00', closeTime: '17:00' },
+    ],
+    createdAt: now,
+    updatedAt: now,
+  };
+  const laundryHeroSection: HomepageSection = {
+    id: 'section_brightside_hero', restaurantId: LAUNDRY_SITE_ID, type: 'hero', order: 1, visible: true, templateVariant: 'a', updatedAt: now,
+    content: {
+      eyebrow: 'Park Slope · Brooklyn, NY',
+      heading: 'Brightside Laundry Co.',
+      description: 'Dry cleaning, wash & fold and alterations - all cleaned in-house, with free pickup and delivery on every order over $35.',
+      buttonText: 'Schedule a Pickup',
+      buttonLink: '#/reservations',
+      secondaryButtonText: 'View Services',
+      secondaryButtonLink: '#/items',
+      backgroundMediaId: null,
+      overlayOpacity: 45,
+    },
+  };
+  const laundrySeed = buildLaundrySeed(LAUNDRY_SITE_ID, now, laundryHeroSection);
+  const laundryHomepage: Homepage = { restaurantId: LAUNDRY_SITE_ID, status: 'published', sections: laundrySeed.sections };
+  const laundryMembershipPlans: MembershipPlan[] = [
+    { id: 'plan_brightside_basic', restaurantId: LAUNDRY_SITE_ID, name: 'Brightside Basic', description: 'Free to join - earn credit toward every order.', priceCents: 0, billingInterval: 'one_time', benefits: ['5% credit on every order', 'Free pickup & delivery', 'Birthday bonus credit'], isActive: true, order: 0, createdAt: now, updatedAt: now },
+    { id: 'plan_brightside_unlimited', restaurantId: LAUNDRY_SITE_ID, name: 'Unlimited Wash & Fold', description: 'Unlimited wash & fold, up to 30 lbs a week.', priceCents: 12900, billingInterval: 'monthly', benefits: ['Up to 30 lbs a week', 'Priority same-day slots', '15% off dry cleaning'], isActive: true, order: 1, createdAt: now, updatedAt: now },
+  ];
+  const laundryAvailability: ReservationAvailabilitySettings = {
+    restaurantId: LAUNDRY_SITE_ID,
+    days: WEEK_DAYS.map((day) => ({
+      day,
+      isClosed: false,
+      openTime: day === 'sun' ? '09:00' : day === 'sat' ? '08:00' : '07:00',
+      closeTime: day === 'sun' ? '17:00' : day === 'sat' ? '18:00' : '20:00',
+      slotDurationMins: 30,
+      maxPerSlot: 5,
+      slots: [],
+    })),
+    blockedDates: [],
+  };
+
   return {
-    organizations: [...organizations, gymOrganization, retailOrganization, salonOrganization, coffeeOrganization],
-    users: [...users, gymOwner, retailOwner, salonOwner, coffeeOwner],
-    restaurants: [restaurant, secondSite, gymSite, retailSite, salonSite, coffeeSite],
+    organizations: [...organizations, gymOrganization, retailOrganization, salonOrganization, coffeeOrganization, laundryOrganization],
+    users: [...users, gymOwner, retailOwner, salonOwner, coffeeOwner, laundryOwner],
+    restaurants: [restaurant, secondSite, gymSite, retailSite, salonSite, coffeeSite, laundrySite],
     brand: {
       [RESTAURANT_ID]: { draft: { ...brandSettings }, published: { ...brandSettings } },
       [SECOND_SITE_ID]: { draft: { ...secondSiteBrand }, published: { ...secondSiteBrand } },
@@ -1112,6 +1191,7 @@ export function buildSeed(): MockDbShape {
       [RETAIL_SITE_ID]: { draft: { ...retailBrand }, published: { ...retailBrand } },
       [SALON_SITE_ID]: { draft: { ...salonBrand }, published: { ...salonBrand } },
       [COFFEE_SITE_ID]: { draft: { ...coffeeBrand }, published: { ...coffeeBrand } },
+      [LAUNDRY_SITE_ID]: { draft: { ...laundryBrand }, published: { ...laundryBrand } },
     },
     website: {
       [RESTAURANT_ID]: {
@@ -1168,6 +1248,15 @@ export function buildSeed(): MockDbShape {
         createdAt: now,
         updatedAt: now,
       },
+      [LAUNDRY_SITE_ID]: {
+        restaurantId: LAUNDRY_SITE_ID,
+        publishStatus: 'published',
+        publishedAt: now,
+        seoTitle: 'Brightside Laundry Co. | Laundry & Dry Cleaning in Park Slope, Brooklyn',
+        seoDescription: 'Family-owned laundry and dry cleaner in Park Slope, Brooklyn, NY - free pickup and delivery. Schedule online.',
+        createdAt: now,
+        updatedAt: now,
+      },
     },
     homepage: {
       [RESTAURANT_ID]: { draft: homepageDraft, published: homepagePublished },
@@ -1176,12 +1265,13 @@ export function buildSeed(): MockDbShape {
       [RETAIL_SITE_ID]: { draft: { ...retailHomepage }, published: { ...retailHomepage } },
       [SALON_SITE_ID]: { draft: { ...salonHomepage }, published: { ...salonHomepage } },
       [COFFEE_SITE_ID]: { draft: { ...coffeeHomepage }, published: { ...coffeeHomepage } },
+      [LAUNDRY_SITE_ID]: { draft: { ...laundryHomepage }, published: { ...laundryHomepage } },
     },
-    media: [...media, ...gymSeed.media, ...retailSeed.media, ...salonSeed.media, ...coffeeSeed.media],
-    categories: [...categories, ...gymSeed.categories, ...retailSeed.categories, ...salonSeed.categories, ...coffeeSeed.categories],
-    items: [...items, ...gymSeed.items, ...retailSeed.items, ...salonSeed.items, ...coffeeSeed.items],
+    media: [...media, ...gymSeed.media, ...retailSeed.media, ...salonSeed.media, ...coffeeSeed.media, ...laundrySeed.media],
+    categories: [...categories, ...gymSeed.categories, ...retailSeed.categories, ...salonSeed.categories, ...coffeeSeed.categories, ...laundrySeed.categories],
+    items: [...items, ...gymSeed.items, ...retailSeed.items, ...salonSeed.items, ...coffeeSeed.items, ...laundrySeed.items],
     addons,
-    offers: [...offers, ...gymSeed.offers, ...retailSeed.offers, ...salonSeed.offers, ...coffeeSeed.offers],
+    offers: [...offers, ...gymSeed.offers, ...retailSeed.offers, ...salonSeed.offers, ...coffeeSeed.offers, ...laundrySeed.offers],
     orders,
     reservations,
     reservationAvailability: {
@@ -1191,6 +1281,7 @@ export function buildSeed(): MockDbShape {
       [RETAIL_SITE_ID]: retailAvailability,
       [SALON_SITE_ID]: salonAvailability,
       [COFFEE_SITE_ID]: coffeeAvailability,
+      [LAUNDRY_SITE_ID]: laundryAvailability,
     },
     pageConfigs: [
       ...buildDefaultPageConfigs(RESTAURANT_ID, true),
@@ -1199,8 +1290,9 @@ export function buildSeed(): MockDbShape {
       ...buildPageConfigsForVertical(RETAIL_SITE_ID, 'retail'),
       ...buildPageConfigsForVertical(SALON_SITE_ID, 'salon'),
       ...buildPageConfigsForVertical(COFFEE_SITE_ID, 'coffee'),
+      ...buildPageConfigsForVertical(LAUNDRY_SITE_ID, 'laundry'),
     ],
-    membershipPlans: [...membershipPlans, ...gymMembershipPlans, ...retailMembershipPlans, ...salonMembershipPlans, ...coffeeMembershipPlans],
+    membershipPlans: [...membershipPlans, ...gymMembershipPlans, ...retailMembershipPlans, ...salonMembershipPlans, ...coffeeMembershipPlans, ...laundryMembershipPlans],
     members,
     memberCheckIns,
     domainMappings: [
@@ -1210,10 +1302,11 @@ export function buildSeed(): MockDbShape {
       ...buildDefaultDomainMappings(RETAIL_SITE_ID, RETAIL_SITE_SLUG),
       ...buildDefaultDomainMappings(SALON_SITE_ID, SALON_SITE_SLUG),
       ...buildDefaultDomainMappings(COFFEE_SITE_ID, COFFEE_SITE_SLUG),
+      ...buildDefaultDomainMappings(LAUNDRY_SITE_ID, LAUNDRY_SITE_SLUG),
     ],
     // Every Site starts on the code defaults for its Vertical; owners only store what they change.
     pageContent: Object.fromEntries(
-      [RESTAURANT_ID, SECOND_SITE_ID, GYM_SITE_ID, RETAIL_SITE_ID, SALON_SITE_ID, COFFEE_SITE_ID].map((id) => [id, { draft: {}, published: {} }]),
+      [RESTAURANT_ID, SECOND_SITE_ID, GYM_SITE_ID, RETAIL_SITE_ID, SALON_SITE_ID, COFFEE_SITE_ID, LAUNDRY_SITE_ID].map((id) => [id, { draft: {}, published: {} }]),
     ),
   };
 }

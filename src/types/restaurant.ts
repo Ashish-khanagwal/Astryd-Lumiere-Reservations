@@ -4,7 +4,7 @@ import type { TemplateVariant } from './pageConfig';
 export type WeekDay = 'mon' | 'tue' | 'wed' | 'thu' | 'fri' | 'sat' | 'sun';
 
 /** Multi-Vertical Platform Plan §2/§3.1/§6 - seeds sensible defaults at onboarding only, never gates functionality. */
-export const VERTICALS = ['restaurant', 'gym', 'retail', 'salon', 'coffee'] as const;
+export const VERTICALS = ['restaurant', 'gym', 'retail', 'salon', 'coffee', 'laundry'] as const;
 export type Vertical = (typeof VERTICALS)[number];
 
 export interface BusinessHoursEntry {
@@ -162,6 +162,20 @@ export const THEME_PRESETS: ThemePreset[] = [
       onPrimaryFixed: '#2b1b0e',
       onPrimaryFixedVariant: '#4a2e1a',
       tertiary: '#a47148',
+    },
+  },
+  {
+    id: 'aqua',
+    name: 'Aqua',
+    colors: {
+      primary: '#2e86ab',
+      onPrimary: '#ffffff',
+      primaryContainer: '#3f9bc4',
+      primaryFixed: '#cfe9f5',
+      primaryFixedDim: '#a7d8ed',
+      onPrimaryFixed: '#03212e',
+      onPrimaryFixedVariant: '#0e4a61',
+      tertiary: '#5faf7a',
     },
   },
 ];

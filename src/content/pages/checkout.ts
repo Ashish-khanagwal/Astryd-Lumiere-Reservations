@@ -224,5 +224,11 @@ export const checkoutContent: ContentPageDefinition = {
       instructionsPlaceholder: 'Oat milk, extra hot, or any other notes for your order...',
       paymentSuccessToast: 'Payment successful. Order #{number} has been sent to the shop.',
     },
+    laundry: {
+      backToMenuLabel: 'Back to Services',
+      addMoreItemsLabel: 'Add More Items',
+      instructionsPlaceholder: 'Stains, delicate fabrics, or anything we should know about this order...',
+      paymentSuccessToast: 'Payment successful. Order #{number} has been sent to the shop.',
+    },
   },
 };

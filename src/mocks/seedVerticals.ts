@@ -1,8 +1,9 @@
 import type { HomepageSection, MediaAsset, MenuCategory, MenuItem, Offer } from '../types';
-import { GYM_IMAGES as GYM, RETAIL_IMAGES as RETAIL, SALON_IMAGES as SALON, COFFEE_IMAGES as COFFEE } from '../content/verticalImages';
+import { GYM_IMAGES as GYM, RETAIL_IMAGES as RETAIL, SALON_IMAGES as SALON, COFFEE_IMAGES as COFFEE, LAUNDRY_IMAGES as LAUNDRY } from '../content/verticalImages';
 
 /**
- * Full demo content for the Gym (PulseFit), Retail (Nova Goods), Salon (Sloane & Co.) and Coffee Shop (Fernwood) tenants - media, catalog, offers and
+ * Full demo content for the Gym (PulseFit), Retail (Nova Goods), Salon (Sloane & Co.), Coffee Shop (Fernwood)
+ * and Laundry (Brightside) tenants - media, catalog, offers and
  * all 7 homepage sections filled in and visible - so each vertical's public site is as complete as Lumière's.
  */
 
@@ -420,6 +421,90 @@ export function buildCoffeeSeed(siteId: string, now: string, hero: HomepageSecti
       },
     },
     { ...base, id: `section_${siteId}_location`, type: 'location', order: 7, visible: true, content: { heading: 'Find the Shop', showHoursTable: true } },
+  ];
+
+  return { media, categories, items, offers, sections };
+}
+
+// -------------------------------------------------------------------------------------- Laundry
+
+export function buildLaundrySeed(siteId: string, now: string, hero: HomepageSection): VerticalSeed {
+  const media = buildMedia(siteId, now, [
+    ['media_bs_hero', LAUNDRY.hero, 'The Brightside Laundry Co. storefront'],
+    ['media_bs_about', LAUNDRY.interior, 'Inside the Brightside laundry room'],
+    ['media_bs_founder', LAUNDRY.founder, 'Founder Maria Delgado'],
+    ['media_bs_offer', LAUNDRY.basket, 'A fresh basket of folded laundry'],
+    ['media_bs_offer2', LAUNDRY.hangers, 'Dry-cleaned shirts ready for pickup'],
+    ['media_bs_g1', LAUNDRY.washers, 'A row of washing machines at work'],
+    ['media_bs_g2', LAUNDRY.folding, 'Folding a fresh load'],
+    ['media_bs_g3', LAUNDRY.ironing, 'Pressing a shirt to a crisp finish'],
+    ['media_bs_g4', LAUNDRY.foldedFlat, 'A neatly packed order, ready to go'],
+    ['media_bs_g5', LAUNDRY.hangers, 'Dry cleaning on the rack'],
+    ['media_bs_g6', LAUNDRY.basket, 'Clean laundry, folded and boxed'],
+  ]);
+
+  const { categories, items } = buildCatalog(siteId, now, 'bs', ['Dry Cleaning', 'Wash & Fold', 'Household & Bedding', 'Alterations & Repairs', 'Specialty Care'], [
+    { id: 'bs_shirt', category: 'Dry Cleaning', name: 'Dress Shirt', description: 'Professionally dry cleaned and pressed to a crisp finish, on a hanger.', price: 4.5, image: LAUNDRY.hangers, tag: 'Popular', rating: 4.9, reviews: 412 },
+    { id: 'bs_suit', category: 'Dry Cleaning', name: '2-Piece Suit', description: 'Jacket and trousers dry cleaned and hand-pressed, ready to wear.', price: 16, image: LAUNDRY.hangers, rating: 4.8, reviews: 187 },
+    { id: 'bs_dress', category: 'Dry Cleaning', name: 'Dress (Silk & Formal)', description: 'Gentle care for delicate fabrics - silk, chiffon and beaded formalwear.', price: 14, image: LAUNDRY.hangers, tag: 'Bestseller', rating: 4.9, reviews: 231 },
+    { id: 'bs_coat', category: 'Dry Cleaning', name: 'Winter Coat', description: 'Heavy coats and parkas, deep cleaned and refreshed for the season.', price: 22, image: LAUNDRY.hangers, rating: 4.7, reviews: 98 },
+    { id: 'bs_wf_standard', category: 'Wash & Fold', name: 'Wash & Fold (per lb)', description: 'Washed, dried and neatly folded - 10 lb minimum. Ready in 24-48 hours.', price: 2.25, image: LAUNDRY.folding, tag: 'Bestseller', rating: 4.9, reviews: 538 },
+    { id: 'bs_wf_rush', category: 'Wash & Fold', name: 'Same-Day Wash & Fold (per lb)', description: 'Drop off by 10am, pick up by 6pm - same-day turnaround.', price: 3.25, image: LAUNDRY.basket, tag: 'New', rating: 4.8, reviews: 104 },
+    { id: 'bs_comforter', category: 'Household & Bedding', name: 'Comforter / Duvet (Queen)', description: 'Deep cleaned and fluffed - fits queen and smaller sizes.', price: 28, image: LAUNDRY.basket, tag: 'Popular', rating: 4.8, reviews: 156 },
+    { id: 'bs_sheets', category: 'Household & Bedding', name: 'Bed Sheet Set', description: 'Washed, pressed and folded - fitted sheet, flat sheet and pillowcases.', price: 12, image: LAUNDRY.foldedFlat, rating: 4.7, reviews: 121 },
+    { id: 'bs_rug', category: 'Household & Bedding', name: 'Area Rug Cleaning (per sq ft)', description: 'Deep steam cleaning for area rugs, picked up and delivered back.', price: 3, image: LAUNDRY.washers, rating: 4.6, reviews: 67 },
+    { id: 'bs_hem', category: 'Alterations & Repairs', name: 'Hem Pants', description: 'A clean, tailored hem - while your other items are being cleaned.', price: 12, image: LAUNDRY.foldedFlat, rating: 4.8, reviews: 143 },
+    { id: 'bs_zipper', category: 'Alterations & Repairs', name: 'Zipper Replacement', description: 'A full zipper swap on jackets, bags and trousers.', price: 18, image: LAUNDRY.ironing, rating: 4.7, reviews: 58 },
+    { id: 'bs_wedding', category: 'Specialty Care', name: 'Wedding Dress Cleaning & Preservation', description: 'Museum-grade cleaning and an acid-free preservation box for the big day.', price: 150, image: LAUNDRY.hangers, tag: 'Premium', rating: 5, reviews: 41 },
+    { id: 'bs_leather', category: 'Specialty Care', name: 'Leather & Suede Cleaning', description: 'Specialized care for leather jackets, bags and suede footwear.', price: 45, image: LAUNDRY.washers, rating: 4.8, reviews: 39 },
+  ]);
+
+  const offers: Offer[] = [
+    { id: 'offer_bs_newcustomer', restaurantId: siteId, name: 'New Customer Welcome', type: 'percentage', discountValue: 20, startDate: now, endDate: inDays(60), isActive: true, appliesToItemIds: [], appliesToCategoryIds: ['cat_bs_dry_cleaning'], cta: 'Schedule a Pickup', imageMediaId: 'media_bs_offer2', createdAt: now, updatedAt: now },
+    { id: 'offer_bs_freedelivery', restaurantId: siteId, name: 'Free Pickup & Delivery', type: 'fixed', discountValue: 5, startDate: now, endDate: inDays(45), isActive: true, appliesToItemIds: [], appliesToCategoryIds: ['cat_bs_wash_fold'], cta: 'Book Now', imageMediaId: 'media_bs_offer', createdAt: now, updatedAt: now },
+  ];
+
+  const base = { restaurantId: siteId, updatedAt: now, templateVariant: 'a' as const };
+  const sections: HomepageSection[] = [
+    { ...hero, content: { ...(hero.type === 'hero' ? hero.content : {}), backgroundMediaId: 'media_bs_hero' } } as HomepageSection,
+    {
+      ...base, id: `section_${siteId}_about`, type: 'about', order: 2, visible: true,
+      content: {
+        eyebrow: 'Our Story',
+        heading: 'Laundry day, handled with care.',
+        description: 'Brightside Laundry Co. is a family-owned laundry and dry cleaner in Park Slope - every order is cleaned in-house, never outsourced, with free pickup and delivery on top.',
+        imageMediaId: 'media_bs_about',
+        quote: 'We treat every order like it is going to our own family - because for 20 years, it has been.',
+        chefName: 'Maria Delgado, Founder',
+        chefQuote: 'My parents opened this shop so neighbors could trust exactly who was cleaning their clothes. Twenty years later, that is still the whole business.',
+        chefBio: 'Maria grew up folding towels behind the counter of her parents\' laundromat. She took over in 2014, added dry cleaning and free pickup and delivery, and now runs the shop with a team of 14 across two Brooklyn locations.',
+        chefImageMediaId: 'media_bs_founder',
+      },
+    },
+    { ...base, id: `section_${siteId}_featured_menu`, type: 'featured_menu', order: 3, visible: true, content: { eyebrow: 'Most Booked', heading: 'Popular Services', description: 'What our neighbors send us most.', selectedItemIds: ['bs_wf_standard', 'bs_shirt', 'bs_comforter', 'bs_dress'] } },
+    {
+      ...base, id: `section_${siteId}_gallery`, type: 'gallery', order: 4, visible: true,
+      content: {
+        eyebrow: 'Behind the Counter',
+        heading: 'A Look Inside Brightside',
+        description: 'Every order, washed, pressed and folded in-house.',
+        images: ['media_bs_g1', 'media_bs_g2', 'media_bs_g3', 'media_bs_g4', 'media_bs_g5', 'media_bs_g6'].map((mediaId, order) => ({ mediaId, order })),
+      },
+    },
+    { ...base, id: `section_${siteId}_offers`, type: 'offers', order: 5, visible: true, content: { eyebrow: 'Limited Time', heading: 'Current Offers', description: 'A little extra for new and returning neighbors.', selectedOfferIds: ['offer_bs_newcustomer', 'offer_bs_freedelivery'] } },
+    {
+      ...base, id: `section_${siteId}_testimonials`, type: 'testimonials', order: 6, visible: true,
+      content: {
+        eyebrow: 'Neighborhood Reviews',
+        heading: 'What Our Customers Say',
+        testimonials: [
+          { id: 'testimonial_bs_1', customerName: 'Dana R.', quote: 'Free pickup and delivery changed my life. Everything comes back folded better than I could ever do it.', rating: 5, order: 0 },
+          { id: 'testimonial_bs_2', customerName: 'Marcus T.', quote: 'They saved my wedding suit after a wine spill the night before. Genuinely grateful.', rating: 5, order: 1 },
+          { id: 'testimonial_bs_3', customerName: 'Priya S.', quote: 'Same-day wash and fold has been a lifesaver with two kids. Never going back to doing it myself.', rating: 4, order: 2 },
+        ],
+      },
+    },
+    { ...base, id: `section_${siteId}_location`, type: 'location', order: 7, visible: true, content: { heading: 'Visit or Schedule a Pickup', showHoursTable: true } },
   ];
 
   return { media, categories, items, offers, sections };

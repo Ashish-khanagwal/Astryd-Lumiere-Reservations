@@ -61,6 +61,14 @@ const STYLE: Record<Vertical, VerticalStyle> = {
     secondaryButtonClassName: 'bg-[#C99A62] text-[#2B1B12] hover:bg-[#dcae79]',
     cardsSectionClassName: 'bg-[#FBF3E7]',
   },
+  laundry: {
+    stickyBarClassName: 'bg-[#0E4A61] border-b border-[#2E86AB]/25',
+    stickyBarTextClassName: 'text-[#CFE9F5]',
+    stickyPillClassName: 'text-[#7FCBE8]',
+    primaryButtonClassName: 'border border-[#7FCBE8]/40 text-[#EAF6FB] hover:bg-[#7FCBE8]/15 hover:text-white',
+    secondaryButtonClassName: 'bg-[#2E86AB] text-white hover:bg-[#3f9bc4]',
+    cardsSectionClassName: 'bg-[#EAF6FB]',
+  },
 };
 
 interface LandingChromeProps {
