@@ -2,6 +2,7 @@ import type { ContentFields, ContentPageDefinition } from '../../types';
 import heroFallback from '../../assets/hero.png';
 import { SALON_IMAGES } from '../verticalImages';
 import { COFFEE_IMAGES } from '../verticalImages';
+import { LAUNDRY_IMAGES } from '../verticalImages';
 
 const rowFields = [
   { key: 'label', label: 'Label', type: 'text' as const },
@@ -306,6 +307,44 @@ export const landingContent: ContentPageDefinition = {
         { id: 'r2', label: 'Payment', value: 'Visa, MC, AMEX, Apple Pay' },
         { id: 'r3', label: 'Gift Cards', value: 'Available in-store' },
         { id: 'r4', label: 'Bean Refills', value: '$1 with any rewards visit' },
+      ],
+    },
+    laundry: {
+      locationFallback: 'Park Slope, Brooklyn',
+      openStatus: 'Open Now',
+      primaryButton: 'View Services',
+      secondaryButton: 'Schedule a Pickup',
+      heroEyebrow: '{city}',
+      heroDescription: 'Dry cleaning, wash & fold and alterations - all cleaned in-house, with free pickup and delivery on every order over $35.',
+      heroButtonText: 'Schedule a Pickup',
+      heroButtonIcon: 'local_shipping',
+      heroSecondaryButtonIcon: 'dry_cleaning',
+      heroFallbackImage: LAUNDRY_IMAGES.hero,
+      aboutEyebrow: 'Our Story',
+      aboutHeading: 'Laundry day, handled with care.',
+      aboutDescription: '{brand} cleans every order in-house, right here in the neighborhood - never outsourced, always accounted for.',
+      aboutStoryLink: 'Meet our founder',
+      featuredViewAll: 'View All Services',
+      offerCtaFallback: 'Schedule a Pickup',
+      hoursTitle: 'Shop Hours',
+      hoursRange: '{open} – {close}',
+      clockFormat: '12h',
+      locationHoursTitle: 'Shop Hours',
+      card1Icon: 'local_shipping',
+      card1Title: 'Pickup & Delivery',
+      card1Rows: [
+        { id: 'r1', label: 'Free Pickup & Delivery', value: 'Orders over $35' },
+        { id: 'r2', label: 'Turnaround', value: '24-48 hours' },
+        { id: 'r3', label: 'Same-Day Service', value: 'Drop off by 10am' },
+        { id: 'r4', label: 'Service Area', value: 'Park Slope & nearby' },
+      ],
+      card2Icon: 'info',
+      card2Title: 'Good to Know',
+      card2Rows: [
+        { id: 'r1', label: 'In-House Cleaning', value: 'Never outsourced' },
+        { id: 'r2', label: 'Payment', value: 'Visa, MC, AMEX, Apple Pay' },
+        { id: 'r3', label: 'Satisfaction Guarantee', value: 'We’ll re-clean it, free' },
+        { id: 'r4', label: 'Lost or Damaged', value: 'Fully insured' },
       ],
     },
   },

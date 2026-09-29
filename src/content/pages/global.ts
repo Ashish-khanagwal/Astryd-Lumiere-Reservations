@@ -301,5 +301,18 @@ export const globalContent: ContentPageDefinition = {
       chefNameFallback: 'Our Founder',
       footerDescription: 'A small-batch coffee roaster and neighborhood cafe in {city} - order ahead, or stay a while.',
     },
+    laundry: {
+      footerExtraNavLabel: 'Same-Day Service',
+      cartEmptyBody: 'Add a service to get started.',
+      chefEyebrow: 'Founder',
+      chefNameFallback: 'Our Founder',
+      footerDescription: 'A family-owned laundry and dry cleaner in {city} - everything cleaned in-house, with free pickup and delivery.',
+      legalLinks: [
+        { id: 'privacy', label: 'Privacy Policy', url: '#' },
+        { id: 'terms', label: 'Terms of Service', url: '#' },
+        { id: 'care', label: 'Care & Claims Policy', url: '#' },
+        { id: 'accessibility', label: 'Accessibility', url: '#' },
+      ],
+    },
   },
 };

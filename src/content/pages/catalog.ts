@@ -245,5 +245,17 @@ export const catalogContent: ContentPageDefinition = {
       a_cartTitle: 'Your Order',
       a_shareToast: 'Link copied to clipboard!',
     },
+    laundry: {
+      a_eyebrow: 'Order Online',
+      a_prepTime: '24-48 hour turnaround',
+      a_prepTimeIcon: 'schedule',
+      a_pickup: 'Free pickup & delivery',
+      a_pickupIcon: 'local_shipping',
+      a_popularSubheading: 'What our neighbors send us most',
+      a_searchPlaceholder: 'Search dry cleaning, wash & fold, alterations...',
+      a_emptyTitle: 'No services found',
+      a_cartTitle: 'Your Order',
+      a_shareToast: 'Link copied to clipboard!',
+    },
   },
 };

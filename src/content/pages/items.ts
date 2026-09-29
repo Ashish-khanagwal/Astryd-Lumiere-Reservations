@@ -117,5 +117,12 @@ export const itemsContent: ContentPageDefinition = {
       a_introLink: 'Order ahead',
       a_introAfter: 'for pickup, or come find a seat.',
     },
+    laundry: {
+      a_eyebrow: 'The Full Price List',
+      a_title: 'Our Services',
+      a_introBefore: 'Take a look through everything we clean, press and mend.',
+      a_introLink: 'Order online',
+      a_introAfter: 'or schedule a pickup whenever you’re ready.',
+    },
   },
 };

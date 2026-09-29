@@ -73,6 +73,16 @@ const FOOTER_THEME: Record<Vertical, FooterTheme> = {
     borderTop: 'border-[#C99A62]/20',
     extraNavTarget: 'menu',
   },
+  laundry: {
+    bg: 'bg-[#0E4A61]',
+    glow: 'bg-gradient-to-b from-[#7FCBE8]/10 via-transparent to-black/40',
+    text: 'text-[#CFE9F5]',
+    accent: 'text-[#7FCBE8]',
+    mutedText: 'text-[#A9C9D6]',
+    hoverText: 'hover:text-white',
+    borderTop: 'border-[#7FCBE8]/20',
+    extraNavTarget: 'reservations',
+  },
 };
 
 interface NavItem {
