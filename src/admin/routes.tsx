@@ -28,6 +28,7 @@ import { SocialMediaPage } from './pages/restaurant/SocialMediaPage';
 import { AccountPage } from './pages/settings/AccountPage';
 import { UsersPage } from './pages/settings/UsersPage';
 import { DomainsPage } from './pages/settings/DomainsPage';
+import { WebsiteSyncPage } from './pages/settings/WebsiteSyncPage';
 import { SuperAdminSitesPage } from './pages/superadmin/SitesPage';
 import { MembershipPage } from './pages/membership/MembershipPage';
 
@@ -94,6 +95,7 @@ export function AdminRoutes() {
           <Route path="settings/account" element={<AccountPage />} />
           <Route element={<RequireRole allow={['owner']} />}>
             <Route path="settings/users" element={<UsersPage />} />
+            <Route path="settings/website-sync" element={<WebsiteSyncPage />} />
             <Route path="settings/domains" element={import.meta.env.VITE_USE_MOCKS === 'true' ? <DomainsPage /> : <p>Custom domains are not enabled yet. Use your platform site address.</p>} />
           </Route>
           <Route element={<RequireRole allow={['super_admin']} />}>
