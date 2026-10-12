@@ -4,6 +4,7 @@ import { MapPin, Plus } from 'lucide-react';
 import { useRestaurant } from '../../../context/RestaurantContext';
 import { getReserveSettings, saveReserveSettings } from '../../../services/reserve';
 import type { ReserveSettings } from '../../../services/reserve';
+import { supportsSeating } from '../../../services/bookingPolicy';
 import { loadPlaces } from '../../../services/googlePlaces';
 import type { PlaceSelection } from '../../../services/googlePlaces';
 import { PageHeader } from '../../components/PageHeader';
@@ -41,7 +42,7 @@ export function ReserveSettingsPage() {
     try {
       const { PlaceAutocompleteElement } = await loadPlaces();
       const widget = new PlaceAutocompleteElement();
-      widget.setAttribute('placeholder', 'Search for your restaurant');
+      widget.setAttribute('placeholder', 'Search for your business');
       const handler = async (event: Event) => {
         try {
           const place = (event as PlaceSelection).placePrediction.toPlace();
@@ -60,13 +61,14 @@ export function ReserveSettingsPage() {
   if (query.isPending) return <p role="status">Loading Reserve settings…</p>;
   if (query.error || !draft) return <p role="alert">{query.error?.message || 'Reserve settings are unavailable.'}</p>;
   const update = (patch: Partial<ReserveSettings>) => setDraft({ ...draft, ...patch });
-  const resourceBooking = draft.booking_template_variant === 'a';
+  const seatingEnabled = supportsSeating(draft.vertical);
   const coordinate = (field: 'latitude' | 'longitude', value: string) => update({ location: { latitude: draft.location?.latitude ?? 0, longitude: draft.location?.longitude ?? 0, source: 'owner', [field]: Number(value) } });
   return <div className="max-w-5xl space-y-6">
-    <PageHeader icon={MapPin} title="Astryd Reserve" description="Connect this business’s map location and configure its booking resources." />
+    <PageHeader icon={MapPin} title="Astryd Reserve" description="Manage this business’s map location and booking timing." />
     <form onSubmit={(event) => {
       event.preventDefault();
-      const { booking_duration_mins, slot_interval_mins, ...settings } = draft;
+      const { booking_duration_mins, slot_interval_mins, seating_areas, tables, ...location } = draft;
+      const settings = seatingEnabled ? { ...location, seating_areas, tables } : location;
       save.mutate(updateTiming ? { ...settings, booking_duration_mins, slot_interval_mins } : settings);
     }} className="space-y-6">
       <section className="admin-card p-5 space-y-4">
@@ -91,14 +93,13 @@ export function ReserveSettingsPage() {
         </div>
         <p className="text-sm text-secondary">Location-only saves preserve current booking timing. Enable this option to change the start interval and duration and activate overlap protection. Opening hours, blocked dates, and disabled starts remain controlled under Reservations → Availability.</p>
       </section>
-      <section className="admin-card p-5 space-y-4">
-        <h2 className="font-semibold">{resourceBooking ? 'Seating areas' : 'Resource groups'}</h2>
-        {!resourceBooking && <p className="text-sm text-secondary">The current session and appointment layouts book the Indoor resource group. Keep its existing ID when renaming the label.</p>}
+      {seatingEnabled && <><section className="admin-card p-5 space-y-4">
+        <h2 className="font-semibold">Seating areas</h2>
         {draft.seating_areas.map((area, index) => <label key={area.id} className="block text-sm">Area {index + 1}<input className={input} value={area.name} maxLength={60} onChange={(event) => update({ seating_areas: draft.seating_areas.map((a) => a.id === area.id ? { ...a, name: event.target.value } : a) })} required /></label>)}
         <Button type="button" onClick={() => update({ seating_areas: [...draft.seating_areas, { id: `area_${crypto.randomUUID().slice(0, 8)}`, name: 'New seating area' }] })}><Plus size={16} /> Add area</Button>
       </section>
       <section className="admin-card p-5 space-y-4">
-        <h2 className="font-semibold">{resourceBooking ? 'Tables' : 'Booking resources'}</h2>
+        <h2 className="font-semibold">Tables</h2>
         <p className="text-sm text-secondary">Set actual capacities. Disable a resource to remove it from availability; existing IDs and POS mappings are retained. Each resource is reserved as a whole by the current booking engine.</p>
         {draft.tables.map((table, index) => <div key={table.id ?? index} className="grid sm:grid-cols-[1fr_90px_1fr_80px] gap-3 items-end border-b border-outline-variant/20 pb-3">
           <label className="text-xs">Name<input className={input} value={table.name} maxLength={60} onChange={(event) => update({ tables: draft.tables.map((t, i) => i === index ? { ...t, name: event.target.value } : t) })} required /></label>
@@ -107,7 +108,7 @@ export function ReserveSettingsPage() {
           <label className="text-xs pb-2"><input type="checkbox" checked={table.is_active} onChange={(event) => update({ tables: draft.tables.map((t, i) => i === index ? { ...t, is_active: event.target.checked } : t) })} /> Active</label>
         </div>)}
         <Button type="button" disabled={!draft.seating_areas.length} onClick={() => update({ tables: [...draft.tables, { name: `Table ${draft.tables.length + 1}`, capacity: 2, seating_type: draft.seating_areas[0].id, is_active: true }] })}><Plus size={16} /> Add table</Button>
-      </section>
+      </section></>}
       {save.error && <p role="alert" className="text-sm text-red-600">{save.error.message}</p>}
       <Button type="submit" variant="primary" loading={save.isPending}>Save Reserve settings</Button>
     </form>
