@@ -79,6 +79,8 @@ export interface PublicAvailabilitySlot {
 }
 
 export interface PublicAvailability {
+  timezone?: string;
+  seatingOptions?: Array<{ id: string; label: string }>;
   available: boolean;
   date?: string;
   partySize?: number;
