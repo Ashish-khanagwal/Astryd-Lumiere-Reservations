@@ -2,6 +2,8 @@ import { useEffect, useMemo, useState } from 'react';
 import { CalendarDays, Users, Mail, Phone, StickyNote, Settings2 } from 'lucide-react';
 import { useReservations, useUpdateReservationStatus, useReservationAvailability, useUpdateReservationAvailability } from '../../hooks/api/useReservations';
 import { useAdminToast } from '../../context/AdminToastContext';
+import { useRestaurant } from '../../../context/RestaurantContext';
+import { supportsSeating } from '../../../services/bookingPolicy';
 import { PageHeader } from '../../components/PageHeader';
 import { ListSkeleton } from '../../components/Skeleton';
 import { Modal } from '../../components/Modal';
@@ -43,6 +45,8 @@ function generateSlots(entry: ReservationDayAvailability): ReservationDayAvailab
 }
 
 export function ReservationsPage() {
+  const { restaurantId, sites } = useRestaurant();
+  const seatingEnabled = supportsSeating(sites.find((site) => site.id === restaurantId)?.vertical);
   const { data: reservations, isLoading } = useReservations();
   const updateStatus = useUpdateReservationStatus();
   const { data: availability, isLoading: isAvailabilityLoading } = useReservationAvailability();
@@ -384,14 +388,14 @@ export function ReservationsPage() {
         }
       >
         {selectedReservation && (
-          <ReservationDetail reservation={selectedReservation} />
+          <ReservationDetail reservation={selectedReservation} seatingEnabled={seatingEnabled} />
         )}
       </Modal>
     </div>
   );
 }
 
-function ReservationDetail({ reservation }: { reservation: Reservation }) {
+function ReservationDetail({ reservation, seatingEnabled }: { reservation: Reservation; seatingEnabled: boolean }) {
   return (
     <div className="space-y-5">
       <div className="flex items-center justify-between">
@@ -404,7 +408,7 @@ function ReservationDetail({ reservation }: { reservation: Reservation }) {
       <div className="space-y-1.5 text-sm text-secondary">
         <div className="flex items-center gap-2">
           <Users className="h-3.5 w-3.5 shrink-0" />
-          {reservation.partySize} guest{reservation.partySize === 1 ? '' : 's'} · {reservation.seatingPreference}
+          {reservation.partySize} {seatingEnabled ? `guest${reservation.partySize === 1 ? '' : 's'}` : `participant${reservation.partySize === 1 ? '' : 's'}`}{seatingEnabled && <> · {reservation.seatingPreference}</>}
         </div>
         <div className="flex items-center gap-2">
           <Mail className="h-3.5 w-3.5 shrink-0" />

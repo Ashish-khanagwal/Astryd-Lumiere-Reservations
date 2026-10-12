@@ -5,6 +5,8 @@ import { createReservationCheckout, getPublicAvailability } from "../../services
 import { parseReserveHandoff, clearReserveHandoff } from '../../services/reserveHandoff';
 import { getPayment, retryPayment, submitCard, waitForPayment } from "../../services/payments";
 import { useRestaurant } from "../../context/RestaurantContext";
+import { usePublicData } from "../../context/PublicDataContext";
+import { supportsSeating } from "../../services/bookingPolicy";
 import { usePageContent } from "../../context/usePageContent";
 import { Header } from "../Header";
 import { Footer } from "../Footer";
@@ -83,6 +85,8 @@ export const BookingVariantA = ({
   onOpenCart,
 }: BookingViewProps) => {
   const { restaurantId } = useRestaurant();
+  const { vertical } = usePublicData();
+  const seatingEnabled = supportsSeating(vertical);
   const [handoff] = useState(() => parseReserveHandoff(new URLSearchParams(window.location.search), restaurantId));
   const handoffApplied = useRef(false);
   const c = usePageContent("booking");
@@ -141,35 +145,35 @@ export const BookingVariantA = ({
     setAvailabilityLoading(true);
     setAvailabilityError(null);
     setSelectedTimeSlot(null);
-    getPublicAvailability(restaurantId, selectedDateIso, partySize)
+    getPublicAvailability(restaurantId, selectedDateIso, partySize, seatingEnabled ? undefined : 'Indoor')
       .then((result) => {
         if (!active) return;
         setAvailability(result.slots);
         setLiveSeatingOptions(result.seatingOptions);
-        if (result.seatingOptions?.length) setSelectedSeating((current) => result.seatingOptions!.some((s) => s.id === current) ? current : result.seatingOptions![0].id);
+        if (seatingEnabled && result.seatingOptions?.length) setSelectedSeating((current) => result.seatingOptions!.some((s) => s.id === current) ? current : result.seatingOptions![0].id);
         if (handoff && !handoffApplied.current) {
           handoffApplied.current = true;
           const slot = [...result.slots.afternoon, ...result.slots.evening].find((s) => s.time24 === handoff.time && s.available);
           if (slot && selectedDateIso === handoff.date && partySize === handoff.partySize) {
             setSelectedTimeSlot(slot.time24);
-            setStep(2);
+            setStep(seatingEnabled ? 2 : 3);
           } else {
             setAvailabilityError('The time selected on Astryd Reserve is no longer available. Please choose another time.');
           }
           clearReserveHandoff();
         }
-        if (!result.available) setAvailabilityError(cRef.current.text("a_no_tables"));
+        if (!result.available) setAvailabilityError(seatingEnabled ? cRef.current.text("a_no_tables") : 'No booking times are available for these choices.');
       })
       .catch((error: unknown) => {
         if (!active) return;
         setAvailability({ afternoon: [], evening: [] });
-        setAvailabilityError(error instanceof Error ? error.message : cRef.current.text("a_availability_error"));
+        setAvailabilityError(!seatingEnabled && error instanceof ApiError && error.status === 400 ? 'Booking is unavailable because no compatible resource is configured. Please contact the business.' : error instanceof Error ? error.message : cRef.current.text("a_availability_error"));
       })
       .finally(() => {
         if (active) setAvailabilityLoading(false);
       });
     return () => { active = false; };
-  }, [partySize, restaurantId, selectedDateIso, handoff]);
+  }, [partySize, restaurantId, selectedDateIso, handoff, seatingEnabled]);
 
   useEffect(() => {
     if (!checkoutSession || !["pending", "provider_unknown"].includes(checkoutSession.status)) return;
@@ -233,7 +237,7 @@ export const BookingVariantA = ({
         date: selectedDateIso,
         timeSlot: selectedTimeSlot,
         partySize,
-        seatingPreference: selectedSeating || "Indoor",
+        seatingPreference: seatingEnabled ? selectedSeating || "Indoor" : "Indoor",
         guestName: fullName,
         guestEmail: email,
         guestPhone: phone,
@@ -325,7 +329,7 @@ export const BookingVariantA = ({
           <div className="w-full max-w-2xl mb-10 fade-in">
             <div className="flex justify-between items-center mb-3">
               <span className="font-label-sm text-xs font-bold text-primary uppercase tracking-[0.2em]">
-                {c.text("a_step_counter", { step, total: 4 })}
+                {c.text("a_step_counter", { step: seatingEnabled || step === 1 ? step : step - 1, total: seatingEnabled ? 4 : 3 })}
               </span>
               <span className="font-label-sm text-xs text-on-surface/70 uppercase font-semibold">
                 {step === 1 && c.text("a_step1_name")}
@@ -337,7 +341,7 @@ export const BookingVariantA = ({
             <div className="h-1.5 w-full bg-surface-container rounded-full overflow-hidden">
               <div
                 className="h-full bg-primary rounded-full transition-all duration-700 ease-in-out"
-                style={{ width: `${(step / 4) * 100}%` }}
+                style={{ width: `${((seatingEnabled || step === 1 ? step : step - 1) / (seatingEnabled ? 4 : 3)) * 100}%` }}
               ></div>
             </div>
           </div>
@@ -587,10 +591,10 @@ export const BookingVariantA = ({
 
                     <button
                       disabled={!selectedTimeSlot || availabilityLoading}
-                      onClick={() => setStep(2)}
+                      onClick={() => setStep(seatingEnabled ? 2 : 3)}
                       className="w-full py-4 bg-on-surface text-surface rounded-xl font-bold text-sm tracking-wide uppercase hover:bg-on-surface/90 transition-all duration-300 shadow-xl active:scale-[0.98] flex items-center justify-center gap-2 group disabled:opacity-50 disabled:cursor-not-allowed"
                     >
-                      <span>{c.text("a_continue_seating")}</span>
+                      <span>{seatingEnabled ? c.text("a_continue_seating") : c.text("a_continue_info")}</span>
                       <span className="material-symbols-outlined transition-transform group-hover:translate-x-1">
                         arrow_forward
                       </span>
@@ -603,7 +607,7 @@ export const BookingVariantA = ({
         )}
 
         {/* STEP 2: Seating Preference Screen */}
-        {step === 2 && (
+        {seatingEnabled && step === 2 && (
           <div className="w-full max-w-6xl space-y-12 animate-fadeIn">
             <div className="text-center mb-10">
               <h2 className="font-serif text-4xl md:text-5xl font-semibold text-on-surface mb-3">
@@ -864,7 +868,7 @@ export const BookingVariantA = ({
                   <div className="pt-4 flex items-center justify-between">
                     <button
                       type="button"
-                      onClick={() => setStep(2)}
+                      onClick={() => setStep(seatingEnabled ? 2 : 1)}
                       className="px-6 py-3 rounded-xl border border-outline text-on-surface text-sm font-semibold hover:bg-surface-container-low transition-colors"
                     >
                       {c.text("a_back")}
@@ -923,7 +927,7 @@ export const BookingVariantA = ({
                         </div>
                       </div>
 
-                      <div className="flex items-center gap-3">
+                      {seatingEnabled && <div className="flex items-center gap-3">
                         <span className="material-symbols-outlined text-primary text-xl">
                           grid_view
                         </span>
@@ -935,7 +939,7 @@ export const BookingVariantA = ({
                             {selectedSeatingTitle || c.text("a_table_default")}
                           </p>
                         </div>
-                      </div>
+                      </div>}
                     </div>
                   </div>
                 </div>
@@ -1022,9 +1026,9 @@ export const BookingVariantA = ({
                           <p className="font-serif text-xl font-bold text-on-surface">
                             {peopleLabel(partySize)}
                           </p>
-                          <p className="text-sm text-on-surface/70">
+                          {seatingEnabled && <p className="text-sm text-on-surface/70">
                             {selectedSeatingTitle || c.text("a_table_default")}
-                          </p>
+                          </p>}
                         </div>
                       </div>
                     </div>
