@@ -2,6 +2,7 @@ import React, { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import { Loader2 } from "lucide-react";
 import { ApiError } from "../../services/http";
 import { createReservationCheckout, getPublicAvailability } from "../../services/reservations";
+import { parseReserveHandoff, clearReserveHandoff } from '../../services/reserveHandoff';
 import { getPayment, retryPayment, submitCard, waitForPayment } from "../../services/payments";
 import { useRestaurant } from "../../context/RestaurantContext";
 import { usePageContent } from "../../context/usePageContent";
@@ -82,6 +83,8 @@ export const BookingVariantA = ({
   onOpenCart,
 }: BookingViewProps) => {
   const { restaurantId } = useRestaurant();
+  const [handoff] = useState(() => parseReserveHandoff(new URLSearchParams(window.location.search), restaurantId));
+  const handoffApplied = useRef(false);
   const c = usePageContent("booking");
   // Effects/callbacks read copy through a ref so editing content never re-triggers fetches or payment polling.
   const cRef = useRef(c);
@@ -89,10 +92,13 @@ export const BookingVariantA = ({
     cRef.current = c;
   }, [c]);
   const [step, setStep] = useState(1);
-  const [partySize, setPartySize] = useState(2);
+  const [partySize, setPartySize] = useState(handoff?.partySize ?? 2);
   const today = useMemo(() => startOfDay(new Date()), []);
-  const [displayMonth, setDisplayMonth] = useState(() => new Date(today.getFullYear(), today.getMonth(), 1));
-  const [selectedDate, setSelectedDate] = useState<Date>(today);
+  const [displayMonth, setDisplayMonth] = useState(() => {
+    const initial = handoff ? new Date(`${handoff.date}T12:00:00`) : today;
+    return new Date(initial.getFullYear(), initial.getMonth(), 1);
+  });
+  const [selectedDate, setSelectedDate] = useState<Date>(() => handoff ? new Date(`${handoff.date}T12:00:00`) : today);
   const [selectedTimeSlot, setSelectedTimeSlot] = useState<string | null>(null);
   const [selectedSeating, setSelectedSeating] = useState<string | null>(
     "Indoor",
@@ -113,6 +119,7 @@ export const BookingVariantA = ({
   const [availability, setAvailability] = useState<PublicAvailability["slots"]>({ afternoon: [], evening: [] });
   const [availabilityLoading, setAvailabilityLoading] = useState(true);
   const [availabilityError, setAvailabilityError] = useState<string | null>(null);
+  const [liveSeatingOptions, setLiveSeatingOptions] = useState<Array<{ id: string; label: string }> | undefined>();
 
   const calendarCells = useMemo(() => getCalendarCells(displayMonth), [displayMonth]);
   const isPrevMonthDisabled =
@@ -138,6 +145,19 @@ export const BookingVariantA = ({
       .then((result) => {
         if (!active) return;
         setAvailability(result.slots);
+        setLiveSeatingOptions(result.seatingOptions);
+        if (result.seatingOptions?.length) setSelectedSeating((current) => result.seatingOptions!.some((s) => s.id === current) ? current : result.seatingOptions![0].id);
+        if (handoff && !handoffApplied.current) {
+          handoffApplied.current = true;
+          const slot = [...result.slots.afternoon, ...result.slots.evening].find((s) => s.time24 === handoff.time && s.available);
+          if (slot && selectedDateIso === handoff.date && partySize === handoff.partySize) {
+            setSelectedTimeSlot(slot.time24);
+            setStep(2);
+          } else {
+            setAvailabilityError('The time selected on Astryd Reserve is no longer available. Please choose another time.');
+          }
+          clearReserveHandoff();
+        }
         if (!result.available) setAvailabilityError(cRef.current.text("a_no_tables"));
       })
       .catch((error: unknown) => {
@@ -149,7 +169,7 @@ export const BookingVariantA = ({
         if (active) setAvailabilityLoading(false);
       });
     return () => { active = false; };
-  }, [partySize, restaurantId, selectedDateIso]);
+  }, [partySize, restaurantId, selectedDateIso, handoff]);
 
   useEffect(() => {
     if (!checkoutSession || !["pending", "provider_unknown"].includes(checkoutSession.status)) return;
@@ -181,7 +201,11 @@ export const BookingVariantA = ({
     };
   }, [checkoutSession, onToast]);
 
-  const seatingOptions = c.list("a_seating_options");
+  const configuredSeatingOptions = c.list("a_seating_options");
+  const seatingOptions = liveSeatingOptions ? liveSeatingOptions.map((area) => {
+    const existing = configuredSeatingOptions.find((option) => option.id === area.id);
+    return { id: area.id, title: area.label, image: existing?.image ?? '', description: existing?.description ?? '', badge: existing?.badge ?? '' };
+  }) : configuredSeatingOptions;
   const selectedSeatingTitle = selectedSeating
     ? seatingOptions.find((opt) => opt.id === selectedSeating)?.title || selectedSeating
     : null;
@@ -601,7 +625,7 @@ export const BookingVariantA = ({
                       : "border-outline-variant/40 hover:border-primary/50"
                   }`}
                 >
-                  <div className="relative h-60 w-full rounded-xl overflow-hidden mb-4 border border-outline-variant/20">
+                  {opt.image && <div className="relative h-60 w-full rounded-xl overflow-hidden mb-4 border border-outline-variant/20">
                     <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent z-10"></div>
                     <img
                       className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
@@ -615,7 +639,7 @@ export const BookingVariantA = ({
                         </span>
                       </div>
                     )}
-                  </div>
+                  </div>}
                   <h3 className="font-serif text-xl font-bold text-on-surface mb-1">
                     {opt.title}
                   </h3>

@@ -9,21 +9,23 @@ import { Header } from '../Header';
 import { Footer } from '../Footer';
 import type { PublicAvailability, PublicReservationConfirmation } from '../../types';
 import type { BookingViewProps } from './VariantA';
+import { useReserveHandoff } from './useReserveHandoff';
 
 function toIsoDate(d: Date) {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
 }
 
-/** Variant C - "Appointment Booking" (Multi-Vertical Platform Plan §8.3); suits Retail - a service picker + duration slot picker instead of Variant A's table-reservation flow. Books directly (no deposit). */
+/** Appointment layout; retains existing service selection and paid checkout. */
 export const BookingVariantC = ({ onNavigateLanding, onNavigateMenu, onToast, cartUniqueCount = 0, onOpenCart }: BookingViewProps) => {
   const { restaurantId } = useRestaurant();
+  const { handoff, apply: applyHandoff, error: handoffError } = useReserveHandoff(restaurantId);
   const c = usePageContent('booking');
   const services = c.list('c_services');
   const [serviceId, setServiceId] = useState<string | null>(null);
   // Falls back to the first listed service (also covers the owner removing the selected one).
   const selectedService = services.find((s) => s.id === serviceId) ?? services[0] ?? null;
   const service = selectedService?.name ?? '';
-  const [dateInput, setDateInput] = useState(() => toIsoDate(new Date()));
+  const [dateInput, setDateInput] = useState(() => handoff?.date ?? toIsoDate(new Date()));
   const [selectedTimeSlot, setSelectedTimeSlot] = useState<string | null>(null);
   const [availability, setAvailability] = useState<PublicAvailability['slots']>({ afternoon: [], evening: [] });
   const [isLoadingSlots, setIsLoadingSlots] = useState(true);
@@ -43,9 +45,13 @@ export const BookingVariantC = ({ onNavigateLanding, onNavigateMenu, onToast, ca
     let active = true;
     setIsLoadingSlots(true);
     setSelectedTimeSlot(null);
-    getPublicAvailability(restaurantId, dateInput, 1)
+    getPublicAvailability(restaurantId, dateInput, 1, 'Indoor')
       .then((result) => {
-        if (active) setAvailability(result.slots);
+        if (active) {
+          setAvailability(result.slots);
+          const time = applyHandoff(result, dateInput, 1);
+          if (time) setSelectedTimeSlot(time);
+        }
       })
       .catch(() => {
         if (active) setAvailability({ afternoon: [], evening: [] });
@@ -56,7 +62,7 @@ export const BookingVariantC = ({ onNavigateLanding, onNavigateMenu, onToast, ca
     return () => {
       active = false;
     };
-  }, [restaurantId, dateInput]);
+  }, [restaurantId, dateInput, applyHandoff]);
 
   const handleSubmit = async () => {
     if (!selectedTimeSlot || !fullName.trim() || !email.trim() || !phone.trim() || !service) return;
@@ -120,6 +126,7 @@ export const BookingVariantC = ({ onNavigateLanding, onNavigateMenu, onToast, ca
       <main className="flex-grow pt-28 pb-24 px-margin-mobile md:px-margin-desktop max-w-container-max mx-auto w-full max-w-3xl">
         {checkout ? <PaidCheckout key={checkout.id} initialSession={checkout} onSuccess={(session) => { if (session.reservation) { setConfirmation(session.reservation); onToast('Appointment confirmed after successful payment.'); } }} /> : <>
         <div className="mb-8">
+          {handoffError && <p role="alert" className="text-sm text-secondary">{handoffError}</p>}
           <span className="text-primary uppercase tracking-[0.2em] font-bold text-xs">{c.text('c_eyebrow')}</span>
           <h1 className="font-serif text-3xl md:text-4xl font-semibold mt-1">{c.text('c_heading')}</h1>
         </div>

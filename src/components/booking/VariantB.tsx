@@ -9,13 +9,14 @@ import { Header } from '../Header';
 import { Footer } from '../Footer';
 import type { PublicAvailability, PublicReservationConfirmation } from '../../types';
 import type { BookingViewProps } from './VariantA';
+import { useReserveHandoff } from './useReserveHandoff';
 
 function toIsoDate(d: Date) {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
 }
 
-function nextSevenDays() {
-  const today = new Date();
+function nextSevenDays(start?: string) {
+  const today = start ? new Date(`${start}T12:00:00`) : new Date();
   return Array.from({ length: 7 }, (_, i) => {
     const d = new Date(today);
     d.setDate(today.getDate() + i);
@@ -23,13 +24,14 @@ function nextSevenDays() {
   });
 }
 
-/** Variant B - "Class/Session Booking" (Multi-Vertical Platform Plan §8.3); suits a Gym - a weekly timetable strip instead of Variant A's full calendar + multi-step wizard. Books directly (no deposit), same as a typical class booking flow. */
+/** Session layout; retains the existing reservation checkout and allocation. */
 export const BookingVariantB = ({ onNavigateLanding, onNavigateMenu, onToast, cartUniqueCount = 0, onOpenCart }: BookingViewProps) => {
   const { restaurantId } = useRestaurant();
+  const { handoff, apply: applyHandoff, error: handoffError } = useReserveHandoff(restaurantId);
   const c = usePageContent('booking');
-  const days = useMemo(() => nextSevenDays(), []);
+  const days = useMemo(() => nextSevenDays(handoff?.date), [handoff?.date]);
   const [selectedDay, setSelectedDay] = useState(days[0]);
-  const [spots, setSpots] = useState(1);
+  const [spots, setSpots] = useState(handoff && handoff.partySize <= 4 ? handoff.partySize : 1);
   const [selectedTimeSlot, setSelectedTimeSlot] = useState<string | null>(null);
   const [availability, setAvailability] = useState<PublicAvailability['slots']>({ afternoon: [], evening: [] });
   const [isLoadingSlots, setIsLoadingSlots] = useState(true);
@@ -48,9 +50,13 @@ export const BookingVariantB = ({ onNavigateLanding, onNavigateMenu, onToast, ca
     let active = true;
     setIsLoadingSlots(true);
     setSelectedTimeSlot(null);
-    getPublicAvailability(restaurantId, selectedDateIso, spots)
+    getPublicAvailability(restaurantId, selectedDateIso, spots, 'Indoor')
       .then((result) => {
-        if (active) setAvailability(result.slots);
+        if (active) {
+          setAvailability(result.slots);
+          const time = applyHandoff(result, selectedDateIso, spots);
+          if (time) setSelectedTimeSlot(time);
+        }
       })
       .catch(() => {
         if (active) setAvailability({ afternoon: [], evening: [] });
@@ -61,7 +67,7 @@ export const BookingVariantB = ({ onNavigateLanding, onNavigateMenu, onToast, ca
     return () => {
       active = false;
     };
-  }, [restaurantId, selectedDateIso, spots]);
+  }, [restaurantId, selectedDateIso, spots, applyHandoff]);
 
   const handleSubmit = async () => {
     if (!selectedTimeSlot || !fullName.trim() || !email.trim() || !phone.trim()) return;
@@ -123,6 +129,7 @@ export const BookingVariantB = ({ onNavigateLanding, onNavigateMenu, onToast, ca
 
       <main className="flex-grow pt-28 pb-24 px-margin-mobile md:px-margin-desktop max-w-container-max mx-auto w-full">
         <div className="mb-8">
+          {handoffError && <p role="alert" className="text-sm text-secondary">{handoffError}</p>}
           <span className="text-primary uppercase tracking-[0.2em] font-bold text-xs">{c.text('b_eyebrow')}</span>
           <h1 className="font-serif text-3xl md:text-4xl font-semibold mt-1">{c.text('b_heading')}</h1>
         </div>
