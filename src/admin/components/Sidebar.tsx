@@ -26,6 +26,7 @@ import {
   Building2,
   Crown,
   Globe,
+  MapPin,
   type LucideIcon,
 } from 'lucide-react';
 import { usePermissions } from '../hooks/usePermissions';
@@ -293,6 +294,8 @@ export function Sidebar() {
                 { to: '/admin/settings/account', label: 'Account', icon: User },
                 ...(perms.canManageSettings && import.meta.env.VITE_USE_MOCKS === 'true' ? [{ to: '/admin/settings/domains', label: 'Domains', icon: Globe }] : []),
                 ...(perms.canManageUsers ? [{ to: '/admin/settings/users', label: 'Users', icon: Users }] : []),
+                ...(perms.canManageSettings && import.meta.env.VITE_USE_MOCKS === 'false' ? [{ to: '/admin/settings/website-sync', label: 'Astryd Main sync', icon: Globe }] : []),
+                ...(perms.canManageUsers && import.meta.env.VITE_USE_MOCKS === 'false' ? [{ to: '/admin/settings/reserve', label: 'Astryd Reserve', icon: MapPin }] : []),
               ],
             },
           ],

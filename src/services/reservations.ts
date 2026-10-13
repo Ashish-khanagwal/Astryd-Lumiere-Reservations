@@ -44,6 +44,8 @@ interface ReservationCheckoutResponse {
 }
 
 interface PublicAvailabilityResponse {
+  timezone?: string;
+  seating_options?: Array<{ id: string; label: string }>;
   available: boolean;
   date?: string;
   party_size?: number;
@@ -81,14 +83,18 @@ export async function getPublicAvailability(
   businessId: string,
   date: string,
   partySize: number,
+  seatingPreference?: string,
 ): Promise<PublicAvailability> {
   const params = new URLSearchParams({ date, party_size: String(partySize) });
+  if (seatingPreference) params.set('seating_preference', seatingPreference);
   const response = await requestPublicApi<PublicAvailabilityResponse>(
     `/availability/${encodeURIComponent(businessId)}?${params}`,
   );
 
   return {
     available: response.available,
+    timezone: response.timezone,
+    seatingOptions: response.seating_options,
     date: response.date,
     partySize: response.party_size,
     reason: response.reason,

@@ -47,12 +47,18 @@ export const NEXT_ACTION_LABEL: Partial<Record<OrderStatus, string>> = {
 
 export type OrderUrgency = 'fresh' | 'warning' | 'overdue';
 
+function orderTimestamp(value: string): number {
+  // Older order API responses omitted the UTC suffix on their UTC timestamps.
+  const utc = /(?:Z|[+-]\d{2}:\d{2})$/i.test(value) ? value : `${value}Z`;
+  return new Date(utc).getTime();
+}
+
 const WARNING_AFTER_MS = 8 * 60 * 1000;
 const OVERDUE_AFTER_MS = 15 * 60 * 1000;
 
 /** How long an order has sat in its current stage, colour-escalated the longer it waits - same thresholds as the reference kitchen-display design. */
 export function getOrderUrgency(statusUpdatedAt: string, now: number): OrderUrgency {
-  const elapsed = now - new Date(statusUpdatedAt).getTime();
+  const elapsed = now - orderTimestamp(statusUpdatedAt);
   if (elapsed >= OVERDUE_AFTER_MS) return 'overdue';
   if (elapsed >= WARNING_AFTER_MS) return 'warning';
   return 'fresh';
@@ -71,7 +77,7 @@ export const URGENCY_TEXT: Record<OrderUrgency, string> = {
 };
 
 export function formatElapsed(fromIso: string, now: number): string {
-  const mins = Math.max(0, Math.floor((now - new Date(fromIso).getTime()) / 60000));
+  const mins = Math.max(0, Math.floor((now - orderTimestamp(fromIso)) / 60000));
   if (mins < 1) return 'Just now';
   if (mins < 60) return `${mins}m`;
   const hours = Math.floor(mins / 60);
