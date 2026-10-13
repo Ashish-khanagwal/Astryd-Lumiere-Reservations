@@ -72,18 +72,18 @@ function AvailabilityChart({
     <svg viewBox={`0 0 ${width} ${height}`} className="w-full h-[7.5rem]" role="img" aria-label="Availability by category">
       <defs>
         <linearGradient id="availFill" x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%" stopColor="#4f46e5" stopOpacity="0.18" />
-          <stop offset="100%" stopColor="#4f46e5" stopOpacity="0" />
+          <stop offset="0%" stopColor="#00c4cd" stopOpacity="0.22" />
+          <stop offset="100%" stopColor="#00c4cd" stopOpacity="0" />
         </linearGradient>
       </defs>
       {Array.from({ length: 3 }).map((_, i) => {
         const y = padY + ((i + 1) / 4) * innerH;
-        return <line key={i} x1={padX} y1={y} x2={width - padX} y2={y} stroke="#eef2ff" strokeWidth="1" />;
+        return <line key={i} x1={padX} y1={y} x2={width - padX} y2={y} style={{ stroke: 'var(--astryd-divider)' }} strokeWidth="1" />;
       })}
       <path d={area} fill="url(#availFill)" />
-      <path d={line} fill="none" stroke="#4f46e5" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
-      <line x1={active.x} y1={padY} x2={active.x} y2={height - padY} stroke="#c7d2fe" strokeDasharray="3 4" />
-      <circle cx={active.x} cy={active.y} r="5" fill="#ffffff" stroke="#4f46e5" strokeWidth="3" />
+      <path d={line} fill="none" stroke="#00c4cd" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
+      <line x1={active.x} y1={padY} x2={active.x} y2={height - padY} style={{ stroke: 'var(--astryd-border-strong)' }} strokeDasharray="3 4" />
+      <circle cx={active.x} cy={active.y} r="5" style={{ fill: 'var(--color-surface)' }} stroke="#00c4cd" strokeWidth="3" />
     </svg>
   );
 }
@@ -95,22 +95,22 @@ function AvailabilityRing({ percent }: { percent: number }) {
   const offset = c * (1 - clamped / 100);
 
   return (
-    <div className="relative h-[108px] w-[108px] shrink-0">
+    <div className="relative h-[136px] w-[136px] shrink-0">
       <svg viewBox="0 0 88 88" className="h-full w-full -rotate-90">
-        <circle cx="44" cy="44" r={r} fill="none" stroke="rgba(255,255,255,0.12)" strokeWidth="8" />
+        <circle cx="44" cy="44" r={r} fill="none" style={{ stroke: 'var(--astryd-progress-track)' }} strokeWidth="8" />
         <circle
           cx="44"
           cy="44"
           r={r}
           fill="none"
-          stroke="#818cf8"
+          stroke="#00c4cd"
           strokeWidth="8"
           strokeLinecap="round"
           strokeDasharray={c}
           strokeDashoffset={offset}
         />
       </svg>
-      <div className="absolute inset-0 flex items-center justify-center text-sm font-bold text-white">{clamped}%</div>
+      <div className="absolute inset-0 flex items-center justify-center text-[24px] font-extrabold tabular-nums astryd-text-strong">{clamped}%</div>
     </div>
   );
 }
@@ -163,8 +163,8 @@ export function DashboardPage() {
     return (
       <div className="space-y-5">
         <StickyHeader>
-          <p className="text-sm text-secondary">Hi {firstName},</p>
-          <h1 className="text-2xl sm:text-3xl font-bold text-on-surface tracking-tight">Welcome back</h1>
+          <h1 className="text-[24px] sm:text-[32px] font-semibold leading-tight astryd-text-strong tracking-tight">Welcome back</h1>
+          <p className="text-[13px] astryd-text-muted mt-1.5">Hi {firstName}, here is how {restaurantName} is doing.</p>
         </StickyHeader>
         <div className="grid grid-cols-12 gap-4 lg:gap-5 items-start">
           <Skeleton className="col-span-12 lg:col-span-6 h-36 rounded-3xl" />
@@ -184,8 +184,8 @@ export function DashboardPage() {
       <StickyHeader>
         <div className="flex flex-wrap items-end justify-between gap-3 min-w-0">
           <div className="min-w-0">
-            <p className="text-sm text-secondary">Hi {firstName},</p>
-            <h1 className="text-2xl sm:text-3xl font-bold text-on-surface tracking-tight">Welcome back</h1>
+            <h1 className="text-[24px] sm:text-[32px] font-semibold leading-tight astryd-text-strong tracking-tight">Welcome back</h1>
+            <p className="text-[13px] astryd-text-muted mt-1.5">Hi {firstName}, here is how {restaurantName} is doing.</p>
           </div>
         </div>
       </StickyHeader>
@@ -196,6 +196,7 @@ export function DashboardPage() {
             className="flex-1"
             label="Menu Items"
             value={items.length}
+            hint={items.length ? `${available} available` : 'None added yet'}
             icon={UtensilsCrossed}
             tone="primary"
             onClick={() => navigate('/admin/menu/items')}
@@ -204,6 +205,7 @@ export function DashboardPage() {
             className="flex-1"
             label="Categories"
             value={categories.length}
+            hint={categories.length ? 'Organizing your menu' : 'None added yet'}
             icon={LayoutGrid}
             tone="tertiary"
             onClick={() => navigate('/admin/menu/categories')}
@@ -212,6 +214,7 @@ export function DashboardPage() {
             className="flex-1"
             label="Active Offers"
             value={activeOffers}
+            hint={activeOffers ? 'Running now' : 'None running'}
             icon={Tag}
             tone="secondary"
             onClick={() => navigate('/admin/menu/offers')}
@@ -221,11 +224,11 @@ export function DashboardPage() {
         <div className="col-span-12 lg:col-span-6 min-w-0 admin-card p-5 sm:p-6">
           <div className="flex items-start justify-between gap-3">
             <div className="min-w-0">
-              <p className="text-sm text-secondary">Menu Availability</p>
-              <div className="text-3xl font-bold text-on-surface tracking-tight mt-1">{availablePct}%</div>
+              <p className="text-[12px] astryd-text-muted">Menu Availability</p>
+              <div className="text-[24px] font-extrabold leading-none tabular-nums astryd-text-bright tracking-tight mt-2">{availablePct}%</div>
             </div>
             <div className="flex rounded-full bg-surface-container-low p-1 text-[11px] font-semibold text-secondary">
-              <span className="rounded-full bg-white px-2.5 py-1 text-primary shadow-sm">Now</span>
+              <span className="rounded-full bg-[rgba(0,196,205,0.12)] px-2.5 py-1 astryd-text-cyan">Now</span>
             </div>
           </div>
           <AvailabilityChart points={chartPoints} empty={items.length === 0 && categories.length === 0} />
@@ -242,7 +245,7 @@ export function DashboardPage() {
 
         <div className="col-span-12 lg:col-span-7 min-w-0 admin-card p-6 sm:p-8 flex flex-col sm:flex-row gap-6">
           <div className="min-w-0 flex-1 flex flex-col justify-center">
-            <h2 className="text-2xl font-bold text-on-surface tracking-tight">
+            <h2 className="text-[20px] font-semibold astryd-text-strong tracking-tight">
               {isPublished ? 'Your site is live' : 'Publish your site'}
             </h2>
             <p className="text-sm text-secondary mt-2 max-w-md leading-relaxed">
@@ -252,37 +255,41 @@ export function DashboardPage() {
             </p>
             <button
               onClick={() => navigate('/admin/website/pages/home')}
-              className="mt-5 inline-flex items-center gap-2 rounded-full bg-primary px-5 py-2.5 text-sm font-bold text-on-primary shadow-md shadow-primary/20 hover:bg-primary-container transition-colors self-start"
+              className="astryd-btn mt-5 h-10 gap-2 self-start px-4 text-[14px]"
             >
               {isPublished ? 'Edit website' : 'Set up website'}
             </button>
           </div>
-          <div className="w-full sm:w-56 shrink-0 rounded-3xl bg-gradient-to-br from-[#6366f1] via-[#7c6cf0] to-[#c4b5fd] p-5 text-white shadow-lg shadow-primary/20 flex flex-col justify-between">
+          <div className="astryd-card-cyan w-full sm:w-56 shrink-0 p-5 flex flex-col justify-between">
             <div className="flex items-center justify-between">
-              <span className="text-xs font-semibold tracking-wide uppercase text-white/80">Website</span>
-              <CreditCard className="h-5 w-5 text-white/80" />
+              <span className="text-[10px] font-semibold uppercase tracking-[0.12em] astryd-text-cyan">Website</span>
+              <CreditCard className="h-4 w-4 astryd-text-cyan" />
             </div>
-            <div className="mt-6 text-lg font-bold truncate">{restaurantName}</div>
-            <div className="mt-1 text-xs font-medium text-white/80">{isPublished ? 'Published' : 'Draft'}</div>
-            <div className="mt-6 flex items-center justify-between text-[11px] text-white/75">
+            <div className="mt-6 text-[16px] font-semibold truncate astryd-text-strong">{restaurantName}</div>
+            <div className="mt-1 text-[12px] astryd-text-muted">{isPublished ? 'Published' : 'Draft'}</div>
+            <div className="mt-6 flex items-center justify-between text-[11px] astryd-text-dim">
               <span className="truncate">{user?.name}</span>
               <span>{website?.publishedAt ? new Date(website.publishedAt).toLocaleDateString() : '—'}</span>
             </div>
           </div>
         </div>
 
-        <div className="col-span-12 lg:col-span-5 min-w-0 admin-card p-5 sm:p-6 flex flex-col justify-between bg-gradient-to-br from-white to-indigo-50/60">
-          <div>
-            <div className="flex items-center gap-2 text-primary text-xs font-bold uppercase tracking-widest">
-              <Sparkles className="h-3.5 w-3.5" />
-              Add-ons
+        <div className="col-span-12 lg:col-span-5 min-w-0 admin-card p-5 sm:p-6 flex flex-col justify-between gap-5">
+          <div className="flex items-center gap-3">
+            <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-[rgba(0,196,205,0.1)] astryd-text-cyan">
+              <Sparkles className="h-5 w-5" />
             </div>
-            <div className="text-3xl font-bold text-on-surface mt-2">{addons?.length ?? 0}</div>
-            <p className="text-sm text-secondary mt-2">Extras guests can add when they customize a dish.</p>
+            <div className="text-[13px] font-medium astryd-text-muted">Add-ons</div>
           </div>
+
+          <div className="flex items-end gap-4">
+            <div className="text-[56px] font-extrabold leading-none tracking-tight tabular-nums astryd-text-strong">{addons?.length ?? 0}</div>
+            <p className="pb-1 text-[13px] leading-snug astryd-text-muted max-w-[16rem]">Extras guests can add when they customize a dish.</p>
+          </div>
+
           <button
             onClick={() => navigate('/admin/menu/addons')}
-            className="mt-5 inline-flex items-center gap-1.5 text-sm font-bold text-primary hover:text-primary-container transition-colors"
+            className="astryd-btn h-10 w-full gap-2 px-4 text-[14px]"
           >
             Manage add-ons
             <ArrowRight className="h-4 w-4" />
@@ -290,7 +297,7 @@ export function DashboardPage() {
         </div>
 
         <div className="col-span-12 md:col-span-6 xl:col-span-4 min-w-0 admin-card p-5 sm:p-6">
-          <h3 className="text-base font-bold text-on-surface tracking-tight mb-4">Recent menu</h3>
+          <h3 className="text-[14px] font-medium astryd-text-bright mb-4">Recent menu</h3>
           {recentItems.length === 0 ? (
             <p className="text-sm text-secondary">No menu items yet. Add your first dish to get started.</p>
           ) : (
@@ -322,7 +329,7 @@ export function DashboardPage() {
         </div>
 
         <div className="col-span-12 md:col-span-6 xl:col-span-4 min-w-0 admin-card p-5 sm:p-6">
-          <h3 className="text-base font-bold text-on-surface tracking-tight mb-4">Quick actions</h3>
+          <h3 className="text-[14px] font-medium astryd-text-bright mb-4">Quick actions</h3>
           <ul className="space-y-3">
             {quickActions.map((action) => (
               <li key={action.label}>
@@ -344,13 +351,13 @@ export function DashboardPage() {
           </ul>
         </div>
 
-        <div className="col-span-12 xl:col-span-4 min-w-0 rounded-3xl bg-[#1e2a78] p-6 text-white shadow-lg shadow-indigo-900/20 flex items-center justify-between gap-4">
-          <div className="min-w-0">
-            <p className="text-sm text-white/70">Menu ready</p>
-            <h3 className="text-2xl font-bold tracking-tight mt-1">
+        <div className="col-span-12 xl:col-span-4 min-w-0 astryd-card p-6 flex items-center justify-between gap-5">
+          <div className="min-w-0 space-y-2">
+            <p className="text-[13px] font-medium astryd-text-muted">Menu ready</p>
+            <h3 className="text-[34px] font-extrabold leading-none tracking-tight tabular-nums astryd-text-strong">
               {availablePct === 100 ? 'Complete' : `${available} available`}
             </h3>
-            <p className="text-xs text-white/60 mt-2">
+            <p className="text-[13px] leading-snug astryd-text-dim">
               {unavailable === 0 ? 'Every dish is on the menu.' : `${unavailable} currently hidden from guests.`}
             </p>
           </div>
