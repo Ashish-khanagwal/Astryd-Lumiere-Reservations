@@ -62,6 +62,10 @@ export interface PublicReservationInput {
 }
 
 export interface PublicReservationConfirmation {
+  managementUrl?: string;
+  calendarUrl?: string;
+  googleCalendarUrl?: string;
+  emailStatus?: string;
   confirmationCode: string;
   date: string;
   timeSlot: string;
