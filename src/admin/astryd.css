@@ -39,6 +39,8 @@
   --astryd-hover: rgba(15, 37, 64, 0.04);
   --astryd-input-fill: #ffffff;
   --astryd-progress-track: #e2eaf4;
+  --astryd-switch-off: #c3cfdd;
+  --astryd-switch-off-hover: #afbdcf;
   --astryd-modal-surface: rgba(255, 255, 255, 0.92);
   --astryd-modal-overlay: rgba(15, 37, 64, 0.25);
   --astryd-header-fill: rgba(238, 243, 250, 0.82);
@@ -77,6 +79,8 @@
   --astryd-hover: rgba(255, 255, 255, 0.04);
   --astryd-input-fill: rgba(255, 255, 255, 0.04);
   --astryd-progress-track: rgba(143, 168, 200, 0.15);
+  --astryd-switch-off: rgba(143, 168, 200, 0.3);
+  --astryd-switch-off-hover: rgba(143, 168, 200, 0.4);
   --astryd-modal-surface: rgba(143, 168, 200, 0.3);
   --astryd-modal-overlay: rgba(0, 0, 0, 0.4);
   --astryd-header-fill: rgba(8, 18, 33, 0.7);
@@ -332,6 +336,23 @@ html:has(.admin-shell) body {
 .admin-shell .astryd-input:disabled {
   opacity: 0.5;
   cursor: not-allowed;
+}
+
+/* Switch (ToggleField): own classes so the generic bg-white / bg-slate remaps below can't flatten track and knob */
+.admin-shell .astryd-switch {
+  background-color: var(--astryd-switch-off);
+  transition: background-color 0.15s;
+}
+.admin-shell .astryd-switch:hover:not(:disabled) {
+  background-color: var(--astryd-switch-off-hover);
+}
+.admin-shell .astryd-switch[aria-checked='true'],
+.admin-shell .astryd-switch[aria-checked='true']:hover:not(:disabled) {
+  background-color: var(--astryd-cyan);
+}
+.admin-shell .astryd-switch-knob {
+  background-color: #ffffff;
+  box-shadow: 0 1px 3px rgba(15, 37, 64, 0.3);
 }
 
 /* Primary action: cyan-tinted (login "Sign in", WorkforceActionButton) */
