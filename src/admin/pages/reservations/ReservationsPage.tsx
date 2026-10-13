@@ -1,3 +1,4 @@
+import { BookingEmailStatus } from './BookingEmailStatus';
 import { useEffect, useMemo, useState } from 'react';
 import { CalendarDays, Users, Mail, Phone, StickyNote, Settings2 } from 'lucide-react';
 import { useReservations, useUpdateReservationStatus, useReservationAvailability, useUpdateReservationAvailability } from '../../hooks/api/useReservations';
@@ -388,16 +389,17 @@ export function ReservationsPage() {
         }
       >
         {selectedReservation && (
-          <ReservationDetail reservation={selectedReservation} seatingEnabled={seatingEnabled} />
+          <ReservationDetail reservation={selectedReservation} seatingEnabled={seatingEnabled} siteId={restaurantId} />
         )}
       </Modal>
     </div>
   );
 }
 
-function ReservationDetail({ reservation, seatingEnabled }: { reservation: Reservation; seatingEnabled: boolean }) {
+function ReservationDetail({ reservation, seatingEnabled, siteId }: { reservation: Reservation; seatingEnabled: boolean; siteId: string }) {
   return (
     <div className="space-y-5">
+      <BookingEmailStatus reservationId={reservation.id} siteId={siteId} />
       <div className="flex items-center justify-between">
         <span className="font-semibold text-on-surface">
           {new Date(reservation.date).toLocaleDateString(undefined, { weekday: 'long', month: 'long', day: 'numeric' })} · {formatTimeSlot(reservation.timeSlot)}

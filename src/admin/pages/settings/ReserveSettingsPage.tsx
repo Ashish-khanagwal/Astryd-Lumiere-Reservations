@@ -93,6 +93,12 @@ export function ReserveSettingsPage() {
         </div>
         <p className="text-sm text-secondary">Location-only saves preserve current booking timing. Enable this option to change the start interval and duration and activate overlap protection. Opening hours, blocked dates, and disabled starts remain controlled under Reservations → Availability.</p>
       </section>
+      <section className="admin-card p-5 space-y-4">
+        <h2 className="font-semibold">Booking confirmation email</h2>
+        <p className="text-sm text-secondary">Published business branding and contact details appear in each message. Policies are displayed as written; refunds and charges remain handled by staff.</p>
+        <label className="block text-sm">Cancellation and no-show policy<textarea className={input} maxLength={2000} value={draft.booking_email_policy ?? ''} onChange={event => update({booking_email_policy:event.target.value})} /></label>
+        <label className="block text-sm">Additional note<textarea className={input} maxLength={2000} value={draft.booking_email_note ?? ''} onChange={event => update({booking_email_note:event.target.value})} /></label>
+      </section>
       {seatingEnabled && <><section className="admin-card p-5 space-y-4">
         <h2 className="font-semibold">Seating areas</h2>
         {draft.seating_areas.map((area, index) => <label key={area.id} className="block text-sm">Area {index + 1}<input className={input} value={area.name} maxLength={60} onChange={(event) => update({ seating_areas: draft.seating_areas.map((a) => a.id === area.id ? { ...a, name: event.target.value } : a) })} required /></label>)}

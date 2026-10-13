@@ -20,6 +20,10 @@ interface PublicApiErrorResponse {
 
 interface PublicReservationResponse {
   success: boolean;
+  management_url?: string;
+  calendar_url?: string;
+  google_calendar_url?: string;
+  email_status?: string;
   confirmation_code: string;
   reservation: {
     date: string;
@@ -139,6 +143,10 @@ export async function createPublicReservation(
 
   return {
     confirmationCode: response.confirmation_code,
+    managementUrl: response.management_url,
+    calendarUrl: response.calendar_url,
+    googleCalendarUrl: response.google_calendar_url,
+    emailStatus: response.email_status,
     date: response.reservation.date,
     timeSlot: response.reservation.time_slot,
     timeDisplay: response.reservation.time_display,
